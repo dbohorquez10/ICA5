@@ -1,6 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { FitoDataService, Inspeccion, Predio, Lote, Usuario } from '../../../core/services/fito-data.service';
 
+/**
+ * @description
+ * Controla el panel de control central para administradores en FitoGestión. Renderiza las métricas globales de la plataforma (productores, técnicos e inspecciones) y permite gestionar y asignar formalmente las solicitudes de inspección pendientes a los técnicos disponibles.
+ *
+ * @usageNotes
+ * Componente de uso exclusivo para el rol 'admin'. Depende directamente de la inyección de `FitoDataService` para obtener indicadores métricos agregados, consultar técnicos activos y ejecutar la acción de asignación de inspecciones.
+ */
 @Component({
   selector: 'app-dashboard-admin',
   templateUrl: './dashboard-admin.component.html',

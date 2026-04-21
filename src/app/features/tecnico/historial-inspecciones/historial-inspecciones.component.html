@@ -12,7 +12,7 @@
   <!-- Buscador -->
   <div class="search-bar">
     <span class="material-icons">search</span>
-    <input type="text" [(ngModel)]="filtro" placeholder="Buscar por predio o ID...">
+    <input type="text" [(ngModel)]="filtro" placeholder="Buscar por predio o ID..." />
   </div>
 
   <!-- Tabla -->
@@ -32,13 +32,17 @@
       </thead>
       <tbody>
         <tr *ngFor="let h of historialFiltrado">
-          <td><code class="id-code">{{ h.id }}</code></td>
+          <td>
+            <code class="id-code">{{ h.id }}</code>
+          </td>
           <td>
             <strong>{{ h.predio }}</strong>
             <small class="ubicacion">{{ h.ubicacion }}</small>
           </td>
-          <td><span class="chip-neutral">{{ h.lotes }}</span></td>
-          <td>{{ h.totalPlantas | number:'1.0-0' }}</td>
+          <td>
+            <span class="chip-neutral">{{ h.lotes }}</span>
+          </td>
+          <td>{{ h.totalPlantas | number: '1.0-0' }}</td>
           <td>
             <span [class]="h.plagasDetectadas > 0 ? 'chip-danger' : 'chip-ok'">
               {{ h.plagasDetectadas }}
@@ -47,8 +51,14 @@
           <td class="text-muted">{{ h.tecnico }}</td>
           <td class="text-muted">{{ h.fecha }}</td>
           <td>
-            <span class="estado-badge"
-              [ngClass]="{'badge-ok': h.estado === 'Completada', 'badge-warn': h.estado === 'En Progreso', 'badge-pend': h.estado === 'Pendiente'}">
+            <span
+              class="estado-badge"
+              [ngClass]="{
+                'badge-ok': h.estado === 'Completada',
+                'badge-warn': h.estado === 'En Progreso',
+                'badge-pend': h.estado === 'Pendiente',
+              }"
+            >
               {{ h.estado }}
             </span>
           </td>

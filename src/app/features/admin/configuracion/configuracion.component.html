@@ -17,7 +17,15 @@
       </h2>
 
       <div class="profile-header">
-        <div class="avatar-large">{{ perfil.nombre.split(' ').slice(0,2).map(n => n[0]).join('') }}</div>
+        <div class="avatar-large">
+          {{
+            perfil.nombre
+              .split(' ')
+              .slice(0, 2)
+              .map((n) => n[0])
+              .join('')
+          }}
+        </div>
         <div>
           <h3>{{ perfil.nombre }}</h3>
           <p>{{ perfil.cargo }}</p>
@@ -42,9 +50,7 @@
 
     <!-- Notificaciones -->
     <div class="config-card">
-      <h2 class="card-title">
-        <span class="material-icons">notifications</span> Notificaciones
-      </h2>
+      <h2 class="card-title"><span class="material-icons">notifications</span> Notificaciones</h2>
 
       <div class="toggle-row">
         <div class="toggle-info">
@@ -52,7 +58,7 @@
           <p>Notificarme cuando un técnico detecte riesgo Alto en una inspección.</p>
         </div>
         <label class="switch">
-          <input type="checkbox" [(ngModel)]="notificaciones.alertasPlagaGrave">
+          <input type="checkbox" [(ngModel)]="notificaciones.alertasPlagaGrave" />
           <span class="slider"></span>
         </label>
       </div>
@@ -63,7 +69,7 @@
           <p>Avisar cuando un productor envíe una solicitud pendiente de asignar.</p>
         </div>
         <label class="switch">
-          <input type="checkbox" [(ngModel)]="notificaciones.nuevasSolicitudes">
+          <input type="checkbox" [(ngModel)]="notificaciones.nuevasSolicitudes" />
           <span class="slider"></span>
         </label>
       </div>
@@ -74,7 +80,7 @@
           <p>Recordatorio cuando una inspección lleve más de 7 días sin completarse.</p>
         </div>
         <label class="switch">
-          <input type="checkbox" [(ngModel)]="notificaciones.inspeccionesVencidas">
+          <input type="checkbox" [(ngModel)]="notificaciones.inspeccionesVencidas" />
           <span class="slider"></span>
         </label>
       </div>
@@ -85,7 +91,7 @@
           <p>Informe ejecutivo los lunes con las métricas de la semana.</p>
         </div>
         <label class="switch">
-          <input type="checkbox" [(ngModel)]="notificaciones.resumenSemanal">
+          <input type="checkbox" [(ngModel)]="notificaciones.resumenSemanal" />
           <span class="slider"></span>
         </label>
       </div>

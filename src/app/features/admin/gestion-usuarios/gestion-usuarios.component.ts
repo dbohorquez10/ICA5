@@ -1,6 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { FitoDataService, Usuario } from '../../../core/services/fito-data.service';
 
+/**
+ * @description
+ * Gestiona el listado, filtrado y administración completa de los usuarios del sistema FitoGestión. Renderiza una interfaz que permite listar usuarios, aplicar filtros de búsqueda por texto o rol, ver detalles, editar información básica, suspender/reactivar y eliminar cuentas permanentemente.
+ *
+ * @usageNotes
+ * Componente diseñado principalmente para el rol 'admin'. Requiere la inyección de la dependencia `FitoDataService` para interactuar con el estado global de usuarios y ejecutar operaciones CRUD sobre ellos. Utiliza estados locales para controlar la visibilidad de los modales de detalle y edición.
+ */
 @Component({
   selector: 'app-gestion-usuarios',
   templateUrl: './gestion-usuarios.component.html',

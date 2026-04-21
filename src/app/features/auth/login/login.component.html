@@ -1,44 +1,63 @@
-<div class="login-container">
-  <div class="login-box animate-slide-up">
-    <div class="brand">
-      <div class="brand-icon">F</div>
-      <h1>Fito<span>Gestión</span></h1>
-      <p>Entorno de Pruebas • Selecciona tu perfil</p>
+<div class="auth-container">
+  <div class="auth-visual">
+    <div class="visual-content">
+      <div class="badge">SISTEMA OFICIAL ICA</div>
+      <h1>Protegiendo el<br /><span class="highlight">Agro Colombiano.</span></h1>
+      <p>Gestión integral de predios, inspecciones fitosanitarias y trazabilidad de exportación.</p>
+
+      <div class="blob"></div>
     </div>
+  </div>
 
-    <div class="role-selector">
-      <button class="role-card" (click)="iniciarSesionComo('productor')">
-        <span class="material-icons icon-agri">agriculture</span>
-        <div>
-          <h3>Productor Agrícola</h3>
-          <small>Darwing Jaimes (Premium)</small>
-        </div>
-        <span class="material-icons arrow">arrow_forward</span>
-      </button>
+  <div class="auth-form-side">
+    <div class="form-wrapper animate-slide-up">
+      <div class="brand">
+        <div class="brand-icon">F</div>
+        <h2>Fito<span>Gestión</span></h2>
+        <p class="subtitle">Entorno de Pruebas • Selecciona tu perfil</p>
+      </div>
 
-      <button class="role-card tecnico-card" (click)="iniciarSesionComo('tecnico')">
-        <span class="material-icons icon-tec">fact_check</span>
-        <div>
-          <h3>Técnico ICA</h3>
-          <small>Funcionario de Zona</small>
-        </div>
-        <span class="material-icons arrow">arrow_forward</span>
-      </button>
+      <div class="roles-list">
+        <button class="role-card" (click)="iniciarSesionComo('productor')">
+          <span class="material-icons icon-agri">agriculture</span>
+          <div>
+            <h3>Productor Agrícola</h3>
+            <small>Darwing Jaimes (Premium)</small>
+          </div>
+          <span class="material-icons arrow">arrow_forward</span>
+        </button>
 
-      <button class="role-card admin-card" (click)="iniciarSesionComo('admin')">
-        <span class="material-icons icon-admin">admin_panel_settings</span>
-        <div>
-          <h3>Administrador</h3>
-          <small>Control Total del Sistema</small>
-        </div>
-        <span class="material-icons arrow">arrow_forward</span>
-      </button>
+        <button class="role-card tecnico-card" (click)="iniciarSesionComo('tecnico')">
+          <span class="material-icons icon-tec">fact_check</span>
+          <div>
+            <h3>Técnico ICA</h3>
+            <small>Funcionario de Zona</small>
+          </div>
+          <span class="material-icons arrow">arrow_forward</span>
+        </button>
+
+        <button class="role-card admin-card" (click)="iniciarSesionComo('admin')">
+          <span class="material-icons icon-admin">admin_panel_settings</span>
+          <div>
+            <h3>Administrador</h3>
+            <small>Control Total del Sistema</small>
+          </div>
+          <span class="material-icons arrow">arrow_forward</span>
+        </button>
+      </div>
+
+      <p class="login-footer">
+        <span class="material-icons">info</span>
+        Al conectar el backend, esta pantalla será reemplazada por el formulario de correo y contraseña.
+      </p>
+
+      <div class="footer-link">
+        ¿No tienes cuenta? <a routerLink="/auth/registro">Crear una cuenta</a>
+      </div>
+      
+      <div class="footer-link" style="margin-top: 10px;">
+        ¿Volver al inicio? <a routerLink="/landing">Ir a la página principal</a>
+      </div>
     </div>
-
-    <p class="login-footer">
-      <span class="material-icons">info</span>
-      Al conectar el backend, esta pantalla será reemplazada por el formulario de correo y
-      contraseña.
-    </p>
   </div>
 </div>

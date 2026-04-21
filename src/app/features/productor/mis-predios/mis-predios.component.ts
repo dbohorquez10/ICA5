@@ -22,7 +22,9 @@ export class MisPrediosComponent implements OnInit {
 
   // Modal de Lote
   public modalLoteVisible = false;
+  public modalLoteModo: 'crear' | 'editar' = 'crear';
   public predioActualParaLote: string = '';
+  public loteEnEdicionId: string = '';
   public nuevoLote: Partial<Lote> = {};
 
   public gpsLoading = false;
@@ -63,7 +65,13 @@ export class MisPrediosComponent implements OnInit {
 
   public abrirModalNuevoPredio(): void {
     this.modalPredioModo = 'nuevo';
-    this.predioEnEdicion = { nombre: '', ubicacion: '' };
+    this.predioEnEdicion = { 
+      nombre: '', 
+      departamento: '',
+      municipio: '',
+      vereda: '',
+      numeroRegistroIca: 'ICA-' + Math.floor(100000 + Math.random() * 900000)
+    };
     this.erroresPredio = {};
     this.modalPredioVisible = true;
     setTimeout(() => this.iniciarMapa(), 200);
@@ -75,15 +83,21 @@ export class MisPrediosComponent implements OnInit {
     if (!this.predioEnEdicion.nombre?.trim()) {
       this.erroresPredio['nombre'] = 'El nombre del lugar de producción es obligatorio.';
     }
-    if (!this.predioEnEdicion.ubicacion?.trim()) {
-      this.erroresPredio['ubicacion'] = 'La ubicación es obligatoria (ej: Vereda, Municipio, Departamento).';
+    if (!this.predioEnEdicion.departamento?.trim() || !this.predioEnEdicion.municipio?.trim() || !this.predioEnEdicion.vereda?.trim()) {
+      this.erroresPredio['ubicacion'] = 'La ubicación (Departamento, Municipio y Vereda) es obligatoria.';
     }
 
     if (Object.keys(this.erroresPredio).length > 0) return;
 
+    this.predioEnEdicion.ubicacion = `${this.predioEnEdicion.vereda}, ${this.predioEnEdicion.municipio}, ${this.predioEnEdicion.departamento}`;
+
     this.dataService.agregarPredio({
       nombre: this.predioEnEdicion.nombre!,
-      ubicacion: this.predioEnEdicion.ubicacion!,
+      ubicacion: this.predioEnEdicion.ubicacion,
+      departamento: this.predioEnEdicion.departamento,
+      municipio: this.predioEnEdicion.municipio,
+      vereda: this.predioEnEdicion.vereda,
+      numeroRegistroIca: this.predioEnEdicion.numeroRegistroIca,
       productorNombre: 'Darwing Jaimes',
       latitud: this.predioEnEdicion.latitud,
       longitud: this.predioEnEdicion.longitud
@@ -134,6 +148,7 @@ export class MisPrediosComponent implements OnInit {
   // === MODAL LOTE ===
 
   public abrirModalNuevoLote(predioId: string): void {
+    this.modalLoteModo = 'crear';
     this.predioActualParaLote = predioId;
     const letras = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
     const existentes = this.getLotesDe(predioId).length;
@@ -148,12 +163,24 @@ export class MisPrediosComponent implements OnInit {
     this.modalLoteVisible = true;
   }
 
+  public abrirModalEditarLote(lote: Lote): void {
+    this.modalLoteModo = 'editar';
+    this.loteEnEdicionId = lote.id;
+    this.predioActualParaLote = lote.predioId;
+    this.nuevoLote = { ...lote };
+    this.modalLoteVisible = true;
+  }
+
   public guardarLote(): void {
     if (!this.nuevoLote.cultivoId || !this.nuevoLote.hectareas) {
       alert('Completa todos los campos');
       return;
     }
-    this.dataService.agregarLote(this.nuevoLote as Omit<Lote, 'id'>);
+    if (this.modalLoteModo === 'crear') {
+      this.dataService.agregarLote(this.nuevoLote as Omit<Lote, 'id'>);
+    } else {
+      this.dataService.editarLote(this.loteEnEdicionId, this.nuevoLote);
+    }
     this.modalLoteVisible = false;
   }
 

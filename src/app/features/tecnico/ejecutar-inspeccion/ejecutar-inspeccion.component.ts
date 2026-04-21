@@ -26,6 +26,7 @@ export class EjecutarInspeccionComponent implements OnInit {
   public plagasDelLote: Plaga[] = [];
   public plagasMarcadas: Set<string> = new Set();
   public plantaActual: number = 1;
+  public observacionesGenerales: string = '';
 
   constructor(public dataService: FitoDataService, private router: Router) {}
 
@@ -149,6 +150,23 @@ export class EjecutarInspeccionComponent implements OnInit {
       this.subActual.plantasEvaluadas = this.plantaActual;
     }
 
+    // Calcular incidencias
+    if (this.subActual.plantasEvaluadas > 0) {
+      const incidencias: { [key: string]: number } = {};
+      this.plagasDelLote.forEach(p => incidencias[p.id] = 0);
+
+      this.subActual.registroPlantas.forEach(rp => {
+        rp.plagasDetectadas.forEach(pId => {
+          if (incidencias[pId] !== undefined) incidencias[pId]++;
+        });
+      });
+
+      this.subActual.incidenciasCalculadas = Object.keys(incidencias).map(plagaId => ({
+        plagaId,
+        porcentaje: (incidencias[plagaId] / this.subActual.plantasEvaluadas) * 100
+      }));
+    }
+
     this.subActual.estado = 'Completada';
     this.dataService.actualizarSubInspeccion(this.inspeccion.id, this.subActual);
     this.inspeccion = this.dataService.getInspeccionPorId(this.inspeccion.id)!;
@@ -168,6 +186,9 @@ export class EjecutarInspeccionComponent implements OnInit {
           this.dataService.actualizarSubInspeccion(this.inspeccion.id, sub);
         }
       });
+
+      // Guardar observaciones
+      this.inspeccion.observaciones = this.observacionesGenerales;
 
       // Refrescar el estado local de la inspección desde el servicio
       this.inspeccion = this.dataService.getInspeccionPorId(this.inspeccion.id)!;

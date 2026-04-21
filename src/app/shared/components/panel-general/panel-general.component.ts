@@ -2,6 +2,13 @@ import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
 
+/**
+ * @description
+ * Renderiza el panel principal o dashboard de bienvenida para el usuario autenticado en FitoGestión. Muestra resúmenes métricos relevantes y despliega un mapa interactivo (Leaflet) con la geolocalización de las solicitudes de inspección activas.
+ *
+ * @usageNotes
+ * Componente transversal que se adapta a distintos roles (admin, tecnico, productor). Requiere inyección de `AuthService` para obtener la sesión del usuario. Depende de `PLATFORM_ID` para asegurar la inicialización del mapa Leaflet exclusivamente en el cliente (navegador).
+ */
 @Component({
   selector: 'app-panel-general',
   templateUrl: './panel-general.component.html',

@@ -1,10 +1,12 @@
 <div class="solicitar-container fade-in">
-
   <!-- ÉXITO -->
   <div class="success-panel" *ngIf="enviado">
     <span class="material-icons success-icon">check_circle</span>
     <h2>¡Solicitud Enviada!</h2>
-    <p>Tu solicitud de inspección para <strong>{{ predioSeleccionado?.nombre }}</strong> ha sido registrada y está pendiente de asignación por el ICA.</p>
+    <p>
+      Tu solicitud de inspección para <strong>{{ predioSeleccionado?.nombre }}</strong> ha sido
+      registrada y está pendiente de asignación por el ICA.
+    </p>
     <button class="btn-primary" (click)="nueva()">Solicitar otra inspección</button>
   </div>
 
@@ -18,7 +20,6 @@
     </div>
 
     <div class="form-layout">
-
       <!-- PASO 1: Seleccionar Predio -->
       <div class="step-card">
         <div class="step-header">
@@ -26,9 +27,12 @@
           <h2>Seleccionar Predio</h2>
         </div>
         <div class="predios-grid">
-          <div class="predio-option" *ngFor="let p of predios"
-               (click)="seleccionarPredio(p)"
-               [class.selected]="predioSeleccionado?.id === p.id">
+          <div
+            class="predio-option"
+            *ngFor="let p of predios"
+            (click)="seleccionarPredio(p)"
+            [class.selected]="predioSeleccionado?.id === p.id"
+          >
             <span class="material-icons">landscape</span>
             <div>
               <h3>{{ p.nombre }}</h3>
@@ -47,8 +51,10 @@
           <div class="lotes-chips">
             <span class="lote-chip" *ngFor="let l of lotesDelPredio">
               <span class="material-icons">eco</span>
-              {{ l.nombre }} — {{ dataService.getCultivoPorId(l.cultivoId)?.nombre }}
-              ({{ l.hectareas }} Ha)
+              {{ l.nombre }} — {{ dataService.getCultivoPorId(l.cultivoId)?.nombre }} ({{
+                l.hectareas
+              }}
+              Ha)
             </span>
           </div>
         </div>
@@ -63,14 +69,23 @@
 
         <div class="form-group">
           <label>Fecha Sugerida para la Visita</label>
-          <input type="date" [(ngModel)]="fechaSugerida" (change)="verificarDisponibilidad()" class="form-input">
+          <input
+            type="date"
+            [(ngModel)]="fechaSugerida"
+            (change)="verificarDisponibilidad()"
+            class="form-input"
+          />
         </div>
 
         <div class="asignacion-toggle">
           <button class="toggle-btn" [class.active]="asignacionAutomatica" (click)="setModo(true)">
             <span class="material-icons">auto_awesome</span> Asignación Automática
           </button>
-          <button class="toggle-btn" [class.active]="!asignacionAutomatica" (click)="setModo(false)">
+          <button
+            class="toggle-btn"
+            [class.active]="!asignacionAutomatica"
+            (click)="setModo(false)"
+          >
             <span class="material-icons">person_search</span> Técnico de Preferencia
           </button>
         </div>
@@ -81,10 +96,13 @@
 
         <!-- Lista técnicos -->
         <div class="tecnicos-list" *ngIf="!asignacionAutomatica">
-          <div class="tecnico-card" *ngFor="let t of tecnicosDisponibles"
-               (click)="seleccionarTecnico(t.id)"
-               [class.selected]="tecnicoElegido === t.id"
-               [class.ocupado]="t.ocupado">
+          <div
+            class="tecnico-card"
+            *ngFor="let t of tecnicosDisponibles"
+            (click)="seleccionarTecnico(t.id)"
+            [class.selected]="tecnicoElegido === t.id"
+            [class.ocupado]="t.ocupado"
+          >
             <div class="tecnico-avatar">{{ t.avatar }}</div>
             <div class="tecnico-info">
               <h3>{{ t.nombre }}</h3>
@@ -102,20 +120,28 @@
           <span class="material-icons">check_circle</span> Técnico disponible para esa fecha.
         </div>
         <div class="status-alert alert-warn" *ngIf="agendaStatus === 'ocupado'">
-          <span class="material-icons">warning</span> El técnico ya tiene asignación en esa fecha. Elige otro o cambia la fecha.
+          <span class="material-icons">warning</span> El técnico ya tiene asignación en esa fecha.
+          Elige otro o cambia la fecha.
         </div>
 
         <div class="form-group">
           <label>Comentarios adicionales (opcional)</label>
-          <textarea [(ngModel)]="comentarios" rows="2" placeholder="Ej: Urgente, se detectaron señales de Moniliasis..." class="form-input"></textarea>
+          <textarea
+            [(ngModel)]="comentarios"
+            rows="2"
+            placeholder="Ej: Urgente, se detectaron señales de Moniliasis..."
+            class="form-input"
+          ></textarea>
         </div>
 
-        <button class="btn-enviar" (click)="enviar()"
-                [disabled]="!fechaSugerida || (!asignacionAutomatica && agendaStatus === 'ocupado')">
+        <button
+          class="btn-enviar"
+          (click)="enviar()"
+          [disabled]="!fechaSugerida || (!asignacionAutomatica && agendaStatus === 'ocupado')"
+        >
           <span class="material-icons">send</span> Enviar Solicitud
         </button>
       </div>
-
     </div>
   </ng-container>
 </div>

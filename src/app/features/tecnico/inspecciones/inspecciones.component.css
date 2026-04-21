@@ -198,22 +198,35 @@
   cursor: pointer;
   transition: 0.2s;
 }
-.btn-primary:hover:not(:disabled) { background: #30391f; }
-.btn-primary:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+.btn-primary:hover:not(:disabled) {
+  background: #30391f;
+}
+.btn-primary:disabled {
+  background: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
 
 .btn-nav {
   flex-shrink: 0;
-  background: rgba(37,99,235,0.08);
-  border: 1.5px solid rgba(37,99,235,0.2);
+  background: rgba(37, 99, 235, 0.08);
+  border: 1.5px solid rgba(37, 99, 235, 0.2);
   color: #2563eb;
   padding: 10px;
   border-radius: 10px;
   cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s;
 }
-.btn-nav:hover { background: rgba(37,99,235,0.15); transform: translateY(-1px); }
-.btn-nav .material-icons { font-size: 20px; }
+.btn-nav:hover {
+  background: rgba(37, 99, 235, 0.15);
+  transform: translateY(-1px);
+}
+.btn-nav .material-icons {
+  font-size: 20px;
+}
 
 /* Scrollbar Custom para la agenda */
 .tasks-list::-webkit-scrollbar {

@@ -11,6 +11,7 @@ export class GestionCatalogosComponent implements OnInit {
 
   public plagas: Plaga[] = [];
   public cultivos: Cultivo[] = [];
+  public plagasDisponibles: Plaga[] = [];
 
   public modalVisible = false;
   public modalTipo: 'plaga' | 'cultivo' = 'plaga';
@@ -26,6 +27,7 @@ export class GestionCatalogosComponent implements OnInit {
   private recargar(): void {
     this.plagas = this.dataService.getPlagas();
     this.cultivos = this.dataService.getCultivos();
+    this.plagasDisponibles = this.plagas;
   }
 
   // --- Abrir modal para CREAR ---
@@ -35,8 +37,8 @@ export class GestionCatalogosComponent implements OnInit {
     this.editandoId = '';
     this.errorModal = '';
     this.nuevoItem = tipo === 'plaga'
-      ? { nombre: '', descripcion: '', riesgo: 'Bajo', icon: 'bug_report', color: '#4ade80', cultivosAfectados: [] }
-      : { nombre: '', variedad: '', icono: 'eco', color: '#22c55e' };
+      ? { nombre: '', descripcion: '', riesgo: 'Bajo', icon: 'bug_report', cultivosAfectados: [] }
+      : { nombre: '', variedad: '', icono: 'eco', color: '#22c55e', plagasSeleccionadas: [] };
     this.modalVisible = true;
   }
 
@@ -46,7 +48,7 @@ export class GestionCatalogosComponent implements OnInit {
     this.modalModo = 'editar';
     this.editandoId = plaga.id;
     this.errorModal = '';
-    this.nuevoItem = { ...plaga };
+    this.nuevoItem = { ...plaga, cultivosAfectados: [...plaga.cultivosAfectados] };
     this.modalVisible = true;
   }
 
@@ -56,7 +58,34 @@ export class GestionCatalogosComponent implements OnInit {
     this.editandoId = cultivo.id;
     this.errorModal = '';
     this.nuevoItem = { ...cultivo };
+    this.nuevoItem.plagasSeleccionadas = this.plagas
+      .filter(p => p.cultivosAfectados.includes(cultivo.id))
+      .map(p => p.id);
     this.modalVisible = true;
+  }
+
+  public togglePlaga(plagaId: string): void {
+    if (!this.nuevoItem.plagasSeleccionadas) {
+      this.nuevoItem.plagasSeleccionadas = [];
+    }
+    const idx = this.nuevoItem.plagasSeleccionadas.indexOf(plagaId);
+    if (idx > -1) {
+      this.nuevoItem.plagasSeleccionadas.splice(idx, 1);
+    } else {
+      this.nuevoItem.plagasSeleccionadas.push(plagaId);
+    }
+  }
+
+  public toggleCultivo(cultivoId: string): void {
+    if (!this.nuevoItem.cultivosAfectados) {
+      this.nuevoItem.cultivosAfectados = [];
+    }
+    const idx = this.nuevoItem.cultivosAfectados.indexOf(cultivoId);
+    if (idx > -1) {
+      this.nuevoItem.cultivosAfectados.splice(idx, 1);
+    } else {
+      this.nuevoItem.cultivosAfectados.push(cultivoId);
+    }
   }
 
   public cerrarModal(): void {
@@ -108,14 +137,14 @@ export class GestionCatalogosComponent implements OnInit {
       if (this.modalTipo === 'plaga') {
         this.dataService.agregarPlaga(this.nuevoItem);
       } else {
-        this.dataService.agregarCultivo(this.nuevoItem);
+        this.dataService.agregarCultivo(this.nuevoItem, this.nuevoItem.plagasSeleccionadas);
       }
     } else {
       // Editar
       if (this.modalTipo === 'plaga') {
         this.dataService.editarPlaga(this.editandoId, this.nuevoItem);
       } else {
-        this.dataService.editarCultivo(this.editandoId, this.nuevoItem);
+        this.dataService.editarCultivo(this.editandoId, this.nuevoItem, this.nuevoItem.plagasSeleccionadas);
       }
     }
 

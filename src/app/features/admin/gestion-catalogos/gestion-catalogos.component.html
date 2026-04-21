@@ -2,7 +2,9 @@
   <div class="header-section">
     <div>
       <h1 class="page-title">Gestión de Catálogos</h1>
-      <p class="page-subtitle">Administra las plagas y cultivos disponibles para los técnicos en campo.</p>
+      <p class="page-subtitle">
+        Administra las plagas y cultivos disponibles para los técnicos en campo.
+      </p>
     </div>
   </div>
 
@@ -22,13 +24,24 @@
 
       <div class="cards-list">
         <div class="catalog-card" *ngFor="let plaga of plagas">
-          <div class="card-icon" [style.background-color]="plaga.color + '22'" [style.border]="'1px solid ' + plaga.color + '55'">
+          <div
+            class="card-icon"
+            [style.background-color]="plaga.color + '22'"
+            [style.border]="'1px solid ' + plaga.color + '55'"
+          >
             <span class="material-icons" [style.color]="plaga.color">{{ plaga.icon }}</span>
           </div>
           <div class="card-content">
             <h3>{{ plaga.nombre }}</h3>
             <p class="description">{{ plaga.descripcion }}</p>
-            <span class="risk-badge" [ngClass]="{'risk-high': plaga.riesgo === 'Alto', 'risk-med': plaga.riesgo === 'Medio', 'risk-low': plaga.riesgo === 'Bajo'}">
+            <span
+              class="risk-badge"
+              [ngClass]="{
+                'risk-high': plaga.riesgo === 'Alto',
+                'risk-med': plaga.riesgo === 'Medio',
+                'risk-low': plaga.riesgo === 'Bajo',
+              }"
+            >
               <span class="material-icons">warning_amber</span> Riesgo {{ plaga.riesgo }}
             </span>
           </div>
@@ -70,7 +83,11 @@
             <button class="action-btn edit" (click)="editarCultivo(cultivo)" title="Editar">
               <span class="material-icons">edit</span>
             </button>
-            <button class="action-btn delete" (click)="eliminarCultivo(cultivo.id)" title="Eliminar">
+            <button
+              class="action-btn delete"
+              (click)="eliminarCultivo(cultivo.id)"
+              title="Eliminar"
+            >
               <span class="material-icons">delete_outline</span>
             </button>
           </div>
@@ -84,8 +101,18 @@
 <div class="modal-overlay" *ngIf="modalVisible" (click)="cerrarModal()">
   <div class="modal-box fade-in" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>{{ modalModo === 'editar' ? 'Editar' : (modalTipo === 'plaga' ? 'Nueva Plaga' : 'Nuevo Cultivo') }}</h2>
-      <button class="close-btn" (click)="cerrarModal()"><span class="material-icons">close</span></button>
+      <h2>
+        {{
+          modalModo === 'editar'
+            ? 'Editar'
+            : modalTipo === 'plaga'
+              ? 'Nueva Plaga'
+              : 'Nuevo Cultivo'
+        }}
+      </h2>
+      <button class="close-btn" (click)="cerrarModal()">
+        <span class="material-icons">close</span>
+      </button>
     </div>
 
     <!-- Error de validación -->
@@ -97,32 +124,110 @@
     <div class="modal-body">
       <div class="form-group">
         <label>Nombre *</label>
-        <input type="text" [(ngModel)]="nuevoItem.nombre" [placeholder]="modalTipo === 'plaga' ? 'Ej: Phytophthora' : 'Ej: Plátano'" class="modal-input">
+        <input
+          type="text"
+          [(ngModel)]="nuevoItem.nombre"
+          [placeholder]="modalTipo === 'plaga' ? 'Ej: Phytophthora' : 'Ej: Plátano'"
+          class="modal-input"
+        />
       </div>
 
       <div class="form-group" *ngIf="modalTipo === 'plaga'">
         <label>Descripción *</label>
-        <textarea [(ngModel)]="nuevoItem.descripcion" rows="2" placeholder="Breve descripción del agente patógeno..." class="modal-input"></textarea>
+        <textarea
+          [(ngModel)]="nuevoItem.descripcion"
+          rows="2"
+          placeholder="Breve descripción del agente patógeno..."
+          class="modal-input"
+        ></textarea>
       </div>
 
       <div class="form-group" *ngIf="modalTipo === 'cultivo'">
         <label>Variedades *</label>
-        <input type="text" [(ngModel)]="nuevoItem.variedad" placeholder="Ej: Hartón, Dominico" class="modal-input">
+        <input
+          type="text"
+          [(ngModel)]="nuevoItem.variedad"
+          placeholder="Ej: Hartón, Dominico"
+          class="modal-input"
+        />
+      </div>
+
+      <div class="form-group" *ngIf="modalTipo === 'cultivo'">
+        <label>Plagas Susceptibles</label>
+        <div class="plagas-selector">
+          <div class="plaga-checkbox" *ngFor="let plaga of plagasDisponibles">
+            <input 
+              type="checkbox" 
+              [id]="'plaga-' + plaga.id"
+              [checked]="nuevoItem.plagasSeleccionadas?.includes(plaga.id)"
+              (change)="togglePlaga(plaga.id)"
+            />
+            <label [for]="'plaga-' + plaga.id" class="checkbox-label">
+              <span class="material-icons pest-icon" [style.color]="plaga.color">{{ plaga.icon }}</span>
+              <span class="pest-name">{{ plaga.nombre }}</span>
+            </label>
+          </div>
+          <div *ngIf="plagasDisponibles.length === 0" class="no-plagas-msg">
+            No hay plagas registradas en el sistema.
+          </div>
+        </div>
       </div>
 
       <div class="form-group" *ngIf="modalTipo === 'plaga'">
         <label>Nivel de Riesgo</label>
         <div class="risk-selector">
-          <button type="button" class="risk-opt" [class.active-low]="nuevoItem.riesgo === 'Bajo'" (click)="nuevoItem.riesgo = 'Bajo'">Bajo</button>
-          <button type="button" class="risk-opt" [class.active-med]="nuevoItem.riesgo === 'Medio'" (click)="nuevoItem.riesgo = 'Medio'">Medio</button>
-          <button type="button" class="risk-opt" [class.active-high]="nuevoItem.riesgo === 'Alto'" (click)="nuevoItem.riesgo = 'Alto'">Alto</button>
+          <button
+            type="button"
+            class="risk-opt"
+            [class.active-low]="nuevoItem.riesgo === 'Bajo'"
+            (click)="nuevoItem.riesgo = 'Bajo'"
+          >
+            Bajo
+          </button>
+          <button
+            type="button"
+            class="risk-opt"
+            [class.active-med]="nuevoItem.riesgo === 'Medio'"
+            (click)="nuevoItem.riesgo = 'Medio'"
+          >
+            Medio
+          </button>
+          <button
+            type="button"
+            class="risk-opt"
+            [class.active-high]="nuevoItem.riesgo === 'Alto'"
+            (click)="nuevoItem.riesgo = 'Alto'"
+          >
+            Alto
+          </button>
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" *ngIf="modalTipo === 'plaga'">
+        <label>Cultivos Afectados</label>
+        <div class="plagas-selector">
+          <div class="plaga-checkbox" *ngFor="let cultivo of cultivos">
+            <input 
+              type="checkbox" 
+              [id]="'cultivo-' + cultivo.id"
+              [checked]="nuevoItem.cultivosAfectados?.includes(cultivo.id)"
+              (change)="toggleCultivo(cultivo.id)"
+            />
+            <label [for]="'cultivo-' + cultivo.id" class="checkbox-label">
+              <span class="material-icons pest-icon" [style.color]="cultivo.color">{{ cultivo.icono }}</span>
+              <span class="pest-name">{{ cultivo.nombre }}</span>
+            </label>
+          </div>
+          <div *ngIf="cultivos.length === 0" class="no-plagas-msg">
+            No hay cultivos registrados en el sistema.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="modalTipo === 'cultivo'">
         <label>Color Representativo</label>
         <div class="color-row">
-          <input type="color" [(ngModel)]="nuevoItem.color" class="color-pick">
+          <input type="color" [(ngModel)]="nuevoItem.color" class="color-pick" />
           <span class="color-val">{{ nuevoItem.color }}</span>
         </div>
       </div>

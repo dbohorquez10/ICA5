@@ -56,18 +56,31 @@
     <div class="solicitudes-list">
       <div class="solicitud-row" *ngFor="let sol of solicitudesPendientes">
         <div class="sol-icon">
-          <span class="material-icons">{{ sol.modoAsignacion === 'preferencia' ? 'person_search' : 'auto_awesome' }}</span>
+          <span class="material-icons">{{
+            sol.modoAsignacion === 'preferencia' ? 'person_search' : 'auto_awesome'
+          }}</span>
         </div>
         <div class="sol-info">
           <h3>{{ sol.predio?.nombre || '—' }}</h3>
           <p>
-            <span class="material-icons small">place</span> {{ sol.predio?.ubicacion }} &nbsp;|&nbsp;
+            <span class="material-icons small">place</span>
+            {{ sol.predio?.ubicacion }} &nbsp;|&nbsp;
             <span class="material-icons small">layers</span> {{ sol.lotesCount }} lotes
           </p>
         </div>
         <div class="sol-meta">
-          <span class="asignacion-badge" [ngClass]="{'badge-auto': sol.modoAsignacion === 'automatica', 'badge-pref': sol.modoAsignacion === 'preferencia'}">
-            {{ sol.modoAsignacion === 'automatica' ? 'Asignación automática' : 'Técnico de preferencia' }}
+          <span
+            class="asignacion-badge"
+            [ngClass]="{
+              'badge-auto': sol.modoAsignacion === 'automatica',
+              'badge-pref': sol.modoAsignacion === 'preferencia',
+            }"
+          >
+            {{
+              sol.modoAsignacion === 'automatica'
+                ? 'Asignación automática'
+                : 'Técnico de preferencia'
+            }}
           </span>
           <small>Solicitada para: {{ sol.fechaSolicitada }}</small>
         </div>
@@ -86,21 +99,37 @@
   <div class="modal-box fade-in" (click)="$event.stopPropagation()">
     <div class="modal-header-asign">
       <h2><span class="material-icons">person_add</span> Asignar Técnico</h2>
-      <button class="close-btn" (click)="cerrarModalAsignacion()"><span class="material-icons">close</span></button>
+      <button class="close-btn" (click)="cerrarModalAsignacion()">
+        <span class="material-icons">close</span>
+      </button>
     </div>
 
     <p class="modal-desc">Selecciona un técnico activo para asignar a esta inspección.</p>
 
     <div class="tecnicos-list">
-      <div class="tecnico-option" *ngFor="let tec of tecnicosDisponibles"
-           [class.selected]="tecnicoSeleccionado === tec.nombre"
-           (click)="tecnicoSeleccionado = tec.nombre">
-        <div class="tec-avatar">{{ tec.nombre.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase() }}</div>
+      <div
+        class="tecnico-option"
+        *ngFor="let tec of tecnicosDisponibles"
+        [class.selected]="tecnicoSeleccionado === tec.nombre"
+        (click)="tecnicoSeleccionado = tec.nombre"
+      >
+        <div class="tec-avatar">
+          {{
+            tec.nombre
+              .split(' ')
+              .slice(0, 2)
+              .map((n) => n[0])
+              .join('')
+              .toUpperCase()
+          }}
+        </div>
         <div class="tec-info">
           <h4>{{ tec.nombre }}</h4>
           <p>{{ tec.zona || 'Sin zona asignada' }} • {{ tec.correo }}</p>
         </div>
-        <span class="material-icons check-icon" *ngIf="tecnicoSeleccionado === tec.nombre">check_circle</span>
+        <span class="material-icons check-icon" *ngIf="tecnicoSeleccionado === tec.nombre"
+          >check_circle</span
+        >
       </div>
 
       <div class="empty-tecnicos" *ngIf="tecnicosDisponibles.length === 0">

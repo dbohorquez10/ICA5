@@ -5,75 +5,168 @@ import { BehaviorSubject } from 'rxjs';
 // INTERFACES DEL MODELO DE DATOS
 // =============================================
 
+/**
+ * @interface Cultivo
+ * @description Representa un tipo de cultivo agrícola administrado dentro del sistema FitoGestión.
+ */
 export interface Cultivo {
+  /** Identificador único del cultivo (PK). */
   id: string;
+  /** Nombre común del cultivo (ej. Cacao, Café). */
   nombre: string;
+  /** Variedades específicas asociadas a este cultivo. */
   variedad: string;
+  /** Nombre del icono de Material Design representativo del cultivo. */
   icono: string;
+  /** Código de color en formato hexadecimal asignado al cultivo para la interfaz. */
   color: string;
 }
 
+/**
+ * @interface Plaga
+ * @description Representa una plaga o enfermedad fitosanitaria que puede afectar a los cultivos registrados.
+ */
 export interface Plaga {
+  /** Identificador único de la plaga (PK). */
   id: string;
+  /** Nombre científico o común de la plaga. */
   nombre: string;
+  /** Nombre del icono representativo en la interfaz. */
   icon: string;
+  /** Nivel de riesgo asociado a la plaga ('Alto', 'Medio', 'Bajo'). */
   riesgo: 'Alto' | 'Medio' | 'Bajo';
+  /** Código de color hexadecimal para categorizar visualmente la plaga. */
   color: string;
+  /** Descripción técnica o biológica detallada de la plaga. */
   descripcion: string;
+  /** Arreglo de identificadores de cultivos (FK apunta a Cultivo) que son susceptibles a esta plaga. */
   cultivosAfectados: string[]; // IDs de cultivos
 }
 
+/**
+ * @interface Lote
+ * @description Representa una subdivisión de tierra dentro de un predio agrícola, dedicada a un cultivo específico.
+ */
 export interface Lote {
+  /** Identificador único del lote (PK). */
   id: string;
+  /** Identificador del predio al que pertenece este lote (FK apunta a Predio). */
   predioId: string;
+  /** Nombre o designación del lote (ej. Lote A, Lote B). */
   nombre: string; // Lote A, Lote B, etc.
+  /** Identificador del cultivo sembrado en este lote (FK apunta a Cultivo). */
   cultivoId: string;
+  /** Extensión de tierra del lote medida en hectáreas. */
   hectareas: number;
+  /** Densidad de siembra expresada en cantidad de plantas por hectárea. */
   plantasPorHectarea: number;
+  /** Estado fitosanitario actual del lote ('Óptimo', 'Alerta', 'Crítico'). */
   estado: 'Óptimo' | 'Alerta' | 'Crítico';
 }
 
+/**
+ * @interface Predio
+ * @description Representa una propiedad o finca agrícola registrada por un productor en el sistema.
+ */
 export interface Predio {
+  /** Identificador único del predio (PK). */
   id: string;
+  /** Nombre oficial o conocido de la finca o predio. */
   nombre: string;
+  /** Ubicación geográfica o dirección del predio (legacy/consolidada). */
   ubicacion: string;
+  /** Departamento donde se ubica el predio. */
+  departamento?: string;
+  /** Municipio donde se ubica el predio. */
+  municipio?: string;
+  /** Vereda donde se ubica el predio. */
+  vereda?: string;
+  /** Número de Registro otorgado por el ICA. */
+  numeroRegistroIca?: string;
+  /** Nombre del productor propietario o administrador del predio. */
   productorNombre: string;
+  /** Coordenada de latitud para geolocalización en el mapa. */
   latitud?: number;
+  /** Coordenada de longitud para geolocalización en el mapa. */
   longitud?: number;
 }
 
+/**
+ * @interface RegistroPlanta
+ * @description Representa el resultado de la inspección individual de una planta dentro de un lote.
+ */
 export interface RegistroPlanta {
+  /** Número o identificador secuencial de la planta inspeccionada. */
   numeroPlanta: number;
+  /** Arreglo de identificadores de plagas encontradas en la planta (FKs apuntan a Plaga). */
   plagasDetectadas: string[]; // IDs de plagas
 }
 
+/**
+ * @interface SubInspeccionLote
+ * @description Representa el registro de la evaluación fitosanitaria detallada realizada sobre un lote específico durante una inspección.
+ */
 export interface SubInspeccionLote {
+  /** Identificador del lote inspeccionado (FK apunta a Lote). */
   loteId: string;
+  /** Estado de avance de la inspección en este lote ('Pendiente', 'En Progreso', 'Completada'). */
   estado: 'Pendiente' | 'En Progreso' | 'Completada';
+  /** Cantidad de plantas que han sido evaluadas en el lote. */
   plantasEvaluadas: number;
+  /** Colección de registros detallados de las plantas inspeccionadas. */
   registroPlantas: RegistroPlanta[];
+  /** Resultados calculados del nivel de alerta por plaga (plantas afectadas / plantas evaluadas). */
+  incidenciasCalculadas?: { plagaId: string, porcentaje: number }[];
 }
 
+/**
+ * @interface Inspeccion
+ * @description Representa una solicitud oficial de revisión fitosanitaria para un predio, gestionada por técnicos.
+ */
 export interface Inspeccion {
+  /** Identificador único de la solicitud de inspección (PK). */
   id: string;
+  /** Identificador del predio a inspeccionar (FK apunta a Predio). */
   predioId: string;
+  /** Nombre del técnico asignado para realizar la inspección. */
   tecnicoNombre: string;
+  /** Fecha en la que el productor solicitó la inspección (formato YYYY-MM-DD). */
   fechaSolicitada: string;
+  /** Estado general de la inspección ('Pendiente', 'En Progreso', 'Completada'). */
   estado: 'Pendiente' | 'En Progreso' | 'Completada';
+  /** Origen de la asignación del técnico ('automatica' por el sistema, o 'preferencia' por un admin). */
   modoAsignacion: 'automatica' | 'preferencia';
+  /** Detalle de las inspecciones individuales por cada lote del predio. */
   subInspecciones: SubInspeccionLote[];
+  /** Observaciones y comentarios generales dejados por el técnico del ICA al finalizar. */
+  observaciones?: string;
 }
 
+/**
+ * @interface Usuario
+ * @description Representa a un actor del sistema (Productor, Técnico o Admin) con sus datos de perfil y estado de cuenta.
+ */
 export interface Usuario {
+  /** Identificador único del usuario (PK). */
   id: string;
+  /** Nombre completo del usuario. */
   nombre: string;
+  /** Correo electrónico de contacto y de acceso al sistema. */
   correo: string;
+  /** Rol o perfil de acceso dentro de FitoGestión ('productor', 'tecnico'). */
   rol: 'productor' | 'tecnico';
+  /** Estado actual de la cuenta del usuario en la plataforma ('Activo', 'Suspendido'). */
   estado: 'Activo' | 'Suspendido';
+  /** Fecha en la que el usuario fue registrado en el sistema. */
   fechaRegistro: string;
+  /** Zona geográfica de operación asignada (Opcional, comúnmente para técnicos). */
   zona?: string;
+  /** Número de documento de identidad oficial del usuario (Opcional). */
   identificacion?: string;
+  /** Número de teléfono de contacto (Opcional). */
   telefono?: string;
+  /** Tarjeta Profesional requerida para Técnicos Oficiales del ICA. */
+  tarjetaProfesional?: string;
 }
 
 // =============================================
@@ -95,20 +188,20 @@ export class FitoDataService {
   private _plagas: Plaga[] = [
     { id: 'p1', nombre: 'Moniliasis', icon: 'coronavirus', riesgo: 'Alto', color: '#ef4444', descripcion: 'Hongo que pudre mazorcas del cacao', cultivosAfectados: ['c1'] },
     { id: 'p2', nombre: 'Escoba de Bruja', icon: 'psychiatry', riesgo: 'Medio', color: '#f97316', descripcion: 'Afecta brotes y frutos del cacao', cultivosAfectados: ['c1'] },
-    { id: 'p3', nombre: 'Mazorca Negra', icon: 'lens_blur', riesgo: 'Alto', color: '#64748b', descripcion: 'Phytophthora palmivora, causa pudrición', cultivosAfectados: ['c1'] },
-    { id: 'p4', nombre: 'Roya del Café', icon: 'blur_on', riesgo: 'Alto', color: '#b45309', descripcion: 'Hongo foliar Hemileia vastatrix', cultivosAfectados: ['c2'] },
-    { id: 'p5', nombre: 'Broca del Café', icon: 'bug_report', riesgo: 'Alto', color: '#7c3aed', descripcion: 'Hypothenemus hampei, taladra el grano', cultivosAfectados: ['c2'] },
-    { id: 'p6', nombre: 'Mancha Grasienta', icon: 'water_drop', riesgo: 'Medio', color: '#0e7490', descripcion: 'Bacteriosis de los cítricos', cultivosAfectados: ['c3'] },
-    { id: 'p7', nombre: 'Minador de Hoja', icon: 'pest_control', riesgo: 'Bajo', color: '#65a30d', descripcion: 'Phyllocnistis citrella en cítricos', cultivosAfectados: ['c3'] },
-    { id: 'p8', nombre: 'Antracnosis', icon: 'bubble_chart', riesgo: 'Medio', color: '#16a34a', descripcion: 'Colletotrichum gloeosporioides en aguacate', cultivosAfectados: ['c4'] },
-    { id: 'p9', nombre: 'Phytophthora Raíz', icon: 'device_hub', riesgo: 'Alto', color: '#dc2626', descripcion: 'Pudrición de raíz en aguacate', cultivosAfectados: ['c4'] },
+    { id: 'p3', nombre: 'Mazorca Negra', icon: 'lens_blur', riesgo: 'Alto', color: '#ef4444', descripcion: 'Phytophthora palmivora, causa pudrición', cultivosAfectados: ['c1'] },
+    { id: 'p4', nombre: 'Roya del Café', icon: 'blur_on', riesgo: 'Alto', color: '#ef4444', descripcion: 'Hongo foliar Hemileia vastatrix', cultivosAfectados: ['c2'] },
+    { id: 'p5', nombre: 'Broca del Café', icon: 'bug_report', riesgo: 'Alto', color: '#ef4444', descripcion: 'Hypothenemus hampei, taladra el grano', cultivosAfectados: ['c2'] },
+    { id: 'p6', nombre: 'Mancha Grasienta', icon: 'water_drop', riesgo: 'Medio', color: '#f97316', descripcion: 'Bacteriosis de los cítricos', cultivosAfectados: ['c3'] },
+    { id: 'p7', nombre: 'Minador de Hoja', icon: 'pest_control', riesgo: 'Bajo', color: '#4ade80', descripcion: 'Phyllocnistis citrella en cítricos', cultivosAfectados: ['c3'] },
+    { id: 'p8', nombre: 'Antracnosis', icon: 'bubble_chart', riesgo: 'Medio', color: '#f97316', descripcion: 'Colletotrichum gloeosporioides en aguacate', cultivosAfectados: ['c4'] },
+    { id: 'p9', nombre: 'Phytophthora Raíz', icon: 'device_hub', riesgo: 'Alto', color: '#ef4444', descripcion: 'Pudrición de raíz en aguacate', cultivosAfectados: ['c4'] },
   ];
 
   // --- PREDIOS Y LOTES ---
 
   private _predios: Predio[] = [
-    { id: 'pr1', nombre: 'Finca La Esmeralda', ubicacion: 'Lebrija, Santander', productorNombre: 'Darwing Jaimes', latitud: 7.111, longitud: -73.167 },
-    { id: 'pr2', nombre: 'Hacienda El Recreo', ubicacion: 'Girón, Santander', productorNombre: 'Darwing Jaimes', latitud: 7.068, longitud: -73.169 },
+    { id: 'pr1', nombre: 'Finca La Esmeralda', ubicacion: 'Lebrija, Santander', departamento: 'Santander', municipio: 'Lebrija', vereda: 'Centro', numeroRegistroIca: 'ICA-938210', productorNombre: 'Darwing Jaimes', latitud: 7.111, longitud: -73.167 },
+    { id: 'pr2', nombre: 'Hacienda El Recreo', ubicacion: 'Girón, Santander', departamento: 'Santander', municipio: 'Girón', vereda: 'El Recreo', numeroRegistroIca: 'ICA-449182', productorNombre: 'Darwing Jaimes', latitud: 7.068, longitud: -73.169 },
   ];
 
   private _lotes: Lote[] = [
@@ -198,13 +291,22 @@ export class FitoDataService {
     this._lotes = this._lotes.filter(l => l.id !== id);
   }
 
-  agregarCultivo(cultivo: Omit<Cultivo, 'id'>): void {
+  editarLote(id: string, datos: Partial<Lote>): void {
+    const lote = this._lotes.find(l => l.id === id);
+    if (lote) Object.assign(lote, datos);
+  }
+
+  agregarCultivo(cultivo: Omit<Cultivo, 'id'>, plagasAsociadas?: string[]): void {
     const id = 'c' + (this._cultivos.length + 1);
     this._cultivos.push({ ...cultivo, id });
+    if (plagasAsociadas) {
+      this._actualizarPlagasDeCultivo(id, plagasAsociadas);
+    }
   }
 
   agregarPlaga(plaga: Omit<Plaga, 'id'>): void {
     const id = 'p' + (this._plagas.length + 1);
+    plaga.color = this._getColorPorRiesgo(plaga.riesgo);
     this._plagas.push({ ...plaga, id });
   }
 
@@ -272,14 +374,40 @@ export class FitoDataService {
 
   // --- Edición de catálogos ---
 
-  editarCultivo(id: string, datos: Partial<Cultivo>): void {
+  editarCultivo(id: string, datos: Partial<Cultivo>, plagasAsociadas?: string[]): void {
     const c = this._cultivos.find(c => c.id === id);
     if (c) Object.assign(c, datos);
+    if (plagasAsociadas) {
+      this._actualizarPlagasDeCultivo(id, plagasAsociadas);
+    }
   }
 
   editarPlaga(id: string, datos: Partial<Plaga>): void {
     const p = this._plagas.find(p => p.id === id);
-    if (p) Object.assign(p, datos);
+    if (p) {
+      Object.assign(p, datos);
+      if (datos.riesgo) {
+        p.color = this._getColorPorRiesgo(p.riesgo);
+      }
+    }
+  }
+
+  private _getColorPorRiesgo(riesgo: string): string {
+    if (riesgo === 'Alto') return '#ef4444';
+    if (riesgo === 'Medio') return '#f97316';
+    return '#4ade80';
+  }
+
+  private _actualizarPlagasDeCultivo(cultivoId: string, plagasIds: string[]): void {
+    this._plagas.forEach(p => {
+      const tiene = p.cultivosAfectados.includes(cultivoId);
+      const deberiaTener = plagasIds.includes(p.id);
+      if (deberiaTener && !tiene) {
+        p.cultivosAfectados.push(cultivoId);
+      } else if (!deberiaTener && tiene) {
+        p.cultivosAfectados = p.cultivosAfectados.filter(id => id !== cultivoId);
+      }
+    });
   }
 
   // --- Asignación de técnico ---

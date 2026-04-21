@@ -126,6 +126,7 @@ export class RegistroComponent {
       zona: this.rolSeleccionado === 'tecnico' ? 'Por asignar' : undefined,
       identificacion: this.identificacion.trim(),
       telefono: this.telefono.trim(),
+      tarjetaProfesional: this.rolSeleccionado === 'tecnico' ? this.tarjetaProfesional.trim() : undefined,
     });
 
     // Mostrar mensaje de éxito

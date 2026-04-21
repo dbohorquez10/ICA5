@@ -2,26 +2,50 @@
   <div class="header-section">
     <div>
       <h1 class="page-title">Gestión de Registros</h1>
-      <p class="page-subtitle">Administra las cuentas de técnicos y productores registrados en el sistema.</p>
+      <p class="page-subtitle">
+        Administra las cuentas de técnicos y productores registrados en el sistema.
+      </p>
     </div>
   </div>
 
   <!-- Nota informativa -->
   <div class="info-notice">
     <span class="material-icons">info</span>
-    <p>El registro de nuevos usuarios se realiza a través del formulario público de registro. Desde aquí puedes <strong>gestionar, visualizar y editar</strong> las cuentas existentes.</p>
+    <p>
+      El registro de nuevos usuarios se realiza a través del formulario público de registro. Desde
+      aquí puedes <strong>gestionar, visualizar y editar</strong> las cuentas existentes.
+    </p>
   </div>
 
   <!-- Controles -->
   <div class="controls-row">
     <div class="search-box">
       <span class="material-icons">search</span>
-      <input type="text" [(ngModel)]="filtro" placeholder="Buscar por nombre, correo, cédula o teléfono..." class="search-input">
+      <input
+        type="text"
+        [(ngModel)]="filtro"
+        placeholder="Buscar por nombre, correo, cédula o teléfono..."
+        class="search-input"
+      />
     </div>
     <div class="rol-tabs">
-      <button class="tab-btn" [class.active]="rolFiltro === 'todos'" (click)="rolFiltro = 'todos'">Todos</button>
-      <button class="tab-btn" [class.active]="rolFiltro === 'tecnico'" (click)="rolFiltro = 'tecnico'">Técnicos</button>
-      <button class="tab-btn" [class.active]="rolFiltro === 'productor'" (click)="rolFiltro = 'productor'">Productores</button>
+      <button class="tab-btn" [class.active]="rolFiltro === 'todos'" (click)="rolFiltro = 'todos'">
+        Todos
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="rolFiltro === 'tecnico'"
+        (click)="rolFiltro = 'tecnico'"
+      >
+        Técnicos
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="rolFiltro === 'productor'"
+        (click)="rolFiltro = 'productor'"
+      >
+        Productores
+      </button>
     </div>
   </div>
 
@@ -45,7 +69,13 @@
         <tr *ngFor="let u of usuariosFiltrados">
           <td>
             <div class="user-cell">
-              <div class="avatar" [ngClass]="{'avatar-tecnico': u.rol === 'tecnico', 'avatar-productor': u.rol === 'productor'}">
+              <div
+                class="avatar"
+                [ngClass]="{
+                  'avatar-tecnico': u.rol === 'tecnico',
+                  'avatar-productor': u.rol === 'productor',
+                }"
+              >
                 {{ getIniciales(u.nombre) }}
               </div>
               <span>{{ u.nombre }}</span>
@@ -55,15 +85,29 @@
           <td class="text-muted">{{ u.correo }}</td>
           <td class="text-muted">{{ u.telefono || '—' }}</td>
           <td>
-            <span class="rol-badge" [ngClass]="{'badge-tecnico': u.rol === 'tecnico', 'badge-productor': u.rol === 'productor'}">
-              <span class="material-icons">{{ u.rol === 'tecnico' ? 'fact_check' : 'agriculture' }}</span>
+            <span
+              class="rol-badge"
+              [ngClass]="{
+                'badge-tecnico': u.rol === 'tecnico',
+                'badge-productor': u.rol === 'productor',
+              }"
+            >
+              <span class="material-icons">{{
+                u.rol === 'tecnico' ? 'fact_check' : 'agriculture'
+              }}</span>
               {{ u.rol === 'tecnico' ? 'Técnico ICA' : 'Productor' }}
             </span>
           </td>
           <td class="text-muted">{{ u.zona || '—' }}</td>
           <td class="text-muted">{{ u.fechaRegistro }}</td>
           <td>
-            <span class="estado-badge" [ngClass]="{'badge-activo': u.estado === 'Activo', 'badge-suspendido': u.estado === 'Suspendido'}">
+            <span
+              class="estado-badge"
+              [ngClass]="{
+                'badge-activo': u.estado === 'Activo',
+                'badge-suspendido': u.estado === 'Suspendido',
+              }"
+            >
               {{ u.estado }}
             </span>
           </td>
@@ -75,9 +119,14 @@
               <button class="icon-btn edit-btn" (click)="editarUsuario(u)" title="Editar usuario">
                 <span class="material-icons">edit</span>
               </button>
-              <button class="icon-btn suspend-btn" (click)="toggleSuspender(u)"
-                [title]="u.estado === 'Activo' ? 'Suspender cuenta' : 'Reactivar cuenta'">
-                <span class="material-icons">{{ u.estado === 'Activo' ? 'block' : 'check_circle' }}</span>
+              <button
+                class="icon-btn suspend-btn"
+                (click)="toggleSuspender(u)"
+                [title]="u.estado === 'Activo' ? 'Suspender cuenta' : 'Reactivar cuenta'"
+              >
+                <span class="material-icons">{{
+                  u.estado === 'Activo' ? 'block' : 'check_circle'
+                }}</span>
               </button>
               <button class="icon-btn delete-btn" (click)="eliminar(u)" title="Eliminar cuenta">
                 <span class="material-icons">delete_outline</span>
@@ -101,17 +150,31 @@
         <span class="material-icons">{{ modalModo === 'ver' ? 'person' : 'edit' }}</span>
         {{ modalModo === 'ver' ? 'Detalle del Usuario' : 'Editar Usuario' }}
       </h2>
-      <button class="close-btn" (click)="cerrarModal()"><span class="material-icons">close</span></button>
+      <button class="close-btn" (click)="cerrarModal()">
+        <span class="material-icons">close</span>
+      </button>
     </div>
 
     <!-- MODO VER -->
     <div *ngIf="modalModo === 'ver' && usuarioSeleccionado" class="detalle-body">
       <div class="detalle-avatar-section">
-        <div class="avatar-big" [ngClass]="{'avatar-tecnico': usuarioSeleccionado.rol === 'tecnico', 'avatar-productor': usuarioSeleccionado.rol === 'productor'}">
+        <div
+          class="avatar-big"
+          [ngClass]="{
+            'avatar-tecnico': usuarioSeleccionado.rol === 'tecnico',
+            'avatar-productor': usuarioSeleccionado.rol === 'productor',
+          }"
+        >
           {{ getIniciales(usuarioSeleccionado.nombre) }}
         </div>
         <h3>{{ usuarioSeleccionado.nombre }}</h3>
-        <span class="rol-badge" [ngClass]="{'badge-tecnico': usuarioSeleccionado.rol === 'tecnico', 'badge-productor': usuarioSeleccionado.rol === 'productor'}">
+        <span
+          class="rol-badge"
+          [ngClass]="{
+            'badge-tecnico': usuarioSeleccionado.rol === 'tecnico',
+            'badge-productor': usuarioSeleccionado.rol === 'productor',
+          }"
+        >
           {{ usuarioSeleccionado.rol === 'tecnico' ? 'Técnico ICA' : 'Productor' }}
         </span>
       </div>
@@ -138,7 +201,13 @@
         </div>
         <div class="detalle-item">
           <span class="detalle-label">Estado</span>
-          <span class="estado-badge" [ngClass]="{'badge-activo': usuarioSeleccionado.estado === 'Activo', 'badge-suspendido': usuarioSeleccionado.estado === 'Suspendido'}">
+          <span
+            class="estado-badge"
+            [ngClass]="{
+              'badge-activo': usuarioSeleccionado.estado === 'Activo',
+              'badge-suspendido': usuarioSeleccionado.estado === 'Suspendido',
+            }"
+          >
             {{ usuarioSeleccionado.estado }}
           </span>
         </div>
@@ -154,20 +223,25 @@
     <div *ngIf="modalModo === 'editar'" class="edit-body">
       <div class="form-group">
         <label>Nombre *</label>
-        <input type="text" [(ngModel)]="editDatos.nombre" class="form-input">
+        <input type="text" [(ngModel)]="editDatos.nombre" class="form-input" />
       </div>
       <div class="form-group">
         <label>Correo</label>
-        <input type="email" [(ngModel)]="editDatos.correo" class="form-input">
+        <input type="email" [(ngModel)]="editDatos.correo" class="form-input" />
       </div>
       <div class="form-row-edit">
         <div class="form-group">
           <label>Teléfono</label>
-          <input type="tel" [(ngModel)]="editDatos.telefono" class="form-input">
+          <input type="tel" [(ngModel)]="editDatos.telefono" class="form-input" />
         </div>
         <div class="form-group">
           <label>Zona</label>
-          <input type="text" [(ngModel)]="editDatos.zona" class="form-input" placeholder="Ej: Bucaramanga, Santander">
+          <input
+            type="text"
+            [(ngModel)]="editDatos.zona"
+            class="form-input"
+            placeholder="Ej: Bucaramanga, Santander"
+          />
         </div>
       </div>
       <div class="modal-footer-u">
