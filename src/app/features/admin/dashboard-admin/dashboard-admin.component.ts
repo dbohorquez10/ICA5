@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FitoDataService, Inspeccion, Predio, Lote } from '../../../core/services/fito-data.service';
+import { FitoDataService, Inspeccion, Predio, Lote, Usuario } from '../../../core/services/fito-data.service';
 
 @Component({
   selector: 'app-dashboard-admin',
@@ -12,9 +12,19 @@ export class DashboardAdminComponent implements OnInit {
   public metricas = { productores: 0, tecnicos: 0, inspeccionesPendientes: 0, alertas: 0 };
   public solicitudesPendientes: Array<Inspeccion & { predio?: Predio; lotesCount: number }> = [];
 
+  // Modal de asignación
+  public modalAsignacionVisible = false;
+  public inspeccionSeleccionada: string = '';
+  public tecnicosDisponibles: Usuario[] = [];
+  public tecnicoSeleccionado: string = '';
+
   constructor(private dataService: FitoDataService) {}
 
   ngOnInit(): void {
+    this.recargar();
+  }
+
+  private recargar(): void {
     const usuarios = this.dataService.getUsuarios();
     const inspecciones = this.dataService.getInspecciones();
 
@@ -33,6 +43,23 @@ export class DashboardAdminComponent implements OnInit {
   }
 
   public asignarTecnico(id: string): void {
-    alert(`Abriendo asignación de técnico para inspección ${id} (funcionalidad pendiente de backend).`);
+    this.inspeccionSeleccionada = id;
+    this.tecnicosDisponibles = this.dataService.getTecnicosActivos();
+    this.tecnicoSeleccionado = '';
+    this.modalAsignacionVisible = true;
+  }
+
+  public confirmarAsignacion(): void {
+    if (!this.tecnicoSeleccionado) {
+      alert('Selecciona un técnico para asignar.');
+      return;
+    }
+    this.dataService.asignarTecnicoAInspeccion(this.inspeccionSeleccionada, this.tecnicoSeleccionado);
+    this.modalAsignacionVisible = false;
+    this.recargar();
+  }
+
+  public cerrarModalAsignacion(): void {
+    this.modalAsignacionVisible = false;
   }
 }

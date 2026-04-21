@@ -161,7 +161,18 @@ export class EjecutarInspeccionComponent implements OnInit {
 
   public finalizarInspeccionCompleta(): void {
     if (confirm(`¿Finalizar y cerrar la inspección completa del predio "${this.predio.nombre}"?`)) {
-      alert('¡Inspección del predio completada y sincronizada!');
+      // Asegurar que todas las sub-inspecciones queden marcadas como completadas
+      this.inspeccion.subInspecciones.forEach(sub => {
+        if (sub.estado !== 'Completada') {
+          sub.estado = 'Completada';
+          this.dataService.actualizarSubInspeccion(this.inspeccion.id, sub);
+        }
+      });
+
+      // Refrescar el estado local de la inspección desde el servicio
+      this.inspeccion = this.dataService.getInspeccionPorId(this.inspeccion.id)!;
+
+      alert('¡Inspección del predio completada exitosamente! Los datos han sido actualizados.');
       this.router.navigate(['/app/tecnico/inspecciones']);
     }
   }

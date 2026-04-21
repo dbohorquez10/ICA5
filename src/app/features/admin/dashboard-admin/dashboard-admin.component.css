@@ -44,3 +44,70 @@
 
 .fade-in { animation: fadeIn 0.4s ease-out forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Modal de asignación */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(27,38,16,0.5);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+}
+.modal-box {
+  background: #fff; border: 1px solid #edf2e9;
+  border-radius: 24px; padding: 32px;
+  width: 100%; max-width: 520px;
+  box-shadow: 0 30px 60px rgba(27,38,16,0.2);
+}
+.modal-header-asign {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+}
+.modal-header-asign h2 {
+  font-size: 1.3rem; color: #1b2610; margin: 0;
+  display: flex; align-items: center; gap: 10px;
+}
+.modal-header-asign h2 .material-icons { color: #668a4c; }
+.close-btn {
+  background: #f4f6f2; border: none; color: #464646; cursor: pointer; padding: 6px;
+  border-radius: 50%; width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+}
+.close-btn:hover { background: #e5ebdf; color: #1b2610; }
+.modal-desc { color: #668a4c; font-size: 0.9rem; margin: 0 0 20px; }
+
+.tecnicos-list { display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; }
+.tecnico-option {
+  display: flex; align-items: center; gap: 14px;
+  background: #f9fbf7; border: 1.5px solid #edf2e9;
+  border-radius: 14px; padding: 14px 18px;
+  cursor: pointer; transition: all 0.2s;
+}
+.tecnico-option:hover { border-color: #accc78; background: #f0f7e8; }
+.tecnico-option.selected { border-color: #668a4c; background: #e6f0da; box-shadow: 0 0 0 3px rgba(102,138,76,0.15); }
+.tec-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, #668a4c, #30391f);
+  color: #accc78; font-weight: 700; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tec-info { flex-grow: 1; }
+.tec-info h4 { color: #1b2610; margin: 0 0 2px; font-size: 0.95rem; }
+.tec-info p { color: #668a4c; margin: 0; font-size: 0.8rem; }
+.check-icon { color: #668a4c; font-size: 24px; }
+.empty-tecnicos { text-align: center; padding: 30px; color: #668a4c; }
+.empty-tecnicos .material-icons { font-size: 40px; opacity: 0.5; display: block; margin: 0 auto 8px; }
+
+.modal-footer-asign { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.btn-cancel {
+  padding: 12px 24px; border-radius: 10px;
+  background: none; border: none; color: #668a4c; cursor: pointer; font-weight: 700;
+}
+.btn-confirm {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border-radius: 10px;
+  background: linear-gradient(135deg, #668a4c, #30391f);
+  border: none; color: #accc78; cursor: pointer; font-weight: 700;
+  box-shadow: 0 4px 12px rgba(48,57,31,0.2); transition: all 0.3s;
+}
+.btn-confirm:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(48,57,31,0.3); }
+.btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+

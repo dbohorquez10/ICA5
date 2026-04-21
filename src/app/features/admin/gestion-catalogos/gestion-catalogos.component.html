@@ -33,6 +33,9 @@
             </span>
           </div>
           <div class="card-actions">
+            <button class="action-btn edit" (click)="editarPlaga(plaga)" title="Editar">
+              <span class="material-icons">edit</span>
+            </button>
             <button class="action-btn delete" (click)="eliminarPlaga(plaga.id)" title="Eliminar">
               <span class="material-icons">delete_outline</span>
             </button>
@@ -64,6 +67,9 @@
             <p class="description">Variedades: {{ cultivo.variedad }}</p>
           </div>
           <div class="card-actions">
+            <button class="action-btn edit" (click)="editarCultivo(cultivo)" title="Editar">
+              <span class="material-icons">edit</span>
+            </button>
             <button class="action-btn delete" (click)="eliminarCultivo(cultivo.id)" title="Eliminar">
               <span class="material-icons">delete_outline</span>
             </button>
@@ -78,8 +84,14 @@
 <div class="modal-overlay" *ngIf="modalVisible" (click)="cerrarModal()">
   <div class="modal-box fade-in" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>{{ modalTipo === 'plaga' ? 'Nueva Plaga' : 'Nuevo Cultivo' }}</h2>
+      <h2>{{ modalModo === 'editar' ? 'Editar' : (modalTipo === 'plaga' ? 'Nueva Plaga' : 'Nuevo Cultivo') }}</h2>
       <button class="close-btn" (click)="cerrarModal()"><span class="material-icons">close</span></button>
+    </div>
+
+    <!-- Error de validación -->
+    <div class="error-banner" *ngIf="errorModal">
+      <span class="material-icons">error_outline</span>
+      {{ errorModal }}
     </div>
 
     <div class="modal-body">
@@ -89,12 +101,12 @@
       </div>
 
       <div class="form-group" *ngIf="modalTipo === 'plaga'">
-        <label>Descripción</label>
+        <label>Descripción *</label>
         <textarea [(ngModel)]="nuevoItem.descripcion" rows="2" placeholder="Breve descripción del agente patógeno..." class="modal-input"></textarea>
       </div>
 
       <div class="form-group" *ngIf="modalTipo === 'cultivo'">
-        <label>Variedades</label>
+        <label>Variedades *</label>
         <input type="text" [(ngModel)]="nuevoItem.variedad" placeholder="Ej: Hartón, Dominico" class="modal-input">
       </div>
 
@@ -119,7 +131,8 @@
     <div class="modal-footer">
       <button class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
       <button class="btn-save" (click)="guardar()">
-        <span class="material-icons">save</span> Guardar
+        <span class="material-icons">{{ modalModo === 'editar' ? 'check' : 'save' }}</span>
+        {{ modalModo === 'editar' ? 'Actualizar' : 'Guardar' }}
       </button>
     </div>
   </div>

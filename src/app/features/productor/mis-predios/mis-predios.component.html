@@ -3,19 +3,19 @@
     <div class="header-main">
       <div>
         <p class="project-tag">Gestión de Activos • FitoGestión</p>
-        <h1>Mis Predios y Lotes</h1>
+        <h1>Mis Lugares de Producción y Lotes</h1>
       </div>
       <button class="btn-add-main" (click)="abrirModalNuevoPredio()">
-        <span class="material-icons">add</span> Nuevo Predio
+        <span class="material-icons">add</span> Nuevo Lugar de Producción
       </button>
     </div>
   </header>
 
-  <!-- Lista de predios -->
+  <!-- Lista de lugares de producción -->
   <div class="predios-list">
     <div class="predio-block" *ngFor="let predio of predios">
 
-      <!-- Cabecera del predio -->
+      <!-- Cabecera del lugar de producción -->
       <div class="predio-header" (click)="toggleExpandir(predio.id)">
         <div class="predio-status-dot"></div>
         <div class="predio-info">
@@ -85,31 +85,33 @@
 
     <div class="empty-predios" *ngIf="predios.length === 0">
       <span class="material-icons">landscape</span>
-      <p>Aún no tienes predios registrados. ¡Comienza añadiendo uno!</p>
+      <p>Aún no tienes lugares de producción registrados. ¡Comienza añadiendo uno!</p>
     </div>
   </div>
 </div>
 
-<!-- MODAL NUEVO PREDIO -->
+<!-- MODAL NUEVO LUGAR DE PRODUCCIÓN -->
 <div class="modal-overlay animate-fade-in" *ngIf="modalPredioVisible" (click)="cerrarModalPredio()">
   <div class="modal-content animate-slide-up" (click)="$event.stopPropagation()">
     <header class="modal-header">
-      <h2>Registrar Nuevo Predio</h2>
+      <h2>Registrar Nuevo Lugar de Producción</h2>
       <button class="btn-close" (click)="cerrarModalPredio()">
         <span class="material-icons">close</span>
       </button>
     </header>
     <div class="modal-body">
-      <div class="form-group">
-        <label>Nombre del Predio</label>
+      <div class="form-group" [class.has-error]="erroresPredio['nombre']">
+        <label>Nombre del Lugar de Producción *</label>
         <input type="text" [(ngModel)]="predioEnEdicion.nombre" placeholder="Ej: Finca La Esperanza">
+        <span class="error-msg" *ngIf="erroresPredio['nombre']">{{ erroresPredio['nombre'] }}</span>
+      </div>
+      <div class="form-group" [class.has-error]="erroresPredio['ubicacion']">
+        <label>Ubicación (Vereda / Municipio / Departamento) *</label>
+        <input type="text" [(ngModel)]="predioEnEdicion.ubicacion" placeholder="Ej: Vereda San José, Lebrija, Santander">
+        <span class="error-msg" *ngIf="erroresPredio['ubicacion']">{{ erroresPredio['ubicacion'] }}</span>
       </div>
       <div class="form-group">
-        <label>Ubicación / Vereda</label>
-        <input type="text" [(ngModel)]="predioEnEdicion.ubicacion" placeholder="Ej: Vereda San José, Lebrija">
-      </div>
-      <div class="form-group">
-        <label>Coordenadas GPS del Predio</label>
+        <label>Coordenadas GPS del Lugar (Opcional)</label>
         <!-- GPS automático -->
         <button type="button" class="btn-gps" (click)="capturarGPS()" [disabled]="gpsLoading">
           <span class="material-icons">{{ gpsLoading ? 'hourglass_empty' : 'my_location' }}</span>
@@ -144,7 +146,7 @@
     </div>
     <footer class="modal-footer">
       <button class="btn-cancel" (click)="cerrarModalPredio()">Cancelar</button>
-      <button class="btn-setup" (click)="guardarPredio()">Confirmar Predio</button>
+      <button class="btn-setup" (click)="guardarPredio()">Confirmar Lugar de Producción</button>
     </footer>
   </div>
 </div>

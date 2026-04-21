@@ -1,7 +1,7 @@
 <div class="usuarios-container fade-in">
   <div class="header-section">
     <div>
-      <h1 class="page-title">Gestión de Usuarios</h1>
+      <h1 class="page-title">Gestión de Registros</h1>
       <p class="page-subtitle">Administra las cuentas de técnicos y productores registrados en el sistema.</p>
     </div>
   </div>
@@ -9,14 +9,14 @@
   <!-- Nota informativa -->
   <div class="info-notice">
     <span class="material-icons">info</span>
-    <p>El registro de nuevos usuarios se realiza a través del formulario público de registro. Desde aquí puedes <strong>gestionar el estado</strong> de las cuentas existentes.</p>
+    <p>El registro de nuevos usuarios se realiza a través del formulario público de registro. Desde aquí puedes <strong>gestionar, visualizar y editar</strong> las cuentas existentes.</p>
   </div>
 
   <!-- Controles -->
   <div class="controls-row">
     <div class="search-box">
       <span class="material-icons">search</span>
-      <input type="text" [(ngModel)]="filtro" placeholder="Buscar por nombre o correo..." class="search-input">
+      <input type="text" [(ngModel)]="filtro" placeholder="Buscar por nombre, correo, cédula o teléfono..." class="search-input">
     </div>
     <div class="rol-tabs">
       <button class="tab-btn" [class.active]="rolFiltro === 'todos'" (click)="rolFiltro = 'todos'">Todos</button>
@@ -31,7 +31,9 @@
       <thead>
         <tr>
           <th>Usuario</th>
+          <th>Identificación</th>
           <th>Correo</th>
+          <th>Teléfono</th>
           <th>Rol</th>
           <th>Zona / Info</th>
           <th>Registro</th>
@@ -49,7 +51,9 @@
               <span>{{ u.nombre }}</span>
             </div>
           </td>
+          <td class="text-muted">{{ u.identificacion || '—' }}</td>
           <td class="text-muted">{{ u.correo }}</td>
+          <td class="text-muted">{{ u.telefono || '—' }}</td>
           <td>
             <span class="rol-badge" [ngClass]="{'badge-tecnico': u.rol === 'tecnico', 'badge-productor': u.rol === 'productor'}">
               <span class="material-icons">{{ u.rol === 'tecnico' ? 'fact_check' : 'agriculture' }}</span>
@@ -65,6 +69,12 @@
           </td>
           <td>
             <div class="action-btns">
+              <button class="icon-btn view-btn" (click)="verDetalle(u)" title="Ver detalle">
+                <span class="material-icons">visibility</span>
+              </button>
+              <button class="icon-btn edit-btn" (click)="editarUsuario(u)" title="Editar usuario">
+                <span class="material-icons">edit</span>
+              </button>
               <button class="icon-btn suspend-btn" (click)="toggleSuspender(u)"
                 [title]="u.estado === 'Activo' ? 'Suspender cuenta' : 'Reactivar cuenta'">
                 <span class="material-icons">{{ u.estado === 'Activo' ? 'block' : 'check_circle' }}</span>
@@ -76,9 +86,96 @@
           </td>
         </tr>
         <tr *ngIf="usuariosFiltrados.length === 0">
-          <td colspan="7" class="empty-state">No se encontraron usuarios con ese criterio.</td>
+          <td colspan="9" class="empty-state">No se encontraron usuarios con ese criterio.</td>
         </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- MODAL VER DETALLE / EDITAR -->
+<div class="modal-overlay" *ngIf="modalVisible" (click)="cerrarModal()">
+  <div class="modal-box fade-in" (click)="$event.stopPropagation()">
+    <div class="modal-header-u">
+      <h2>
+        <span class="material-icons">{{ modalModo === 'ver' ? 'person' : 'edit' }}</span>
+        {{ modalModo === 'ver' ? 'Detalle del Usuario' : 'Editar Usuario' }}
+      </h2>
+      <button class="close-btn" (click)="cerrarModal()"><span class="material-icons">close</span></button>
+    </div>
+
+    <!-- MODO VER -->
+    <div *ngIf="modalModo === 'ver' && usuarioSeleccionado" class="detalle-body">
+      <div class="detalle-avatar-section">
+        <div class="avatar-big" [ngClass]="{'avatar-tecnico': usuarioSeleccionado.rol === 'tecnico', 'avatar-productor': usuarioSeleccionado.rol === 'productor'}">
+          {{ getIniciales(usuarioSeleccionado.nombre) }}
+        </div>
+        <h3>{{ usuarioSeleccionado.nombre }}</h3>
+        <span class="rol-badge" [ngClass]="{'badge-tecnico': usuarioSeleccionado.rol === 'tecnico', 'badge-productor': usuarioSeleccionado.rol === 'productor'}">
+          {{ usuarioSeleccionado.rol === 'tecnico' ? 'Técnico ICA' : 'Productor' }}
+        </span>
+      </div>
+      <div class="detalle-grid">
+        <div class="detalle-item">
+          <span class="detalle-label">Identificación (CC)</span>
+          <span class="detalle-value">{{ usuarioSeleccionado.identificacion || '—' }}</span>
+        </div>
+        <div class="detalle-item">
+          <span class="detalle-label">Correo Electrónico</span>
+          <span class="detalle-value">{{ usuarioSeleccionado.correo }}</span>
+        </div>
+        <div class="detalle-item">
+          <span class="detalle-label">Teléfono</span>
+          <span class="detalle-value">{{ usuarioSeleccionado.telefono || '—' }}</span>
+        </div>
+        <div class="detalle-item">
+          <span class="detalle-label">Zona Asignada</span>
+          <span class="detalle-value">{{ usuarioSeleccionado.zona || '—' }}</span>
+        </div>
+        <div class="detalle-item">
+          <span class="detalle-label">Fecha de Registro</span>
+          <span class="detalle-value">{{ usuarioSeleccionado.fechaRegistro }}</span>
+        </div>
+        <div class="detalle-item">
+          <span class="detalle-label">Estado</span>
+          <span class="estado-badge" [ngClass]="{'badge-activo': usuarioSeleccionado.estado === 'Activo', 'badge-suspendido': usuarioSeleccionado.estado === 'Suspendido'}">
+            {{ usuarioSeleccionado.estado }}
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer-u">
+        <button class="btn-edit-mode" (click)="editarUsuario(usuarioSeleccionado!)">
+          <span class="material-icons">edit</span> Editar
+        </button>
+      </div>
+    </div>
+
+    <!-- MODO EDITAR -->
+    <div *ngIf="modalModo === 'editar'" class="edit-body">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" [(ngModel)]="editDatos.nombre" class="form-input">
+      </div>
+      <div class="form-group">
+        <label>Correo</label>
+        <input type="email" [(ngModel)]="editDatos.correo" class="form-input">
+      </div>
+      <div class="form-row-edit">
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" [(ngModel)]="editDatos.telefono" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>Zona</label>
+          <input type="text" [(ngModel)]="editDatos.zona" class="form-input" placeholder="Ej: Bucaramanga, Santander">
+        </div>
+      </div>
+      <div class="modal-footer-u">
+        <button class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
+        <button class="btn-save" (click)="guardarEdicion()">
+          <span class="material-icons">save</span> Guardar Cambios
+        </button>
+      </div>
+    </div>
   </div>
 </div>

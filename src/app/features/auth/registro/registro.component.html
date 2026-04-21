@@ -11,69 +11,106 @@
 
   <div class="auth-form-side">
     <div class="form-wrapper animate-fade-in">
-      <h2>Crear Cuenta</h2>
-      <p class="subtitle">Selecciona tu perfil para empezar.</p>
 
-      <div class="role-selector">
-        <button [class.active]="rolSeleccionado === 'productor'" (click)="cambiarRol('productor')">
-          Productor
-        </button>
-        <button [class.active]="rolSeleccionado === 'tecnico'" (click)="cambiarRol('tecnico')">
-          Técnico ICA
-        </button>
-      </div>
-
-      <form (submit)="registrarUsuario($event)">
-        <div class="form-grid">
-          <div class="input-group">
-            <label>Identificación (CC/NIT)</label>
-            <input type="text" placeholder="Número de documento" required />
-          </div>
-
-          <div class="input-group">
-            <label>Nombres / Razón Social</label>
-            <input type="text" placeholder="Nombre completo o empresa" required />
-          </div>
-
-          <div class="input-row">
-            <div class="input-group">
-              <label>Correo</label>
-              <input type="email" placeholder="correo@ejemplo.com" required />
-            </div>
-            <div class="input-group">
-              <label>Teléfono</label>
-              <input type="tel" placeholder="300..." required />
-            </div>
-          </div>
-
-          @if (rolSeleccionado === 'productor') {
-            <div class="info-box animate-fade-in">
-              <p>
-                📍 <strong>Nota:</strong> Como productor, podrás registrar y gestionar tus múltiples
-                predios desde tu panel una vez finalices el registro.
-              </p>
-            </div>
-          }
-
-          @if (rolSeleccionado === 'tecnico') {
-            <div class="input-group animate-fade-in">
-              <label>Tarjeta Profesional</label>
-              <input type="text" placeholder="Número de registro TP" required />
-            </div>
-          }
-
-          <div class="input-group">
-            <label>Contraseña</label>
-            <input type="password" placeholder="••••••••" required />
+      <!-- Mensaje de éxito -->
+      @if (registroExitoso) {
+        <div class="success-banner animate-fade-in">
+          <span class="material-icons">check_circle</span>
+          <div>
+            <h3>¡Registro Exitoso!</h3>
+            <p>Tu cuenta ha sido creada correctamente. Redirigiendo al inicio de sesión...</p>
           </div>
         </div>
+      }
 
-        <button type="submit" class="btn-main">Completar Registro</button>
-      </form>
+      @if (!registroExitoso) {
+        <h2>Crear Cuenta</h2>
+        <p class="subtitle">Selecciona tu perfil para empezar.</p>
 
-      <div class="footer-link">
-        ¿Ya tienes cuenta? <a routerLink="/auth/login">Inicia Sesión</a>
-      </div>
+        <div class="role-selector">
+          <button [class.active]="rolSeleccionado === 'productor'" (click)="cambiarRol('productor')">
+            Productor
+          </button>
+          <button [class.active]="rolSeleccionado === 'tecnico'" (click)="cambiarRol('tecnico')">
+            Técnico ICA
+          </button>
+        </div>
+
+        <form (submit)="registrarUsuario($event)" novalidate>
+          <div class="form-grid">
+            <!-- Identificación -->
+            <div class="input-group" [class.has-error]="errores['identificacion']">
+              <label>Identificación (CC/NIT) *</label>
+              <input type="text" placeholder="Solo números — Ej: 1098765432"
+                     [(ngModel)]="identificacion" name="identificacion"
+                     (input)="identificacion = identificacion.replace(/[^0-9]/g, '')"
+                     maxlength="15" required />
+              <span class="error-msg" *ngIf="errores['identificacion']">{{ errores['identificacion'] }}</span>
+            </div>
+
+            <!-- Nombre -->
+            <div class="input-group" [class.has-error]="errores['nombre']">
+              <label>Nombres / Razón Social *</label>
+              <input type="text" placeholder="Solo letras — Ej: Darwing Jaimes"
+                     [(ngModel)]="nombre" name="nombre"
+                     (input)="nombre = nombre.replace(/[^A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]/g, '')"
+                     maxlength="80" required />
+              <span class="error-msg" *ngIf="errores['nombre']">{{ errores['nombre'] }}</span>
+            </div>
+
+            <div class="input-row">
+              <!-- Correo -->
+              <div class="input-group" [class.has-error]="errores['correo']">
+                <label>Correo *</label>
+                <input type="email" placeholder="correo@ejemplo.com"
+                       [(ngModel)]="correo" name="correo" required />
+                <span class="error-msg" *ngIf="errores['correo']">{{ errores['correo'] }}</span>
+              </div>
+              <!-- Teléfono -->
+              <div class="input-group" [class.has-error]="errores['telefono']">
+                <label>Teléfono *</label>
+                <input type="tel" placeholder="Solo números — Ej: 3001234567"
+                       [(ngModel)]="telefono" name="telefono"
+                       (input)="telefono = telefono.replace(/[^0-9]/g, '')"
+                       maxlength="10" required />
+                <span class="error-msg" *ngIf="errores['telefono']">{{ errores['telefono'] }}</span>
+              </div>
+            </div>
+
+            @if (rolSeleccionado === 'productor') {
+              <div class="info-box animate-fade-in">
+                <p>
+                  📍 <strong>Nota:</strong> Como productor, podrás registrar y gestionar tus múltiples
+                  lugares de producción desde tu panel una vez finalices el registro.
+                </p>
+              </div>
+            }
+
+            @if (rolSeleccionado === 'tecnico') {
+              <div class="input-group animate-fade-in" [class.has-error]="errores['tarjetaProfesional']">
+                <label>Tarjeta Profesional *</label>
+                <input type="text" placeholder="Número de registro TP"
+                       [(ngModel)]="tarjetaProfesional" name="tarjetaProfesional" required />
+                <span class="error-msg" *ngIf="errores['tarjetaProfesional']">{{ errores['tarjetaProfesional'] }}</span>
+              </div>
+            }
+
+            <!-- Contraseña -->
+            <div class="input-group" [class.has-error]="errores['contrasena']">
+              <label>Contraseña *</label>
+              <input type="password" placeholder="Mínimo 6 caracteres"
+                     [(ngModel)]="contrasena" name="contrasena" required />
+              <span class="error-msg" *ngIf="errores['contrasena']">{{ errores['contrasena'] }}</span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-main">Completar Registro</button>
+        </form>
+
+        <div class="footer-link">
+          ¿Ya tienes cuenta? <a routerLink="/auth/login">Inicia Sesión</a>
+        </div>
+      }
     </div>
   </div>
 </div>

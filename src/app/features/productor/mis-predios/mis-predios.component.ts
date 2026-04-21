@@ -27,6 +27,7 @@ export class MisPrediosComponent implements OnInit {
 
   public gpsLoading = false;
   public gpsStatus: 'ok' | 'error' | null = null;
+  public erroresPredio: { [key: string]: string } = {};
 
   private map: any;
   private marker: any;
@@ -63,12 +64,23 @@ export class MisPrediosComponent implements OnInit {
   public abrirModalNuevoPredio(): void {
     this.modalPredioModo = 'nuevo';
     this.predioEnEdicion = { nombre: '', ubicacion: '' };
+    this.erroresPredio = {};
     this.modalPredioVisible = true;
     setTimeout(() => this.iniciarMapa(), 200);
   }
 
   public guardarPredio(): void {
-    if (!this.predioEnEdicion.nombre) { alert('El nombre es obligatorio'); return; }
+    this.erroresPredio = {};
+
+    if (!this.predioEnEdicion.nombre?.trim()) {
+      this.erroresPredio['nombre'] = 'El nombre del lugar de producción es obligatorio.';
+    }
+    if (!this.predioEnEdicion.ubicacion?.trim()) {
+      this.erroresPredio['ubicacion'] = 'La ubicación es obligatoria (ej: Vereda, Municipio, Departamento).';
+    }
+
+    if (Object.keys(this.erroresPredio).length > 0) return;
+
     this.dataService.agregarPredio({
       nombre: this.predioEnEdicion.nombre!,
       ubicacion: this.predioEnEdicion.ubicacion!,

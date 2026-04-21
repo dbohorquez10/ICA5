@@ -13,17 +13,29 @@ export class GestionUsuariosComponent implements OnInit {
   public filtro: string = '';
   public rolFiltro: string = 'todos';
 
+  // Modal de detalle / edición
+  public modalVisible = false;
+  public modalModo: 'ver' | 'editar' = 'ver';
+  public usuarioSeleccionado: Usuario | null = null;
+  public editDatos: Partial<Usuario> = {};
+
   constructor(private dataService: FitoDataService) {}
 
   ngOnInit(): void {
     this.usuarios = this.dataService.getUsuarios();
   }
 
+  /** Filtra por nombre, correo, identificación (cédula) */
   get usuariosFiltrados(): Usuario[] {
     return this.usuarios.filter(u => {
-      const matchNombre = u.nombre.toLowerCase().includes(this.filtro.toLowerCase());
+      const termino = this.filtro.toLowerCase().trim();
+      const matchTexto = !termino ||
+        u.nombre.toLowerCase().includes(termino) ||
+        u.correo.toLowerCase().includes(termino) ||
+        (u.identificacion && u.identificacion.includes(termino)) ||
+        (u.telefono && u.telefono.includes(termino));
       const matchRol = this.rolFiltro === 'todos' || u.rol === this.rolFiltro;
-      return matchNombre && matchRol;
+      return matchTexto && matchRol;
     });
   }
 
@@ -44,5 +56,42 @@ export class GestionUsuariosComponent implements OnInit {
       this.dataService.eliminarUsuario(usuario.id);
       this.usuarios = this.dataService.getUsuarios();
     }
+  }
+
+  // --- Ver detalle ---
+  public verDetalle(usuario: Usuario): void {
+    this.usuarioSeleccionado = usuario;
+    this.modalModo = 'ver';
+    this.modalVisible = true;
+  }
+
+  // --- Editar usuario ---
+  public editarUsuario(usuario: Usuario): void {
+    this.usuarioSeleccionado = usuario;
+    this.editDatos = { ...usuario };
+    this.modalModo = 'editar';
+    this.modalVisible = true;
+  }
+
+  public guardarEdicion(): void {
+    if (!this.editDatos.nombre?.trim()) {
+      alert('El nombre es obligatorio.');
+      return;
+    }
+    if (this.usuarioSeleccionado) {
+      this.dataService.editarUsuario(this.usuarioSeleccionado.id, {
+        nombre: this.editDatos.nombre?.trim(),
+        correo: this.editDatos.correo?.trim(),
+        zona: this.editDatos.zona?.trim(),
+        telefono: this.editDatos.telefono?.trim(),
+      });
+      this.usuarios = this.dataService.getUsuarios();
+    }
+    this.cerrarModal();
+  }
+
+  public cerrarModal(): void {
+    this.modalVisible = false;
+    this.usuarioSeleccionado = null;
   }
 }

@@ -80,3 +80,40 @@
     </div>
   </div>
 </div>
+
+<!-- MODAL DE ASIGNACIÓN DE TÉCNICO -->
+<div class="modal-overlay" *ngIf="modalAsignacionVisible" (click)="cerrarModalAsignacion()">
+  <div class="modal-box fade-in" (click)="$event.stopPropagation()">
+    <div class="modal-header-asign">
+      <h2><span class="material-icons">person_add</span> Asignar Técnico</h2>
+      <button class="close-btn" (click)="cerrarModalAsignacion()"><span class="material-icons">close</span></button>
+    </div>
+
+    <p class="modal-desc">Selecciona un técnico activo para asignar a esta inspección.</p>
+
+    <div class="tecnicos-list">
+      <div class="tecnico-option" *ngFor="let tec of tecnicosDisponibles"
+           [class.selected]="tecnicoSeleccionado === tec.nombre"
+           (click)="tecnicoSeleccionado = tec.nombre">
+        <div class="tec-avatar">{{ tec.nombre.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase() }}</div>
+        <div class="tec-info">
+          <h4>{{ tec.nombre }}</h4>
+          <p>{{ tec.zona || 'Sin zona asignada' }} • {{ tec.correo }}</p>
+        </div>
+        <span class="material-icons check-icon" *ngIf="tecnicoSeleccionado === tec.nombre">check_circle</span>
+      </div>
+
+      <div class="empty-tecnicos" *ngIf="tecnicosDisponibles.length === 0">
+        <span class="material-icons">person_off</span>
+        <p>No hay técnicos activos disponibles.</p>
+      </div>
+    </div>
+
+    <div class="modal-footer-asign">
+      <button class="btn-cancel" (click)="cerrarModalAsignacion()">Cancelar</button>
+      <button class="btn-confirm" (click)="confirmarAsignacion()" [disabled]="!tecnicoSeleccionado">
+        <span class="material-icons">check</span> Confirmar Asignación
+      </button>
+    </div>
+  </div>
+</div>

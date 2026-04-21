@@ -72,6 +72,8 @@ export interface Usuario {
   estado: 'Activo' | 'Suspendido';
   fechaRegistro: string;
   zona?: string;
+  identificacion?: string;
+  telefono?: string;
 }
 
 // =============================================
@@ -144,11 +146,11 @@ export class FitoDataService {
   // --- USUARIOS (para Admin) ---
 
   private _usuarios: Usuario[] = [
-    { id: 'u1', nombre: 'Carlos Gómez', correo: 'cgomez@ica.gov.co', rol: 'tecnico', estado: 'Activo', fechaRegistro: '2025-01-10', zona: 'Lebrija, Girón' },
-    { id: 'u2', nombre: 'Luisa Herrera', correo: 'lherrera@ica.gov.co', rol: 'tecnico', estado: 'Activo', fechaRegistro: '2025-03-15', zona: 'Bucaramanga' },
-    { id: 'u3', nombre: 'Andrés Felipe', correo: 'afelipe@ica.gov.co', rol: 'tecnico', estado: 'Suspendido', fechaRegistro: '2024-11-02', zona: 'San Gil' },
-    { id: 'u4', nombre: 'Darwing Jaimes', correo: 'djaimes@campo.co', rol: 'productor', estado: 'Activo', fechaRegistro: '2025-02-20' },
-    { id: 'u5', nombre: 'María Castellanos', correo: 'mcastellanos@campo.co', rol: 'productor', estado: 'Activo', fechaRegistro: '2025-04-01' },
+    { id: 'u1', nombre: 'Carlos Gómez', correo: 'cgomez@ica.gov.co', rol: 'tecnico', estado: 'Activo', fechaRegistro: '2025-01-10', zona: 'Lebrija, Girón', identificacion: '1098123456', telefono: '3001234567' },
+    { id: 'u2', nombre: 'Luisa Herrera', correo: 'lherrera@ica.gov.co', rol: 'tecnico', estado: 'Activo', fechaRegistro: '2025-03-15', zona: 'Bucaramanga', identificacion: '1098234567', telefono: '3109876543' },
+    { id: 'u3', nombre: 'Andrés Felipe', correo: 'afelipe@ica.gov.co', rol: 'tecnico', estado: 'Suspendido', fechaRegistro: '2024-11-02', zona: 'San Gil', identificacion: '1098345678', telefono: '3205551234' },
+    { id: 'u4', nombre: 'Darwing Jaimes', correo: 'djaimes@campo.co', rol: 'productor', estado: 'Activo', fechaRegistro: '2025-02-20', identificacion: '1098456789', telefono: '3157894561' },
+    { id: 'u5', nombre: 'María Castellanos', correo: 'mcastellanos@campo.co', rol: 'productor', estado: 'Activo', fechaRegistro: '2025-04-01', identificacion: '1098567890', telefono: '3184567890' },
   ];
 
   // =============================================
@@ -239,8 +241,58 @@ export class FitoDataService {
     this._usuarios = this._usuarios.filter(u => u.id !== id);
   }
 
+  agregarUsuario(usuario: Omit<Usuario, 'id'>): void {
+    const id = 'u' + (this._usuarios.length + 1);
+    this._usuarios.push({ ...usuario, id });
+  }
+
+  editarUsuario(id: string, datos: Partial<Usuario>): void {
+    const u = this._usuarios.find(u => u.id === id);
+    if (u) Object.assign(u, datos);
+  }
+
+  getUsuarioPorId(id: string): Usuario | undefined {
+    return this._usuarios.find(u => u.id === id);
+  }
+
   agregarInspeccion(ins: Omit<Inspeccion, 'id'>): void {
     const id = 'ins' + (this._inspecciones.length + 1);
     this._inspecciones.push({ ...ins, id });
+  }
+
+  // --- Validaciones de duplicados ---
+
+  existeCultivoConNombre(nombre: string): boolean {
+    return this._cultivos.some(c => c.nombre.toLowerCase().trim() === nombre.toLowerCase().trim());
+  }
+
+  existePlagaConNombre(nombre: string): boolean {
+    return this._plagas.some(p => p.nombre.toLowerCase().trim() === nombre.toLowerCase().trim());
+  }
+
+  // --- Edición de catálogos ---
+
+  editarCultivo(id: string, datos: Partial<Cultivo>): void {
+    const c = this._cultivos.find(c => c.id === id);
+    if (c) Object.assign(c, datos);
+  }
+
+  editarPlaga(id: string, datos: Partial<Plaga>): void {
+    const p = this._plagas.find(p => p.id === id);
+    if (p) Object.assign(p, datos);
+  }
+
+  // --- Asignación de técnico ---
+
+  getTecnicosActivos(): Usuario[] {
+    return this._usuarios.filter(u => u.rol === 'tecnico' && u.estado === 'Activo');
+  }
+
+  asignarTecnicoAInspeccion(inspeccionId: string, tecnicoNombre: string): void {
+    const ins = this._inspecciones.find(i => i.id === inspeccionId);
+    if (ins) {
+      ins.tecnicoNombre = tecnicoNombre;
+      ins.modoAsignacion = 'preferencia';
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { FitoDataService, Inspeccion, Predio } from '../../../core/services/fito-data.service';
 
 /**
  * Componente principal para el módulo de inspecciones del técnico.
@@ -17,44 +18,24 @@ export class InspeccionesComponent implements OnInit {
    * Estadísticas generales de las inspecciones asignadas.
    */
   public stats = {
-    pendientes: 4,
-    alertas: 1,
-    enProgreso: 2,
-    completadas: 15,
+    pendientes: 0,
+    alertas: 0,
+    enProgreso: 0,
+    completadas: 0,
   };
 
   /**
-   * Listado de inspecciones mockeadas para la interfaz.
+   * Listado de inspecciones conectado al servicio de datos central.
    */
-  public listaInspecciones = [
-    {
-      id: 'INS-001',
-      productor: 'Darwing Jaimes',
-      predio: 'Finca La Esmeralda',
-      estado: 'Pendiente',
-      prioridad: 'Alta',
-      lat: 7.1193,
-      lng: -73.1227,
-    },
-    {
-      id: 'INS-002',
-      productor: 'Luisa H.',
-      predio: 'Hacienda El Recreo',
-      estado: 'En Progreso',
-      prioridad: 'Media',
-      lat: 7.068,
-      lng: -73.169,
-    },
-    {
-      id: 'INS-003',
-      productor: 'Carlos G.',
-      predio: 'Cultivos El Sol',
-      estado: 'Completada',
-      prioridad: 'Baja',
-      lat: 7.125,
-      lng: -73.15,
-    },
-  ];
+  public listaInspecciones: Array<{
+    id: string;
+    productor: string;
+    predio: string;
+    estado: string;
+    prioridad: string;
+    lat: number;
+    lng: number;
+  }> = [];
 
   /** Instancia del mapa de Leaflet */
   private map: any;
@@ -65,8 +46,12 @@ export class InspeccionesComponent implements OnInit {
   /**
    * Inicializa el componente.
    * @param platformId Identificador de la plataforma para validar ejecución en el navegador.
+   * @param dataService Servicio central de datos.
    */
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private dataService: FitoDataService
+  ) {}
 
   /**
    * Abre Google Maps con ruta desde la posición actual del técnico hasta el predio.
@@ -87,12 +72,42 @@ export class InspeccionesComponent implements OnInit {
 
   /**
    * Hook de ciclo de vida invocado tras la inicialización del componente.
-   * Desencadena la renderización del mapa si se ejecuta en el navegador.
+   * Carga datos desde el servicio central y renderiza el mapa.
    */
   ngOnInit(): void {
+    this.cargarDatos();
     if (isPlatformBrowser(this.platformId)) {
       setTimeout(() => this.iniciarMapa(), 300);
     }
+  }
+
+  /**
+   * Recarga los datos de inspecciones desde el servicio central de datos.
+   */
+  private cargarDatos(): void {
+    const inspecciones = this.dataService.getInspecciones();
+
+    // Calcular estadísticas
+    this.stats = {
+      pendientes: inspecciones.filter(i => i.estado === 'Pendiente').length,
+      alertas: inspecciones.filter(i => i.subInspecciones.some(s => s.registroPlantas.some(r => r.plagasDetectadas.length > 0))).length,
+      enProgreso: inspecciones.filter(i => i.estado === 'En Progreso').length,
+      completadas: inspecciones.filter(i => i.estado === 'Completada').length,
+    };
+
+    // Construir lista de inspecciones con datos del predio
+    this.listaInspecciones = inspecciones.map(ins => {
+      const predio = this.dataService.getPredio(ins.predioId);
+      return {
+        id: ins.id.toUpperCase(),
+        productor: predio?.productorNombre || '—',
+        predio: predio?.nombre || '—',
+        estado: ins.estado,
+        prioridad: ins.estado === 'Pendiente' ? 'Alta' : ins.estado === 'En Progreso' ? 'Media' : 'Baja',
+        lat: predio?.latitud || 7.1193,
+        lng: predio?.longitud || -73.1227,
+      };
+    });
   }
 
   /**
