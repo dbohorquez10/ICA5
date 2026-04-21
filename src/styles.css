@@ -1,1 +1,29 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --color-principal: #30391f;
+  --color-comp-1: #668a4c;
+  --color-comp-2: #accc78;
+  --color-comp-3: #464646;
+  --color-claro: #ffffff;
+  --bg-light: #f4f6f2;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  --shadow-login: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family:
+    'Inter',
+    -apple-system,
+    sans-serif;
+  background-color: var(--bg-light);
+  color: var(--color-principal);
+}

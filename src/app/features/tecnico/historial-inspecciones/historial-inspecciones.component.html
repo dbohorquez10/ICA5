@@ -1,0 +1,62 @@
+<div class="historial-container fade-in">
+  <div class="page-header">
+    <button class="back-btn" routerLink="/app/tecnico/inspecciones">
+      <span class="material-icons">arrow_back</span>
+    </button>
+    <div>
+      <h1>Historial de Inspecciones</h1>
+      <p>Registro de todas las evaluaciones fitosanitarias realizadas.</p>
+    </div>
+  </div>
+
+  <!-- Buscador -->
+  <div class="search-bar">
+    <span class="material-icons">search</span>
+    <input type="text" [(ngModel)]="filtro" placeholder="Buscar por predio o ID...">
+  </div>
+
+  <!-- Tabla -->
+  <div class="table-card">
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Predio / Ubicación</th>
+          <th>Lotes</th>
+          <th>Plantas evaluadas</th>
+          <th>Plantas c/ Plaga</th>
+          <th>Técnico</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let h of historialFiltrado">
+          <td><code class="id-code">{{ h.id }}</code></td>
+          <td>
+            <strong>{{ h.predio }}</strong>
+            <small class="ubicacion">{{ h.ubicacion }}</small>
+          </td>
+          <td><span class="chip-neutral">{{ h.lotes }}</span></td>
+          <td>{{ h.totalPlantas | number:'1.0-0' }}</td>
+          <td>
+            <span [class]="h.plagasDetectadas > 0 ? 'chip-danger' : 'chip-ok'">
+              {{ h.plagasDetectadas }}
+            </span>
+          </td>
+          <td class="text-muted">{{ h.tecnico }}</td>
+          <td class="text-muted">{{ h.fecha }}</td>
+          <td>
+            <span class="estado-badge"
+              [ngClass]="{'badge-ok': h.estado === 'Completada', 'badge-warn': h.estado === 'En Progreso', 'badge-pend': h.estado === 'Pendiente'}">
+              {{ h.estado }}
+            </span>
+          </td>
+        </tr>
+        <tr *ngIf="historialFiltrado.length === 0">
+          <td colspan="8" class="empty">No hay registros que coincidan.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

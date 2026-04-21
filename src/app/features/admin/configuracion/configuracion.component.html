@@ -1,0 +1,94 @@
+<div class="config-container fade-in">
+  <div class="header-section">
+    <div>
+      <h1 class="page-title">Mi Perfil ICA</h1>
+      <p class="page-subtitle">Información del funcionario y preferencias de notificación.</p>
+    </div>
+    <button class="btn-save" (click)="guardar()">
+      <span class="material-icons">save</span> Guardar
+    </button>
+  </div>
+
+  <div class="config-grid">
+    <!-- Perfil del Funcionario -->
+    <div class="config-card">
+      <h2 class="card-title">
+        <span class="material-icons">badge</span> Información del Funcionario
+      </h2>
+
+      <div class="profile-header">
+        <div class="avatar-large">{{ perfil.nombre.split(' ').slice(0,2).map(n => n[0]).join('') }}</div>
+        <div>
+          <h3>{{ perfil.nombre }}</h3>
+          <p>{{ perfil.cargo }}</p>
+          <span class="codigo-badge">
+            <span class="material-icons">verified</span> Cód. {{ perfil.codigoICA }}
+          </span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <label>Departamento de Cobertura</label>
+        <p>{{ perfil.departamento }}</p>
+      </div>
+
+      <div class="info-row">
+        <label>Municipios Asignados</label>
+        <div class="municipios">
+          <span class="municipio-chip" *ngFor="let m of perfil.municipiosSede">{{ m }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notificaciones -->
+    <div class="config-card">
+      <h2 class="card-title">
+        <span class="material-icons">notifications</span> Notificaciones
+      </h2>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <h3>Alertas de Plaga Grave</h3>
+          <p>Notificarme cuando un técnico detecte riesgo Alto en una inspección.</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" [(ngModel)]="notificaciones.alertasPlagaGrave">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <h3>Nuevas Solicitudes de Inspección</h3>
+          <p>Avisar cuando un productor envíe una solicitud pendiente de asignar.</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" [(ngModel)]="notificaciones.nuevasSolicitudes">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <h3>Inspecciones Vencidas</h3>
+          <p>Recordatorio cuando una inspección lleve más de 7 días sin completarse.</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" [(ngModel)]="notificaciones.inspeccionesVencidas">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <h3>Resumen Semanal</h3>
+          <p>Informe ejecutivo los lunes con las métricas de la semana.</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" [(ngModel)]="notificaciones.resumenSemanal">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>

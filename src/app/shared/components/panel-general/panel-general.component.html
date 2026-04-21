@@ -1,0 +1,89 @@
+<div class="panel-container animate-fade-in">
+  <header class="header-section">
+    <p class="project-tag">Panel Principal • FitoGestión Digital</p>
+    <h1>Bienvenido, {{ usuarioActual?.nombre }}</h1>
+  </header>
+
+  @if (usuarioActual?.rol === 'productor') {
+    <div class="metrics-row">
+      <div class="metric-box">
+        <span class="material-icons">landscape</span>
+        <div>
+          <small>Hectáreas</small><b>{{ resumenAgricola.hectareas }} Ha</b>
+        </div>
+      </div>
+      <div class="metric-box">
+        <span class="material-icons">grass</span>
+        <div>
+          <small>Unidades</small><b>{{ resumenAgricola.totalPredios }}</b>
+        </div>
+      </div>
+      <div class="metric-box warning">
+        <span class="material-icons">warning</span>
+        <div>
+          <small>Trámites</small><b>{{ resumenAgricola.pendientes }}</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="weather-card">
+      <div class="w-head">
+        <h3>Clima en tu Zona</h3>
+        <span class="material-icons">cloud</span>
+      </div>
+      <div class="w-body">
+        <h1>{{ climaActual.temp }}°</h1>
+        <div>
+          <p>{{ climaActual.condicion }}</p>
+          <small>{{ climaActual.lluvia }}% Prob. Lluvia</small>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (usuarioActual?.rol === 'tecnico') {
+    <div class="metrics-row">
+      <div class="metric-box">
+        <span class="material-icons">pending_actions</span>
+        <div>
+          <small>Pendientes</small><b>{{ statsTecnico.pendientes }}</b>
+        </div>
+      </div>
+      <div class="metric-box danger">
+        <span class="material-icons">error</span>
+        <div>
+          <small>Alertas</small><b>{{ statsTecnico.alertas }}</b>
+        </div>
+      </div>
+      <div class="metric-box success">
+        <span class="material-icons">check_circle</span>
+        <div>
+          <small>Completadas</small><b>{{ statsTecnico.completadas }}</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="map-card">
+      <div class="m-head"><h3>Mapa Operativo</h3></div>
+      <div class="map-wrapper"><div id="mapaGeneral" style="width: 100%; height: 400px"></div></div>
+    </div>
+  }
+
+  @if (usuarioActual?.rol === 'admin') {
+    <div class="weather-card">
+      <div class="w-head">
+        <h3>Modo Administrador Activo</h3>
+        <span class="material-icons" style="color: #a855f7">admin_panel_settings</span>
+      </div>
+      <div class="w-body">
+        <p style="color: #94a3b8; font-size: 1.1rem; line-height: 1.5">
+          Utiliza el menú lateral para acceder a tus herramientas de gestión exclusivas: <br><br>
+          • <b>Panel General:</b> Métricas y gráficas.<br>
+          • <b>Usuarios:</b> Gestiona técnicos y productores.<br>
+          • <b>Catálogos:</b> Administra plagas y cultivos.<br>
+          • <b>Configuración:</b> Preferencias del sistema.
+        </p>
+      </div>
+    </div>
+  }
+</div>

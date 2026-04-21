@@ -1,0 +1,93 @@
+<div class="tecnico-container animate-fade-in">
+  <header class="header-section">
+    <p class="project-tag">Gestión Operativa • Técnico ICA</p>
+    <h1>Panel de Inspecciones</h1>
+  </header>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon"><span class="material-icons">pending_actions</span></div>
+      <div class="metric-data">
+        <small>Pendientes</small><b>{{ stats.pendientes }}</b>
+      </div>
+    </div>
+    <div class="metric-card warning">
+      <div class="metric-icon"><span class="material-icons">warning_amber</span></div>
+      <div class="metric-data">
+        <small>Alertas</small><b>{{ stats.alertas }}</b>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon"><span class="material-icons">directions_car</span></div>
+      <div class="metric-data">
+        <small>En Progreso</small><b>{{ stats.enProgreso }}</b>
+      </div>
+    </div>
+    <div class="metric-card success">
+      <div class="metric-icon"><span class="material-icons">task_alt</span></div>
+      <div class="metric-data">
+        <small>Completadas</small><b>{{ stats.completadas }}</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <div class="map-section">
+      <div class="section-header">
+        <h2>Mapa Geográfico</h2>
+        <span class="material-icons" style="color: #8cb369">map</span>
+      </div>
+      <div class="map-wrapper">
+        <div id="mapaTecnico" class="mapa-global"></div>
+      </div>
+    </div>
+
+    <div class="tasks-section">
+      <div class="section-header"><h2>Agenda Asignada</h2></div>
+
+      <div class="tasks-list">
+        @for (item of listaInspecciones; track item.id) {
+          <div class="task-card" [class.alta-prioridad]="item.prioridad === 'Alta'">
+            <div class="task-header">
+              <span
+                class="tag-status"
+                [class.status-pending]="item.estado === 'Pendiente'"
+                [class.status-progress]="item.estado === 'En Progreso'"
+                [class.status-done]="item.estado === 'Completada'"
+              >
+                {{ item.estado }}
+              </span>
+              <span class="priority-badge" [class.badge-alta]="item.prioridad === 'Alta'">{{
+                item.prioridad
+              }}</span>
+            </div>
+
+            <h3 class="task-title">{{ item.predio }}</h3>
+            <p class="task-desc">
+              <span class="material-icons" style="font-size: 14px; vertical-align: middle"
+                >person</span
+              >
+              Productor: {{ item.productor }}
+            </p>
+
+            <div class="task-actions">
+              <button
+                class="btn-nav"
+                (click)="navegarAPredio(item.lat, item.lng)"
+                title="Abrir ruta en Google Maps">
+                <span class="material-icons">navigation</span>
+              </button>
+              <button
+                class="btn-primary"
+                routerLink="/app/tecnico/ejecutar-inspeccion"
+                [disabled]="item.estado === 'Completada'"
+              >
+                {{ item.estado === 'Completada' ? 'Cerrada' : 'Iniciar Visita' }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

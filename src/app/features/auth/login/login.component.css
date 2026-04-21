@@ -1,0 +1,159 @@
+.login-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f6f2;
+}
+.login-box {
+  background: white;
+  padding: 50px;
+  border-radius: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+}
+
+.brand {
+  margin-bottom: 40px;
+}
+.brand-icon {
+  width: 60px;
+  height: 60px;
+  background: #accc78;
+  color: #1b2610;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 2rem;
+  margin: 0 auto 15px auto;
+}
+.brand h1 {
+  font-size: 2rem;
+  font-weight: 850;
+  color: #1b2610;
+  margin: 0 0 5px 0;
+}
+.brand h1 span {
+  color: #8cb369;
+}
+.brand p {
+  color: #64748b;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.role-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.role-card {
+  background: white;
+  border: 2px solid #f1f5f9;
+  padding: 20px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  cursor: pointer;
+  transition: 0.2s;
+  text-align: left;
+  width: 100%;
+}
+.role-card:hover {
+  border-color: #accc78;
+  background: #f0fdf4;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(172, 204, 120, 0.15);
+}
+.role-card h3 {
+  margin: 0 0 4px 0;
+  color: #1b2610;
+  font-size: 1.1rem;
+}
+.role-card small {
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+.icon-agri {
+  background: #f0fdf4;
+  color: #22c55e;
+  padding: 12px;
+  border-radius: 14px;
+  font-size: 28px;
+}
+.arrow {
+  margin-left: auto;
+  color: #cbd5e1;
+  transition: 0.2s;
+}
+.role-card:hover .arrow {
+  color: #1b2610;
+  transform: translateX(5px);
+}
+
+.tecnico-card:hover {
+  border-color: #64748b;
+  background: #f8fafc;
+  box-shadow: 0 10px 20px rgba(100, 116, 139, 0.1);
+}
+.icon-tec {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 12px;
+  border-radius: 14px;
+  font-size: 28px;
+}
+
+.admin-card:hover {
+  border-color: #a855f7;
+  background: #faf5ff;
+  box-shadow: 0 10px 20px rgba(168, 85, 247, 0.1);
+}
+.icon-admin {
+  background: #faf5ff;
+  color: #a855f7;
+  padding: 12px;
+  border-radius: 14px;
+  font-size: 28px;
+}
+
+.login-footer {
+  margin-top: 40px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  text-align: left;
+  line-height: 1.4;
+}
+.login-footer .material-icons {
+  font-size: 16px;
+  color: #cbd5e1;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+@keyframes slideUp {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

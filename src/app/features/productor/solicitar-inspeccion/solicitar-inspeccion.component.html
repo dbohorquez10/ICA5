@@ -1,0 +1,121 @@
+<div class="solicitar-container fade-in">
+
+  <!-- ÉXITO -->
+  <div class="success-panel" *ngIf="enviado">
+    <span class="material-icons success-icon">check_circle</span>
+    <h2>¡Solicitud Enviada!</h2>
+    <p>Tu solicitud de inspección para <strong>{{ predioSeleccionado?.nombre }}</strong> ha sido registrada y está pendiente de asignación por el ICA.</p>
+    <button class="btn-primary" (click)="nueva()">Solicitar otra inspección</button>
+  </div>
+
+  <ng-container *ngIf="!enviado">
+    <div class="page-header">
+      <div>
+        <p class="tag">Productor • FitoGestión</p>
+        <h1>Solicitar Inspección</h1>
+        <p class="sub">Selecciona el predio que deseas inspeccionar y agenda la visita.</p>
+      </div>
+    </div>
+
+    <div class="form-layout">
+
+      <!-- PASO 1: Seleccionar Predio -->
+      <div class="step-card">
+        <div class="step-header">
+          <span class="step-num">1</span>
+          <h2>Seleccionar Predio</h2>
+        </div>
+        <div class="predios-grid">
+          <div class="predio-option" *ngFor="let p of predios"
+               (click)="seleccionarPredio(p)"
+               [class.selected]="predioSeleccionado?.id === p.id">
+            <span class="material-icons">landscape</span>
+            <div>
+              <h3>{{ p.nombre }}</h3>
+              <small>{{ p.ubicacion }}</small>
+            </div>
+            <span class="material-icons check-icon">check_circle</span>
+          </div>
+        </div>
+
+        <!-- Lotes del predio seleccionado -->
+        <div class="lotes-preview" *ngIf="predioSeleccionado && lotesDelPredio.length > 0">
+          <p class="lotes-label">
+            <span class="material-icons">layers</span>
+            {{ lotesDelPredio.length }} lotes a inspeccionar en este predio:
+          </p>
+          <div class="lotes-chips">
+            <span class="lote-chip" *ngFor="let l of lotesDelPredio">
+              <span class="material-icons">eco</span>
+              {{ l.nombre }} — {{ dataService.getCultivoPorId(l.cultivoId)?.nombre }}
+              ({{ l.hectareas }} Ha)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 2: Fecha y Asignación -->
+      <div class="step-card" *ngIf="predioSeleccionado">
+        <div class="step-header">
+          <span class="step-num">2</span>
+          <h2>Fecha y Técnico</h2>
+        </div>
+
+        <div class="form-group">
+          <label>Fecha Sugerida para la Visita</label>
+          <input type="date" [(ngModel)]="fechaSugerida" (change)="verificarDisponibilidad()" class="form-input">
+        </div>
+
+        <div class="asignacion-toggle">
+          <button class="toggle-btn" [class.active]="asignacionAutomatica" (click)="setModo(true)">
+            <span class="material-icons">auto_awesome</span> Asignación Automática
+          </button>
+          <button class="toggle-btn" [class.active]="!asignacionAutomatica" (click)="setModo(false)">
+            <span class="material-icons">person_search</span> Técnico de Preferencia
+          </button>
+        </div>
+
+        <p class="toggle-desc" *ngIf="asignacionAutomatica">
+          El ICA asignará al técnico disponible más cercano a tu zona según la fecha.
+        </p>
+
+        <!-- Lista técnicos -->
+        <div class="tecnicos-list" *ngIf="!asignacionAutomatica">
+          <div class="tecnico-card" *ngFor="let t of tecnicosDisponibles"
+               (click)="seleccionarTecnico(t.id)"
+               [class.selected]="tecnicoElegido === t.id"
+               [class.ocupado]="t.ocupado">
+            <div class="tecnico-avatar">{{ t.avatar }}</div>
+            <div class="tecnico-info">
+              <h3>{{ t.nombre }}</h3>
+              <p>{{ t.zona }}</p>
+              <div class="rating">⭐ {{ t.rating }}</div>
+            </div>
+            <span class="tecnico-status" [class.libre]="!t.ocupado" [class.busy]="t.ocupado">
+              {{ t.ocupado ? 'Ocupado' : 'Disponible' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Status disponibilidad -->
+        <div class="status-alert alert-ok" *ngIf="agendaStatus === 'disponible'">
+          <span class="material-icons">check_circle</span> Técnico disponible para esa fecha.
+        </div>
+        <div class="status-alert alert-warn" *ngIf="agendaStatus === 'ocupado'">
+          <span class="material-icons">warning</span> El técnico ya tiene asignación en esa fecha. Elige otro o cambia la fecha.
+        </div>
+
+        <div class="form-group">
+          <label>Comentarios adicionales (opcional)</label>
+          <textarea [(ngModel)]="comentarios" rows="2" placeholder="Ej: Urgente, se detectaron señales de Moniliasis..." class="form-input"></textarea>
+        </div>
+
+        <button class="btn-enviar" (click)="enviar()"
+                [disabled]="!fechaSugerida || (!asignacionAutomatica && agendaStatus === 'ocupado')">
+          <span class="material-icons">send</span> Enviar Solicitud
+        </button>
+      </div>
+
+    </div>
+  </ng-container>
+</div>

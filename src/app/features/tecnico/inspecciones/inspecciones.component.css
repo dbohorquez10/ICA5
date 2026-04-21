@@ -1,0 +1,237 @@
+.tecnico-container {
+  padding: 40px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+.header-section h1 {
+  font-size: 2.8rem;
+  font-weight: 850;
+  color: #1b2610;
+  margin: 5px 0 30px 0;
+}
+.project-tag {
+  color: #8cb369;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+/* Metrics */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+.metric-card {
+  background: white;
+  padding: 20px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+}
+.metric-icon {
+  background: #f0fdf4;
+  color: #16a34a;
+  padding: 12px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.metric-icon .material-icons {
+  font-size: 28px;
+}
+.metric-data small {
+  display: block;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+.metric-data b {
+  font-size: 1.5rem;
+  color: #1b2610;
+  line-height: 1.2;
+}
+.metric-card.warning .metric-icon {
+  background: #fffbeb;
+  color: #d97706;
+}
+.metric-card.success .metric-icon {
+  background: #f0fdf4;
+  color: #10b981;
+}
+
+/* Layout Grid: Mapa a la Izquierda, Agenda a la Derecha */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 30px;
+}
+
+/* Secciones Generales */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.section-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1e293b;
+}
+
+/* Mapa */
+.map-section {
+  background: white;
+  border-radius: 24px;
+  padding: 25px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  height: fit-content;
+}
+.map-wrapper {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+}
+.mapa-global {
+  width: 100%;
+  height: 500px;
+}
+
+/* Agenda (Tarjetas de Tareas) */
+.tasks-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 550px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+.task-card {
+  background: white;
+  border: 2px solid #f1f5f9;
+  border-radius: 16px;
+  padding: 20px;
+  transition: 0.2s;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+.task-card:hover {
+  border-color: #8cb369;
+  transform: translateY(-2px);
+}
+.task-card.alta-prioridad {
+  border-left: 4px solid #ef4444;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.tag-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+.status-pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+.status-progress {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.status-done {
+  background: #d1fae5;
+  color: #10b981;
+}
+
+.priority-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+}
+.badge-alta {
+  color: #ef4444;
+}
+
+.task-title {
+  margin: 0 0 5px 0;
+  font-size: 1.1rem;
+  color: #1e293b;
+}
+.task-desc {
+  margin: 0 0 15px 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.task-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-primary {
+  flex: 1;
+  background: #1b2610;
+  color: #accc78;
+  border: none;
+  padding: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn-primary:hover:not(:disabled) { background: #30391f; }
+.btn-primary:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+
+.btn-nav {
+  flex-shrink: 0;
+  background: rgba(37,99,235,0.08);
+  border: 1.5px solid rgba(37,99,235,0.2);
+  color: #2563eb;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.btn-nav:hover { background: rgba(37,99,235,0.15); transform: translateY(-1px); }
+.btn-nav .material-icons { font-size: 20px; }
+
+/* Scrollbar Custom para la agenda */
+.tasks-list::-webkit-scrollbar {
+  width: 6px;
+}
+.tasks-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,79 @@
+<div class="auth-container">
+  <div class="auth-visual">
+    <div class="visual-content">
+      <div class="badge">SISTEMA OFICIAL ICA</div>
+      <h1>Protegiendo el<br /><span class="highlight">Agro Colombiano.</span></h1>
+      <p>Gestión integral de predios, inspecciones fitosanitarias y trazabilidad de exportación.</p>
+
+      <div class="blob"></div>
+    </div>
+  </div>
+
+  <div class="auth-form-side">
+    <div class="form-wrapper animate-fade-in">
+      <h2>Crear Cuenta</h2>
+      <p class="subtitle">Selecciona tu perfil para empezar.</p>
+
+      <div class="role-selector">
+        <button [class.active]="rolSeleccionado === 'productor'" (click)="cambiarRol('productor')">
+          Productor
+        </button>
+        <button [class.active]="rolSeleccionado === 'tecnico'" (click)="cambiarRol('tecnico')">
+          Técnico ICA
+        </button>
+      </div>
+
+      <form (submit)="registrarUsuario($event)">
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Identificación (CC/NIT)</label>
+            <input type="text" placeholder="Número de documento" required />
+          </div>
+
+          <div class="input-group">
+            <label>Nombres / Razón Social</label>
+            <input type="text" placeholder="Nombre completo o empresa" required />
+          </div>
+
+          <div class="input-row">
+            <div class="input-group">
+              <label>Correo</label>
+              <input type="email" placeholder="correo@ejemplo.com" required />
+            </div>
+            <div class="input-group">
+              <label>Teléfono</label>
+              <input type="tel" placeholder="300..." required />
+            </div>
+          </div>
+
+          @if (rolSeleccionado === 'productor') {
+            <div class="info-box animate-fade-in">
+              <p>
+                📍 <strong>Nota:</strong> Como productor, podrás registrar y gestionar tus múltiples
+                predios desde tu panel una vez finalices el registro.
+              </p>
+            </div>
+          }
+
+          @if (rolSeleccionado === 'tecnico') {
+            <div class="input-group animate-fade-in">
+              <label>Tarjeta Profesional</label>
+              <input type="text" placeholder="Número de registro TP" required />
+            </div>
+          }
+
+          <div class="input-group">
+            <label>Contraseña</label>
+            <input type="password" placeholder="••••••••" required />
+          </div>
+        </div>
+
+        <button type="submit" class="btn-main">Completar Registro</button>
+      </form>
+
+      <div class="footer-link">
+        ¿Ya tienes cuenta? <a routerLink="/auth/login">Inicia Sesión</a>
+      </div>
+    </div>
+  </div>
+</div>

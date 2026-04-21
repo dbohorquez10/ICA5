@@ -1,0 +1,110 @@
+<div class="layout-wrapper" [class.collapsed]="sidebarColapsada">
+  <aside class="main-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">F</div>
+      <span class="brand-name">Fito<span>Gestión</span></span>
+    </div>
+
+    <nav class="sidebar-menu">
+      <div class="menu-section">
+        <small class="section-title">Principal</small>
+        <a routerLink="/app/inicio" routerLinkActive="active">
+          <span class="material-icons">dashboard</span>
+          <span class="menu-label">Panel Principal</span>
+        </a>
+      </div>
+
+      @if (usuarioActual?.rol === 'productor') {
+        <div class="menu-section">
+          <small class="section-title">Panel de Productor</small>
+          <a routerLink="/app/productor/mis-predios" routerLinkActive="active">
+            <span class="material-icons">agriculture</span>
+            <span class="menu-label">Mis Predios</span>
+          </a>
+          <a routerLink="/app/productor/solicitar" routerLinkActive="active">
+            <span class="material-icons">assignment_add</span>
+            <span class="menu-label">Solicitar Inspección</span>
+          </a>
+          <a routerLink="/app/productor/reportes" routerLinkActive="active">
+            <span class="material-icons">description</span> <span class="menu-label">Reportes</span>
+          </a>
+        </div>
+      }
+
+      @if (usuarioActual?.rol === 'tecnico') {
+        <div class="menu-section">
+          <small class="section-title">Panel de Técnico ICA</small>
+          <a routerLink="/app/tecnico/inspecciones" routerLinkActive="active">
+            <span class="material-icons">fact_check</span>
+            <span class="menu-label">Inspecciones</span>
+          </a>
+          <a routerLink="/app/tecnico/historial-inspecciones" routerLinkActive="active">
+            <span class="material-icons">history</span>
+            <span class="menu-label">Historial</span>
+          </a>
+        </div>
+      }
+
+      @if (usuarioActual?.rol === 'admin') {
+        <div class="menu-section">
+          <small class="section-title">Administración</small>
+          <a routerLink="/app/admin/dashboard" routerLinkActive="active">
+            <span class="material-icons">query_stats</span>
+            <span class="menu-label">Panel General</span>
+          </a>
+          <a routerLink="/app/admin/usuarios" routerLinkActive="active">
+            <span class="material-icons">manage_accounts</span>
+            <span class="menu-label">Usuarios</span>
+          </a>
+          <a routerLink="/app/admin/catalogos" routerLinkActive="active">
+            <span class="material-icons">category</span>
+            <span class="menu-label">Catálogos</span>
+          </a>
+          <a routerLink="/app/admin/configuracion" routerLinkActive="active">
+            <span class="material-icons">settings</span>
+            <span class="menu-label">Configuración</span>
+          </a>
+        </div>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <button (click)="cerrarSesion()" class="btn-logout">
+        <span class="material-icons">logout</span> <span class="menu-label">Cerrar Sesión</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-container">
+    <header class="top-header">
+      <div class="header-left">
+        <button class="toggle-btn" (click)="toggleSidebar()">
+          <span class="material-icons">{{ sidebarColapsada ? 'menu' : 'menu_open' }}</span>
+        </button>
+        <div class="breadcrumb">
+          Sistema /
+          <span style="color: #8cb369; font-weight: 700">{{ usuarioActual?.rol | titlecase }}</span>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="notification-wrapper" (click)="toggleNotificaciones()">
+          <button class="icon-btn" style="position: relative">
+            <span class="material-icons">notifications_none</span><span class="badge">2</span>
+          </button>
+        </div>
+        <div class="divider"></div>
+        <div class="user-profile">
+          <div class="user-meta">
+            <span class="user-name">{{ usuarioActual?.nombre }}</span>
+            <span class="user-status">{{ usuarioActual?.plan }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="page-content">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+</div>

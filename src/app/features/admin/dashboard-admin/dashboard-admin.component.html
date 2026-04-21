@@ -1,0 +1,82 @@
+<div class="dashboard-container fade-in">
+  <div class="header-section">
+    <div>
+      <h1 class="page-title">Panel Administrativo ICA</h1>
+      <p class="page-subtitle">Resumen operativo y solicitudes pendientes de gestión.</p>
+    </div>
+  </div>
+
+  <!-- Métricas -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon icon-blue"><span class="material-icons">agriculture</span></div>
+      <div class="metric-data">
+        <h2>{{ metricas.productores }}</h2>
+        <p>Productores Activos</p>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon icon-green"><span class="material-icons">fact_check</span></div>
+      <div class="metric-data">
+        <h2>{{ metricas.tecnicos }}</h2>
+        <p>Técnicos ICA</p>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon icon-yellow"><span class="material-icons">pending_actions</span></div>
+      <div class="metric-data">
+        <h2>{{ metricas.inspeccionesPendientes }}</h2>
+        <p>Inspecciones Pendientes</p>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon icon-purple"><span class="material-icons">query_stats</span></div>
+      <div class="metric-data">
+        <h2>{{ metricas.alertas }}</h2>
+        <p>En Progreso</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Solicitudes Pendientes de Asignar -->
+  <div class="section-card">
+    <div class="section-header">
+      <h2>
+        <span class="material-icons">assignment</span>
+        Solicitudes Pendientes de Asignar
+      </h2>
+      <span class="count-chip">{{ solicitudesPendientes.length }}</span>
+    </div>
+
+    <div *ngIf="solicitudesPendientes.length === 0" class="empty-state">
+      <span class="material-icons">task_alt</span>
+      <p>No hay solicitudes pendientes. ¡Todo está al día!</p>
+    </div>
+
+    <div class="solicitudes-list">
+      <div class="solicitud-row" *ngFor="let sol of solicitudesPendientes">
+        <div class="sol-icon">
+          <span class="material-icons">{{ sol.modoAsignacion === 'preferencia' ? 'person_search' : 'auto_awesome' }}</span>
+        </div>
+        <div class="sol-info">
+          <h3>{{ sol.predio?.nombre || '—' }}</h3>
+          <p>
+            <span class="material-icons small">place</span> {{ sol.predio?.ubicacion }} &nbsp;|&nbsp;
+            <span class="material-icons small">layers</span> {{ sol.lotesCount }} lotes
+          </p>
+        </div>
+        <div class="sol-meta">
+          <span class="asignacion-badge" [ngClass]="{'badge-auto': sol.modoAsignacion === 'automatica', 'badge-pref': sol.modoAsignacion === 'preferencia'}">
+            {{ sol.modoAsignacion === 'automatica' ? 'Asignación automática' : 'Técnico de preferencia' }}
+          </span>
+          <small>Solicitada para: {{ sol.fechaSolicitada }}</small>
+        </div>
+        <div class="sol-actions">
+          <button class="btn-assign" (click)="asignarTecnico(sol.id)">
+            <span class="material-icons">person_add</span> Asignar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

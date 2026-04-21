@@ -1,0 +1,127 @@
+<div class="inspeccion-wrapper fade-in">
+
+  <!-- VISTA 1: FICHA DEL PREDIO -->
+  <div *ngIf="vista === 'ficha-predio'" class="vista-ficha">
+    <div class="ficha-header">
+      <button class="back-btn" routerLink="/app/tecnico/inspecciones"><span class="material-icons">arrow_back</span></button>
+      <div style="flex-grow:1">
+        <p class="tag">Inspección Asignada</p>
+        <h1>{{ predio?.nombre }}</h1>
+        <p class="sub">{{ predio?.ubicacion }} • {{ predio?.productorNombre }}</p>
+        <button class="btn-navegar" (click)="navegarAlPredio()">
+          <span class="material-icons">navigation</span> Navegar al Predio
+        </button>
+        <div class="nav-info" *ngIf="predio?.latitud">
+          <span class="material-icons small">location_on</span>
+          Coordenadas: {{ predio?.latitud | number:'1.4-4' }}, {{ predio?.longitud | number:'1.4-4' }}
+        </div>
+      </div>
+    </div>
+    <div class="ficha-resumen">
+      <h2 class="section-label">Lotes a Inspeccionar</h2>
+      <div class="lotes-ficha-grid">
+        <div class="lote-ficha-card" *ngFor="let lote of lotesDePredio">
+          <div class="lote-letra">{{ lote.nombre.split(' ')[1] }}</div>
+          <div class="lote-ficha-info">
+            <h3>{{ lote.nombre }}</h3>
+            <p><span class="material-icons small">eco</span> {{ dataService.getCultivoPorId(lote.cultivoId)?.nombre }}</p>
+            <p><span class="material-icons small">straighten</span> {{ lote.hectareas }} Ha — ~{{ lote.plantasPorHectarea * lote.hectareas | number:'1.0-0' }} plantas</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ficha-footer">
+      <button class="btn-iniciar" (click)="iniciarInspeccion()"><span class="material-icons">play_circle</span> Iniciar Inspección</button>
+    </div>
+  </div>
+
+  <!-- VISTA 2: LISTA DE LOTES -->
+  <div *ngIf="vista === 'lista-lotes'" class="vista-lotes">
+    <div class="lotes-header">
+      <button class="back-btn" routerLink="/app/tecnico/inspecciones"><span class="material-icons">arrow_back</span></button>
+      <div class="header-info">
+        <h2>{{ predio?.nombre }}</h2>
+        <p>Selecciona un lote para inspeccionar</p>
+      </div>
+      <div class="progress-global">
+        <small>Progreso: {{ progresoGlobal }}%</small>
+        <div class="bar-global"><div class="bar-fill" [style.width.%]="progresoGlobal"></div></div>
+      </div>
+    </div>
+    <div class="lotes-selector">
+      <div class="lote-selector-card" *ngFor="let lote of lotesDePredio"
+           (click)="seleccionarLote(lote)"
+           [ngClass]="{'completado': getSubInspeccion(lote.id)?.estado === 'Completada', 'en-progreso': getSubInspeccion(lote.id)?.estado === 'En Progreso'}">
+        <div class="lote-status-icon">
+          <span class="material-icons" *ngIf="getSubInspeccion(lote.id)?.estado === 'Completada'">check_circle</span>
+          <span class="material-icons" *ngIf="getSubInspeccion(lote.id)?.estado === 'En Progreso'">pending</span>
+          <span class="material-icons" *ngIf="!getSubInspeccion(lote.id) || getSubInspeccion(lote.id)?.estado === 'Pendiente'">radio_button_unchecked</span>
+        </div>
+        <div class="lote-sel-info">
+          <h3>{{ lote.nombre }}</h3>
+          <p>{{ dataService.getCultivoPorId(lote.cultivoId)?.nombre }} • {{ lote.hectareas }} Ha</p>
+          <p *ngIf="getSubInspeccion(lote.id)?.plantasEvaluadas">{{ getSubInspeccion(lote.id)?.plantasEvaluadas }} plantas evaluadas</p>
+        </div>
+        <span class="material-icons arrow-icon" *ngIf="getSubInspeccion(lote.id)?.estado !== 'Completada'">chevron_right</span>
+        <span class="completado-label" *ngIf="getSubInspeccion(lote.id)?.estado === 'Completada'">✓ Completado</span>
+      </div>
+    </div>
+    <div class="finalizacion-panel" *ngIf="todosLotesCompletos">
+      <span class="material-icons">celebration</span>
+      <p>¡Todos los lotes inspeccionados!</p>
+      <button class="btn-finalizar-predio" (click)="finalizarInspeccionCompleta()">
+        <span class="material-icons">done_all</span> Finalizar Inspección del Predio
+      </button>
+    </div>
+  </div>
+
+  <!-- VISTA 3: PLANTA POR PLANTA -->
+  <div *ngIf="vista === 'inspeccion-lote'" class="vista-tap-ui">
+    <header class="tap-header">
+      <button class="back-btn" (click)="volverALotes()"><span class="material-icons">arrow_back</span></button>
+      <div class="tap-header-info">
+        <h3>{{ loteActual?.nombre }} — {{ dataService.getCultivoPorId(loteActual?.cultivoId ?? '')?.nombre }}</h3>
+        <p>{{ loteActual?.hectareas }} Ha</p>
+      </div>
+      <button class="btn-guardar-parcial" (click)="guardarProgresoParcial()" title="Guardar"><span class="material-icons">save</span></button>
+    </header>
+
+    <div class="counter-section">
+      <div class="counter-circle">
+        <span class="counter-label">Planta Actual</span>
+        <span class="counter-number">#{{ plantaActual }}</span>
+      </div>
+      <p class="counter-summary">Evaluadas: <strong>{{ subActual?.plantasEvaluadas || 0 }}</strong></p>
+    </div>
+
+    <div class="tap-plagas-section">
+      <h3 class="section-title">¿Qué observas en esta planta?</h3>
+      <p class="section-subtitle">Toca las plagas presentes. Si está sana, pasa directamente.</p>
+      <div class="plagas-grid" *ngIf="plagasDelLote.length > 0; else sinPlagas">
+        <button class="plaga-card" *ngFor="let plaga of plagasDelLote"
+                [class.active]="hasPlaga(plaga.id)"
+                (click)="togglePlaga(plaga.id)"
+                [style.--plaga-color]="plaga.color">
+          <div class="plaga-icon"><span class="material-icons">{{ plaga.icon }}</span></div>
+          <span class="plaga-name">{{ plaga.nombre }}</span>
+          <div class="active-overlay" *ngIf="hasPlaga(plaga.id)"><span class="material-icons">check_circle</span></div>
+        </button>
+      </div>
+      <ng-template #sinPlagas>
+        <div class="no-plagas-msg">
+          <span class="material-icons">check_circle</span>
+          <p>No hay plagas registradas para este cultivo en el catálogo.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="btn-completar-lote" (click)="completarLote()">
+        <span class="material-icons">done_all</span> Completar {{ loteActual?.nombre }}
+      </button>
+      <button class="btn-siguiente-planta" (click)="siguientePlanta()">
+        <span class="material-icons">add_circle</span> Siguiente Planta
+      </button>
+    </div>
+  </div>
+</div>

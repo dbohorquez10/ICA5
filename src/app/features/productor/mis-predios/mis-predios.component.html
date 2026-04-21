@@ -1,0 +1,188 @@
+<div class="predios-container animate-fade-in">
+  <header class="header-section">
+    <div class="header-main">
+      <div>
+        <p class="project-tag">Gestión de Activos • FitoGestión</p>
+        <h1>Mis Predios y Lotes</h1>
+      </div>
+      <button class="btn-add-main" (click)="abrirModalNuevoPredio()">
+        <span class="material-icons">add</span> Nuevo Predio
+      </button>
+    </div>
+  </header>
+
+  <!-- Lista de predios -->
+  <div class="predios-list">
+    <div class="predio-block" *ngFor="let predio of predios">
+
+      <!-- Cabecera del predio -->
+      <div class="predio-header" (click)="toggleExpandir(predio.id)">
+        <div class="predio-status-dot"></div>
+        <div class="predio-info">
+          <h3>{{ predio.nombre }}</h3>
+          <span><span class="material-icons small">place</span> {{ predio.ubicacion }}</span>
+        </div>
+
+        <div class="predio-stats">
+          <div class="stat">
+            <span class="material-icons">layers</span>
+            {{ getLotesDe(predio.id).length }} Lotes
+          </div>
+          <div class="stat">
+            <span class="material-icons">straighten</span>
+            {{ getTotalHectareas(predio.id) }} Ha
+          </div>
+        </div>
+
+        <span class="material-icons toggle-icon" [class.rotated]="predioExpandido === predio.id">
+          expand_more
+        </span>
+      </div>
+
+      <!-- Panel de lotes (expandible) -->
+      <div class="lotes-panel" *ngIf="predioExpandido === predio.id">
+        <div class="lotes-grid">
+          <div class="lote-card" *ngFor="let lote of getLotesDe(predio.id)">
+            <div class="lote-header">
+              <span class="lote-nombre">{{ lote.nombre }}</span>
+              <span class="estado-lote" [ngClass]="{
+                'estado-optimo': lote.estado === 'Óptimo',
+                'estado-alerta': lote.estado === 'Alerta',
+                'estado-critico': lote.estado === 'Crítico'
+              }">{{ lote.estado }}</span>
+            </div>
+            <div class="lote-body">
+              <div class="lote-dato">
+                <span class="material-icons">eco</span>
+                <span>{{ getNombreCultivo(lote.cultivoId) }}</span>
+              </div>
+              <div class="lote-dato">
+                <span class="material-icons">straighten</span>
+                <span>{{ lote.hectareas }} Ha</span>
+              </div>
+              <div class="lote-dato">
+                <span class="material-icons">grass</span>
+                <span>{{ lote.plantasPorHectarea }} pl/Ha</span>
+              </div>
+              <div class="lote-dato">
+                <span class="material-icons">park</span>
+                <span>~{{ lote.plantasPorHectarea * lote.hectareas | number:'1.0-0' }} plantas</span>
+              </div>
+            </div>
+            <button class="btn-eliminar-lote" (click)="eliminarLote(lote.id)" title="Eliminar lote">
+              <span class="material-icons">delete_outline</span>
+            </button>
+          </div>
+
+          <!-- Tarjeta: Añadir lote -->
+          <div class="lote-card add-lote" (click)="abrirModalNuevoLote(predio.id)">
+            <span class="material-icons">add_circle_outline</span>
+            <p>Añadir Lote</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-predios" *ngIf="predios.length === 0">
+      <span class="material-icons">landscape</span>
+      <p>Aún no tienes predios registrados. ¡Comienza añadiendo uno!</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO PREDIO -->
+<div class="modal-overlay animate-fade-in" *ngIf="modalPredioVisible" (click)="cerrarModalPredio()">
+  <div class="modal-content animate-slide-up" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <h2>Registrar Nuevo Predio</h2>
+      <button class="btn-close" (click)="cerrarModalPredio()">
+        <span class="material-icons">close</span>
+      </button>
+    </header>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nombre del Predio</label>
+        <input type="text" [(ngModel)]="predioEnEdicion.nombre" placeholder="Ej: Finca La Esperanza">
+      </div>
+      <div class="form-group">
+        <label>Ubicación / Vereda</label>
+        <input type="text" [(ngModel)]="predioEnEdicion.ubicacion" placeholder="Ej: Vereda San José, Lebrija">
+      </div>
+      <div class="form-group">
+        <label>Coordenadas GPS del Predio</label>
+        <!-- GPS automático -->
+        <button type="button" class="btn-gps" (click)="capturarGPS()" [disabled]="gpsLoading">
+          <span class="material-icons">{{ gpsLoading ? 'hourglass_empty' : 'my_location' }}</span>
+          {{ gpsLoading ? 'Obteniendo GPS...' : 'Capturar mi Ubicación Actual' }}
+        </button>
+        <!-- Ingreso manual -->
+        <div class="coords-row">
+          <div class="coord-field">
+            <label>Latitud</label>
+            <input type="number" [(ngModel)]="predioEnEdicion.latitud"
+                   placeholder="Ej: 7.1193" step="0.0001"
+                   (change)="actualizarMarcadorManual()">
+          </div>
+          <div class="coord-field">
+            <label>Longitud</label>
+            <input type="number" [(ngModel)]="predioEnEdicion.longitud"
+                   placeholder="Ej: -73.1227" step="0.0001"
+                   (change)="actualizarMarcadorManual()">
+          </div>
+        </div>
+        <div class="gps-status ok" *ngIf="gpsStatus === 'ok'">
+          <span class="material-icons">check_circle</span> Coordenadas capturadas
+        </div>
+        <div class="gps-status err" *ngIf="gpsStatus === 'error'">
+          <span class="material-icons">warning</span> No se pudo acceder al GPS. Ingresa las coordenadas manualmente.
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Ubicación en Mapa (clic para marcar o verifica las coordenadas)</label>
+        <div id="mapaFito" style="height: 200px; border-radius: 12px; overflow: hidden;"></div>
+      </div>
+    </div>
+    <footer class="modal-footer">
+      <button class="btn-cancel" (click)="cerrarModalPredio()">Cancelar</button>
+      <button class="btn-setup" (click)="guardarPredio()">Confirmar Predio</button>
+    </footer>
+  </div>
+</div>
+
+<!-- MODAL NUEVO LOTE -->
+<div class="modal-overlay animate-fade-in" *ngIf="modalLoteVisible" (click)="modalLoteVisible = false">
+  <div class="modal-content animate-slide-up" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <h2>Añadir Lote — {{ nuevoLote.nombre }}</h2>
+      <button class="btn-close" (click)="modalLoteVisible = false">
+        <span class="material-icons">close</span>
+      </button>
+    </header>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo de Cultivo *</label>
+          <select [(ngModel)]="nuevoLote.cultivoId">
+            <option *ngFor="let c of cultivos" [value]="c.id">{{ c.nombre }} — {{ c.variedad }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Extensión (Hectáreas) *</label>
+          <input type="number" [(ngModel)]="nuevoLote.hectareas" placeholder="Ej: 2.5" min="0.1" step="0.5">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Densidad de Siembra (plantas por hectárea)</label>
+        <input type="number" [(ngModel)]="nuevoLote.plantasPorHectarea" placeholder="Ej: 1100" min="1">
+      </div>
+      <div class="info-calc" *ngIf="nuevoLote.hectareas && nuevoLote.plantasPorHectarea">
+        <span class="material-icons">park</span>
+        Total estimado: <strong>{{ (nuevoLote.hectareas! * nuevoLote.plantasPorHectarea!) | number:'1.0-0' }} plantas</strong>
+      </div>
+    </div>
+    <footer class="modal-footer">
+      <button class="btn-cancel" (click)="modalLoteVisible = false">Cancelar</button>
+      <button class="btn-setup" (click)="guardarLote()">Guardar Lote</button>
+    </footer>
+  </div>
+</div>

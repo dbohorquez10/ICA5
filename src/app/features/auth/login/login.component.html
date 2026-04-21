@@ -1,0 +1,44 @@
+<div class="login-container">
+  <div class="login-box animate-slide-up">
+    <div class="brand">
+      <div class="brand-icon">F</div>
+      <h1>Fito<span>Gestión</span></h1>
+      <p>Entorno de Pruebas • Selecciona tu perfil</p>
+    </div>
+
+    <div class="role-selector">
+      <button class="role-card" (click)="iniciarSesionComo('productor')">
+        <span class="material-icons icon-agri">agriculture</span>
+        <div>
+          <h3>Productor Agrícola</h3>
+          <small>Darwing Jaimes (Premium)</small>
+        </div>
+        <span class="material-icons arrow">arrow_forward</span>
+      </button>
+
+      <button class="role-card tecnico-card" (click)="iniciarSesionComo('tecnico')">
+        <span class="material-icons icon-tec">fact_check</span>
+        <div>
+          <h3>Técnico ICA</h3>
+          <small>Funcionario de Zona</small>
+        </div>
+        <span class="material-icons arrow">arrow_forward</span>
+      </button>
+
+      <button class="role-card admin-card" (click)="iniciarSesionComo('admin')">
+        <span class="material-icons icon-admin">admin_panel_settings</span>
+        <div>
+          <h3>Administrador</h3>
+          <small>Control Total del Sistema</small>
+        </div>
+        <span class="material-icons arrow">arrow_forward</span>
+      </button>
+    </div>
+
+    <p class="login-footer">
+      <span class="material-icons">info</span>
+      Al conectar el backend, esta pantalla será reemplazada por el formulario de correo y
+      contraseña.
+    </p>
+  </div>
+</div>
