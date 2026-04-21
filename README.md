@@ -89,8 +89,6 @@ Gestiona la información de su lado:
 * Solicitar visitas técnicas al ICA.
 * Ver listado de sus predios.
 
-*(Nota: El rol 🟩 ADMIN se gestiona de forma centralizada en la aplicación de escritorio Java Swing).*
-
 ---
 
 # 🚨 Lógica clave implementada
@@ -162,9 +160,9 @@ this.listaInspecciones.forEach(item => {
 
 | Categoría    | Tecnología         |
 | ------------ | ------------------ |
-| Framework    | Angular 17+        |
+| Framework    | Angular 21        |
 | Lenguaje     | TypeScript         |
-| Estilos      | CSS3 / Flexbox     |
+| Estilos      | CSS               |
 | Control Flujo| Sintaxis `@if` `@for`|
 | Mapas        | Leaflet.js         |
 | Estado/Datos | RxJS (Observables) |
