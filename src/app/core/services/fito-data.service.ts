@@ -1,426 +1,343 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { map, tap, catchError } from 'rxjs/operators';
+import { API_CONFIG } from './api.config';
 
 // =============================================
 // INTERFACES DEL MODELO DE DATOS
 // =============================================
 
-/**
- * @interface Cultivo
- * @description Representa un tipo de cultivo agrícola administrado dentro del sistema FitoGestión.
- */
 export interface Cultivo {
-  /** Identificador único del cultivo (PK). */
   id: string;
-  /** Nombre común del cultivo (ej. Cacao, Café). */
   nombre: string;
-  /** Variedades específicas asociadas a este cultivo. */
+  nombre_cientifico?: string;
   variedad: string;
-  /** Nombre del icono de Material Design representativo del cultivo. */
-  icono: string;
-  /** Código de color en formato hexadecimal asignado al cultivo para la interfaz. */
-  color: string;
+  icono?: string;
+  color?: string;
+  descripcion?: string;
 }
 
-/**
- * @interface Plaga
- * @description Representa una plaga o enfermedad fitosanitaria que puede afectar a los cultivos registrados.
- */
 export interface Plaga {
-  /** Identificador único de la plaga (PK). */
   id: string;
-  /** Nombre científico o común de la plaga. */
-  nombre: string;
-  /** Nombre del icono representativo en la interfaz. */
-  icon: string;
-  /** Nivel de riesgo asociado a la plaga ('Alto', 'Medio', 'Bajo'). */
+  nombre_comun: string;
+  nombre_cientifico?: string;
+  tipo: string;
   riesgo: 'Alto' | 'Medio' | 'Bajo';
-  /** Código de color hexadecimal para categorizar visualmente la plaga. */
-  color: string;
-  /** Descripción técnica o biológica detallada de la plaga. */
   descripcion: string;
-  /** Arreglo de identificadores de cultivos (FK apunta a Cultivo) que son susceptibles a esta plaga. */
-  cultivosAfectados: string[]; // IDs de cultivos
+  cultivos_afectados?: string[];
+  /** Alias de compatibilidad frontend */
+  nombre?: string;
+  icon?: string;
+  color?: string;
 }
 
-/**
- * @interface Lote
- * @description Representa una subdivisión de tierra dentro de un predio agrícola, dedicada a un cultivo específico.
- */
 export interface Lote {
-  /** Identificador único del lote (PK). */
   id: string;
-  /** Identificador del predio al que pertenece este lote (FK apunta a Predio). */
-  predioId: string;
-  /** Nombre o designación del lote (ej. Lote A, Lote B). */
-  nombre: string; // Lote A, Lote B, etc.
-  /** Identificador del cultivo sembrado en este lote (FK apunta a Cultivo). */
-  cultivoId: string;
-  /** Extensión de tierra del lote medida en hectáreas. */
-  hectareas: number;
-  /** Densidad de siembra expresada en cantidad de plantas por hectárea. */
-  plantasPorHectarea: number;
-  /** Estado fitosanitario actual del lote ('Óptimo', 'Alerta', 'Crítico'). */
-  estado: 'Óptimo' | 'Alerta' | 'Crítico';
+  predio_id: string;
+  nombre: string;
+  cultivo_id?: string;
+  area?: number;
+  plantas_por_hectarea?: number;
+  num_plantas?: number;
+  estado: string;
+  /** Alias de compatibilidad frontend */
+  predioId?: string;
+  cultivoId?: string;
+  hectareas?: number;
+  plantasPorHectarea?: number;
 }
 
-/**
- * @interface Predio
- * @description Representa una propiedad o finca agrícola registrada por un productor en el sistema.
- */
 export interface Predio {
-  /** Identificador único del predio (PK). */
   id: string;
-  /** Nombre oficial o conocido de la finca o predio. */
   nombre: string;
-  /** Ubicación geográfica o dirección del predio (legacy/consolidada). */
-  ubicacion: string;
-  /** Departamento donde se ubica el predio. */
+  productor_id?: string;
   departamento?: string;
-  /** Municipio donde se ubica el predio. */
   municipio?: string;
-  /** Vereda donde se ubica el predio. */
   vereda?: string;
-  /** Número de Registro otorgado por el ICA. */
-  numeroRegistroIca?: string;
-  /** Nombre del productor propietario o administrador del predio. */
-  productorNombre: string;
-  /** Coordenada de latitud para geolocalización en el mapa. */
+  numero_registro_ica?: string;
   latitud?: number;
-  /** Coordenada de longitud para geolocalización en el mapa. */
   longitud?: number;
+  area_total?: number;
+  /** Alias de compatibilidad frontend */
+  ubicacion?: string;
+  numeroRegistroIca?: string;
+  productorNombre?: string;
 }
 
-/**
- * @interface RegistroPlanta
- * @description Representa el resultado de la inspección individual de una planta dentro de un lote.
- */
 export interface RegistroPlanta {
-  /** Número o identificador secuencial de la planta inspeccionada. */
-  numeroPlanta: number;
-  /** Arreglo de identificadores de plagas encontradas en la planta (FKs apuntan a Plaga). */
-  plagasDetectadas: string[]; // IDs de plagas
-}
-
-/**
- * @interface SubInspeccionLote
- * @description Representa el registro de la evaluación fitosanitaria detallada realizada sobre un lote específico durante una inspección.
- */
-export interface SubInspeccionLote {
-  /** Identificador del lote inspeccionado (FK apunta a Lote). */
-  loteId: string;
-  /** Estado de avance de la inspección en este lote ('Pendiente', 'En Progreso', 'Completada'). */
-  estado: 'Pendiente' | 'En Progreso' | 'Completada';
-  /** Cantidad de plantas que han sido evaluadas en el lote. */
-  plantasEvaluadas: number;
-  /** Colección de registros detallados de las plantas inspeccionadas. */
-  registroPlantas: RegistroPlanta[];
-  /** Resultados calculados del nivel de alerta por plaga (plantas afectadas / plantas evaluadas). */
-  incidenciasCalculadas?: { plagaId: string, porcentaje: number }[];
-}
-
-/**
- * @interface Inspeccion
- * @description Representa una solicitud oficial de revisión fitosanitaria para un predio, gestionada por técnicos.
- */
-export interface Inspeccion {
-  /** Identificador único de la solicitud de inspección (PK). */
-  id: string;
-  /** Identificador del predio a inspeccionar (FK apunta a Predio). */
-  predioId: string;
-  /** Nombre del técnico asignado para realizar la inspección. */
-  tecnicoNombre: string;
-  /** Fecha en la que el productor solicitó la inspección (formato YYYY-MM-DD). */
-  fechaSolicitada: string;
-  /** Estado general de la inspección ('Pendiente', 'En Progreso', 'Completada'). */
-  estado: 'Pendiente' | 'En Progreso' | 'Completada';
-  /** Origen de la asignación del técnico ('automatica' por el sistema, o 'preferencia' por un admin). */
-  modoAsignacion: 'automatica' | 'preferencia';
-  /** Detalle de las inspecciones individuales por cada lote del predio. */
-  subInspecciones: SubInspeccionLote[];
-  /** Observaciones y comentarios generales dejados por el técnico del ICA al finalizar. */
+  id?: string;
+  sub_inspeccion_id?: string;
+  numero_planta: number;
+  plaga_id?: string;
+  sintoma?: string;
+  severidad?: string;
+  incidencia?: number;
+  estado_planta?: string;
   observaciones?: string;
+  /** Alias de compatibilidad */
+  numeroPlanta?: number;
+  plagasDetectadas?: string[];
 }
 
-/**
- * @interface Usuario
- * @description Representa a un actor del sistema (Productor, Técnico o Admin) con sus datos de perfil y estado de cuenta.
- */
-export interface Usuario {
-  /** Identificador único del usuario (PK). */
+export interface SubInspeccionLote {
+  id?: string;
+  inspeccion_id?: string;
+  codigo_punto?: string;
+  ubicacion_referencia?: string;
+  observaciones?: string;
+  estado: 'Pendiente' | 'En Progreso' | 'Completada' | 'pendiente' | 'completado';
+  /** Campos de compatibilidad frontend */
+  loteId?: string;
+  plantasEvaluadas?: number;
+  registroPlantas?: RegistroPlanta[];
+  incidenciasCalculadas?: { plagaId: string; porcentaje: number }[];
+}
+
+export interface Inspeccion {
   id: string;
-  /** Nombre completo del usuario. */
+  tecnico_id?: string;
+  tecnico_nombre?: string;
+  predio_id?: string;
+  lote_id?: string;
+  fecha_inspeccion?: string;
+  tipo_inspeccion?: string;
+  estado: 'Pendiente' | 'En Progreso' | 'Completada' | 'pendiente' | 'en_progreso' | 'completada' | 'cancelada';
+  modo_asignacion?: string;
+  observaciones?: string;
+  resultado_general?: string;
+  fecha_cierre?: string;
+  sub_inspecciones?: SubInspeccionLote[];
+  /** Alias de compatibilidad frontend */
+  predioId?: string;
+  tecnicoNombre?: string;
+  fechaSolicitada?: string;
+  modoAsignacion?: string;
+  subInspecciones?: SubInspeccionLote[];
+}
+
+export interface Usuario {
+  id: string;
   nombre: string;
-  /** Correo electrónico de contacto y de acceso al sistema. */
-  correo: string;
-  /** Rol o perfil de acceso dentro de FitoGestión ('productor', 'tecnico'). */
-  rol: 'productor' | 'tecnico';
-  /** Estado actual de la cuenta del usuario en la plataforma ('Activo', 'Suspendido'). */
-  estado: 'Activo' | 'Suspendido';
-  /** Fecha en la que el usuario fue registrado en el sistema. */
-  fechaRegistro: string;
-  /** Zona geográfica de operación asignada (Opcional, comúnmente para técnicos). */
-  zona?: string;
-  /** Número de documento de identidad oficial del usuario (Opcional). */
-  identificacion?: string;
-  /** Número de teléfono de contacto (Opcional). */
+  apellido?: string;
+  email?: string;
+  cedula?: string;
+  rol: 'productor' | 'tecnico' | 'admin';
   telefono?: string;
-  /** Tarjeta Profesional requerida para Técnicos Oficiales del ICA. */
+  registro_ica?: string;
+  activo?: boolean;
+  /** Alias de compatibilidad frontend */
+  correo?: string;
+  estado?: 'Activo' | 'Suspendido';
+  fechaRegistro?: string;
+  zona?: string;
+  identificacion?: string;
   tarjetaProfesional?: string;
 }
 
 // =============================================
-// SERVICIO CENTRAL DE DATOS SIMULADOS
+// SERVICIO CENTRAL — CONECTADO AL API GATEWAY
 // =============================================
 
 @Injectable({ providedIn: 'root' })
 export class FitoDataService {
 
-  // --- CATÁLOGOS (gestionados por Admin) ---
+  private coreUrl = API_CONFIG.CORE;
+  private insUrl = API_CONFIG.INSPECCIONES;
 
-  private _cultivos: Cultivo[] = [
-    { id: 'c1', nombre: 'Cacao', variedad: 'CCN-51, Criollo', icono: 'eco', color: '#92400e' },
-    { id: 'c2', nombre: 'Café', variedad: 'Arábica, Castillo', icono: 'local_cafe', color: '#78350f' },
-    { id: 'c3', nombre: 'Cítricos', variedad: 'Naranja, Limón Tahití', icono: 'nutrition', color: '#d97706' },
-    { id: 'c4', nombre: 'Aguacate', variedad: 'Hass, Lorena', icono: 'grass', color: '#15803d' },
-  ];
+  constructor(private http: HttpClient) {}
 
-  private _plagas: Plaga[] = [
-    { id: 'p1', nombre: 'Moniliasis', icon: 'coronavirus', riesgo: 'Alto', color: '#ef4444', descripcion: 'Hongo que pudre mazorcas del cacao', cultivosAfectados: ['c1'] },
-    { id: 'p2', nombre: 'Escoba de Bruja', icon: 'psychiatry', riesgo: 'Medio', color: '#f97316', descripcion: 'Afecta brotes y frutos del cacao', cultivosAfectados: ['c1'] },
-    { id: 'p3', nombre: 'Mazorca Negra', icon: 'lens_blur', riesgo: 'Alto', color: '#ef4444', descripcion: 'Phytophthora palmivora, causa pudrición', cultivosAfectados: ['c1'] },
-    { id: 'p4', nombre: 'Roya del Café', icon: 'blur_on', riesgo: 'Alto', color: '#ef4444', descripcion: 'Hongo foliar Hemileia vastatrix', cultivosAfectados: ['c2'] },
-    { id: 'p5', nombre: 'Broca del Café', icon: 'bug_report', riesgo: 'Alto', color: '#ef4444', descripcion: 'Hypothenemus hampei, taladra el grano', cultivosAfectados: ['c2'] },
-    { id: 'p6', nombre: 'Mancha Grasienta', icon: 'water_drop', riesgo: 'Medio', color: '#f97316', descripcion: 'Bacteriosis de los cítricos', cultivosAfectados: ['c3'] },
-    { id: 'p7', nombre: 'Minador de Hoja', icon: 'pest_control', riesgo: 'Bajo', color: '#4ade80', descripcion: 'Phyllocnistis citrella en cítricos', cultivosAfectados: ['c3'] },
-    { id: 'p8', nombre: 'Antracnosis', icon: 'bubble_chart', riesgo: 'Medio', color: '#f97316', descripcion: 'Colletotrichum gloeosporioides en aguacate', cultivosAfectados: ['c4'] },
-    { id: 'p9', nombre: 'Phytophthora Raíz', icon: 'device_hub', riesgo: 'Alto', color: '#ef4444', descripcion: 'Pudrición de raíz en aguacate', cultivosAfectados: ['c4'] },
-  ];
+  // ── CULTIVOS ───────────────────────────────────────────────────────────────
 
-  // --- PREDIOS Y LOTES ---
-
-  private _predios: Predio[] = [
-    { id: 'pr1', nombre: 'Finca La Esmeralda', ubicacion: 'Lebrija, Santander', departamento: 'Santander', municipio: 'Lebrija', vereda: 'Centro', numeroRegistroIca: 'ICA-938210', productorNombre: 'Darwing Jaimes', latitud: 7.111, longitud: -73.167 },
-    { id: 'pr2', nombre: 'Hacienda El Recreo', ubicacion: 'Girón, Santander', departamento: 'Santander', municipio: 'Girón', vereda: 'El Recreo', numeroRegistroIca: 'ICA-449182', productorNombre: 'Darwing Jaimes', latitud: 7.068, longitud: -73.169 },
-  ];
-
-  private _lotes: Lote[] = [
-    { id: 'l1', predioId: 'pr1', nombre: 'Lote A', cultivoId: 'c1', hectareas: 2.5, plantasPorHectarea: 1100, estado: 'Óptimo' },
-    { id: 'l2', predioId: 'pr1', nombre: 'Lote B', cultivoId: 'c3', hectareas: 3.0, plantasPorHectarea: 200, estado: 'Alerta' },
-    { id: 'l3', predioId: 'pr1', nombre: 'Lote C', cultivoId: 'c1', hectareas: 1.5, plantasPorHectarea: 1100, estado: 'Óptimo' },
-    { id: 'l4', predioId: 'pr2', nombre: 'Lote A', cultivoId: 'c4', hectareas: 5.0, plantasPorHectarea: 150, estado: 'Crítico' },
-    { id: 'l5', predioId: 'pr2', nombre: 'Lote B', cultivoId: 'c2', hectareas: 8.0, plantasPorHectarea: 5000, estado: 'Alerta' },
-  ];
-
-  // --- INSPECCIONES ---
-
-  private _inspecciones: Inspeccion[] = [
-    {
-      id: 'ins1', predioId: 'pr1',
-      tecnicoNombre: 'Téc. Carlos Gómez', fechaSolicitada: '2026-04-20',
-      estado: 'Pendiente', modoAsignacion: 'preferencia',
-      subInspecciones: [
-        { loteId: 'l1', estado: 'Pendiente', plantasEvaluadas: 0, registroPlantas: [] },
-        { loteId: 'l2', estado: 'Pendiente', plantasEvaluadas: 0, registroPlantas: [] },
-        { loteId: 'l3', estado: 'Pendiente', plantasEvaluadas: 0, registroPlantas: [] },
-      ]
-    },
-    {
-      id: 'ins2', predioId: 'pr2',
-      tecnicoNombre: 'Asignación Automática', fechaSolicitada: '2026-04-18',
-      estado: 'Pendiente', modoAsignacion: 'automatica',
-      subInspecciones: [
-        { loteId: 'l4', estado: 'Pendiente', plantasEvaluadas: 0, registroPlantas: [] },
-        { loteId: 'l5', estado: 'Pendiente', plantasEvaluadas: 0, registroPlantas: [] },
-      ]
-    }
-  ];
-
-  // --- USUARIOS (para Admin) ---
-
-  private _usuarios: Usuario[] = [
-    { id: 'u1', nombre: 'Carlos Gómez', correo: 'cgomez@ica.gov.co', rol: 'tecnico', estado: 'Activo', fechaRegistro: '2025-01-10', zona: 'Lebrija, Girón', identificacion: '1098123456', telefono: '3001234567' },
-    { id: 'u2', nombre: 'Luisa Herrera', correo: 'lherrera@ica.gov.co', rol: 'tecnico', estado: 'Activo', fechaRegistro: '2025-03-15', zona: 'Bucaramanga', identificacion: '1098234567', telefono: '3109876543' },
-    { id: 'u3', nombre: 'Andrés Felipe', correo: 'afelipe@ica.gov.co', rol: 'tecnico', estado: 'Suspendido', fechaRegistro: '2024-11-02', zona: 'San Gil', identificacion: '1098345678', telefono: '3205551234' },
-    { id: 'u4', nombre: 'Darwing Jaimes', correo: 'djaimes@campo.co', rol: 'productor', estado: 'Activo', fechaRegistro: '2025-02-20', identificacion: '1098456789', telefono: '3157894561' },
-    { id: 'u5', nombre: 'María Castellanos', correo: 'mcastellanos@campo.co', rol: 'productor', estado: 'Activo', fechaRegistro: '2025-04-01', identificacion: '1098567890', telefono: '3184567890' },
-  ];
-
-  // =============================================
-  // GETTERS (ACCESO REACTIVO)
-  // =============================================
-
-  getCultivos(): Cultivo[] { return [...this._cultivos]; }
-  getPlagas(): Plaga[] { return [...this._plagas]; }
-  getPlagasByPrediosCultivos(cultivoId: string): Plaga[] {
-    return this._plagas.filter(p => p.cultivosAfectados.includes(cultivoId));
-  }
-  getCultivoPorId(id: string): Cultivo | undefined {
-    return this._cultivos.find(c => c.id === id);
+  getCultivos(): Observable<Cultivo[]> {
+    return this.http.get<Cultivo[]>(`${this.coreUrl}/catalogos/cultivos`);
   }
 
-  getPredios(): Predio[] { return [...this._predios]; }
-  getLotesPorPredio(predioId: string): Lote[] {
-    return this._lotes.filter(l => l.predioId === predioId);
-  }
-  getLotePorId(id: string): Lote | undefined {
-    return this._lotes.find(l => l.id === id);
+  getCultivoPorId(id: string): Observable<Cultivo> {
+    return this.http.get<Cultivo>(`${this.coreUrl}/catalogos/cultivos/${id}`);
   }
 
-  getInspecciones(): Inspeccion[] { return [...this._inspecciones]; }
-  getInspeccionPorId(id: string): Inspeccion | undefined {
-    return this._inspecciones.find(i => i.id === id);
-  }
-  getInspeccionesPendientes(): Inspeccion[] {
-    return this._inspecciones.filter(i => i.estado === 'Pendiente');
+  agregarCultivo(cultivo: Partial<Cultivo>): Observable<Cultivo> {
+    return this.http.post<Cultivo>(`${this.coreUrl}/catalogos/cultivos`, cultivo);
   }
 
-  getUsuarios(): Usuario[] { return [...this._usuarios]; }
-  getPredio(id: string): Predio | undefined { return this._predios.find(p => p.id === id); }
-
-  // =============================================
-  // MUTACIONES
-  // =============================================
-
-  agregarLote(lote: Omit<Lote, 'id'>): void {
-    const id = 'l' + (this._lotes.length + 1);
-    this._lotes.push({ ...lote, id });
+  editarCultivo(id: string, datos: Partial<Cultivo>): Observable<Cultivo> {
+    return this.http.put<Cultivo>(`${this.coreUrl}/catalogos/cultivos/${id}`, datos);
   }
 
-  eliminarLote(id: string): void {
-    this._lotes = this._lotes.filter(l => l.id !== id);
+  eliminarCultivo(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.coreUrl}/catalogos/cultivos/${id}`);
   }
 
-  editarLote(id: string, datos: Partial<Lote>): void {
-    const lote = this._lotes.find(l => l.id === id);
-    if (lote) Object.assign(lote, datos);
+  // ── PLAGAS ─────────────────────────────────────────────────────────────────
+
+  getPlagas(): Observable<Plaga[]> {
+    return this.http.get<Plaga[]>(`${this.coreUrl}/catalogos/plagas`);
   }
 
-  agregarCultivo(cultivo: Omit<Cultivo, 'id'>, plagasAsociadas?: string[]): void {
-    const id = 'c' + (this._cultivos.length + 1);
-    this._cultivos.push({ ...cultivo, id });
-    if (plagasAsociadas) {
-      this._actualizarPlagasDeCultivo(id, plagasAsociadas);
-    }
+  getPlagasByPrediosCultivos(cultivoId: string): Observable<Plaga[]> {
+    return this.http.get<Plaga[]>(`${this.coreUrl}/catalogos/plagas/por-cultivo/${cultivoId}`);
   }
 
-  agregarPlaga(plaga: Omit<Plaga, 'id'>): void {
-    const id = 'p' + (this._plagas.length + 1);
-    plaga.color = this._getColorPorRiesgo(plaga.riesgo);
-    this._plagas.push({ ...plaga, id });
+  agregarPlaga(plaga: Partial<Plaga>): Observable<Plaga> {
+    return this.http.post<Plaga>(`${this.coreUrl}/catalogos/plagas`, plaga);
   }
 
-  eliminarPlaga(id: string): void {
-    this._plagas = this._plagas.filter(p => p.id !== id);
+  editarPlaga(id: string, datos: Partial<Plaga>): Observable<Plaga> {
+    return this.http.put<Plaga>(`${this.coreUrl}/catalogos/plagas/${id}`, datos);
   }
 
-  eliminarCultivo(id: string): void {
-    this._cultivos = this._cultivos.filter(c => c.id !== id);
+  eliminarPlaga(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.coreUrl}/catalogos/plagas/${id}`);
   }
 
-  agregarPredio(predio: Omit<Predio, 'id'>): void {
-    const id = 'pr' + (this._predios.length + 1);
-    this._predios.push({ ...predio, id });
+  // ── PREDIOS ────────────────────────────────────────────────────────────────
+
+  getPredios(): Observable<Predio[]> {
+    return this.http.get<Predio[]>(`${this.coreUrl}/predios/`);
   }
 
-  actualizarSubInspeccion(inspeccionId: string, sub: SubInspeccionLote): void {
-    const ins = this._inspecciones.find(i => i.id === inspeccionId);
-    if (!ins) return;
-    const idx = ins.subInspecciones.findIndex(s => s.loteId === sub.loteId);
-    if (idx > -1) ins.subInspecciones[idx] = { ...sub };
-    // Verificar si todos los lotes están completos
-    const todosCompletos = ins.subInspecciones.every(s => s.estado === 'Completada');
-    if (todosCompletos) ins.estado = 'Completada';
-    else ins.estado = 'En Progreso';
+  getPredio(id: string): Observable<Predio> {
+    return this.http.get<Predio>(`${this.coreUrl}/predios/${id}`);
   }
 
-  suspenderUsuario(id: string): void {
-    const u = this._usuarios.find(u => u.id === id);
-    if (u) u.estado = u.estado === 'Activo' ? 'Suspendido' : 'Activo';
+  getPrediosPorProductor(productorId: string): Observable<Predio[]> {
+    return this.http.get<Predio[]>(`${this.coreUrl}/predios/productor/${productorId}`);
   }
 
-  eliminarUsuario(id: string): void {
-    this._usuarios = this._usuarios.filter(u => u.id !== id);
+  agregarPredio(predio: Partial<Predio>): Observable<Predio> {
+    return this.http.post<Predio>(`${this.coreUrl}/predios/`, predio);
   }
 
-  agregarUsuario(usuario: Omit<Usuario, 'id'>): void {
-    const id = 'u' + (this._usuarios.length + 1);
-    this._usuarios.push({ ...usuario, id });
+  actualizarPredio(id: string, datos: Partial<Predio>): Observable<Predio> {
+    return this.http.put<Predio>(`${this.coreUrl}/predios/${id}`, datos);
   }
 
-  editarUsuario(id: string, datos: Partial<Usuario>): void {
-    const u = this._usuarios.find(u => u.id === id);
-    if (u) Object.assign(u, datos);
+  // ── LOTES ──────────────────────────────────────────────────────────────────
+
+  getLotesPorPredio(predioId: string): Observable<Lote[]> {
+    return this.http.get<Lote[]>(`${this.coreUrl}/lotes/predio/${predioId}`);
   }
 
-  getUsuarioPorId(id: string): Usuario | undefined {
-    return this._usuarios.find(u => u.id === id);
+  getLotePorId(id: string): Observable<Lote> {
+    return this.http.get<Lote>(`${this.coreUrl}/lotes/${id}`);
   }
 
-  agregarInspeccion(ins: Omit<Inspeccion, 'id'>): void {
-    const id = 'ins' + (this._inspecciones.length + 1);
-    this._inspecciones.push({ ...ins, id });
+  agregarLote(lote: Partial<Lote>): Observable<Lote> {
+    return this.http.post<Lote>(`${this.coreUrl}/lotes/`, lote);
   }
 
-  // --- Validaciones de duplicados ---
-
-  existeCultivoConNombre(nombre: string): boolean {
-    return this._cultivos.some(c => c.nombre.toLowerCase().trim() === nombre.toLowerCase().trim());
+  editarLote(id: string, datos: Partial<Lote>): Observable<Lote> {
+    return this.http.put<Lote>(`${this.coreUrl}/lotes/${id}`, datos);
   }
 
-  existePlagaConNombre(nombre: string): boolean {
-    return this._plagas.some(p => p.nombre.toLowerCase().trim() === nombre.toLowerCase().trim());
+  eliminarLote(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.coreUrl}/lotes/${id}`);
   }
 
-  // --- Edición de catálogos ---
+  // ── USUARIOS ───────────────────────────────────────────────────────────────
 
-  editarCultivo(id: string, datos: Partial<Cultivo>, plagasAsociadas?: string[]): void {
-    const c = this._cultivos.find(c => c.id === id);
-    if (c) Object.assign(c, datos);
-    if (plagasAsociadas) {
-      this._actualizarPlagasDeCultivo(id, plagasAsociadas);
-    }
+  getUsuarios(): Observable<Usuario[]> {
+    return this.http.get<Usuario[]>(`${this.coreUrl}/usuarios/`);
   }
 
-  editarPlaga(id: string, datos: Partial<Plaga>): void {
-    const p = this._plagas.find(p => p.id === id);
-    if (p) {
-      Object.assign(p, datos);
-      if (datos.riesgo) {
-        p.color = this._getColorPorRiesgo(p.riesgo);
-      }
-    }
+  getUsuarioPorId(id: string): Observable<Usuario> {
+    return this.http.get<Usuario>(`${this.coreUrl}/usuarios/${id}`);
   }
 
-  private _getColorPorRiesgo(riesgo: string): string {
-    if (riesgo === 'Alto') return '#ef4444';
-    if (riesgo === 'Medio') return '#f97316';
-    return '#4ade80';
+  agregarUsuario(usuario: Partial<Usuario>): Observable<Usuario> {
+    return this.http.post<Usuario>(`${this.coreUrl}/usuarios/`, usuario);
   }
 
-  private _actualizarPlagasDeCultivo(cultivoId: string, plagasIds: string[]): void {
-    this._plagas.forEach(p => {
-      const tiene = p.cultivosAfectados.includes(cultivoId);
-      const deberiaTener = plagasIds.includes(p.id);
-      if (deberiaTener && !tiene) {
-        p.cultivosAfectados.push(cultivoId);
-      } else if (!deberiaTener && tiene) {
-        p.cultivosAfectados = p.cultivosAfectados.filter(id => id !== cultivoId);
-      }
+  editarUsuario(id: string, datos: Partial<Usuario>): Observable<Usuario> {
+    return this.http.put<Usuario>(`${this.coreUrl}/usuarios/${id}`, datos);
+  }
+
+  eliminarUsuario(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.coreUrl}/usuarios/${id}`);
+  }
+
+  suspenderUsuario(id: string): Observable<any> {
+    return this.http.patch(`${this.coreUrl}/usuarios/${id}/toggle-estado`, {});
+  }
+
+  getTecnicosActivos(): Observable<Usuario[]> {
+    return this.http.get<Usuario[]>(`${this.coreUrl}/usuarios/tecnicos/activos`);
+  }
+
+  // ── INSPECCIONES ───────────────────────────────────────────────────────────
+
+  getInspecciones(): Observable<Inspeccion[]> {
+    return this.http.get<Inspeccion[]>(`${this.insUrl}/inspecciones/`);
+  }
+
+  getInspeccionPorId(id: string): Observable<Inspeccion> {
+    return this.http.get<Inspeccion>(`${this.insUrl}/inspecciones/${id}`);
+  }
+
+  getInspeccionesPendientes(): Observable<Inspeccion[]> {
+    return this.http.get<Inspeccion[]>(`${this.insUrl}/inspecciones/estado/pendientes`);
+  }
+
+  getInspeccionesPorTecnico(tecnicoId: string): Observable<Inspeccion[]> {
+    return this.http.get<Inspeccion[]>(`${this.insUrl}/inspecciones/tecnico/${tecnicoId}`);
+  }
+
+  getInspeccionesPorPredio(predioId: string): Observable<Inspeccion[]> {
+    return this.http.get<Inspeccion[]>(`${this.insUrl}/inspecciones/predio/${predioId}`);
+  }
+
+  agregarInspeccion(inspeccion: Partial<Inspeccion>): Observable<Inspeccion> {
+    return this.http.post<Inspeccion>(`${this.insUrl}/inspecciones/`, inspeccion);
+  }
+
+  actualizarInspeccion(id: string, datos: Partial<Inspeccion>): Observable<Inspeccion> {
+    return this.http.put<Inspeccion>(`${this.insUrl}/inspecciones/${id}`, datos);
+  }
+
+  asignarTecnicoAInspeccion(inspeccionId: string, tecnicoNombre: string, tecnicoId?: string): Observable<any> {
+    return this.http.patch(`${this.insUrl}/inspecciones/${inspeccionId}/asignar-tecnico`, {
+      tecnico_id: tecnicoId ?? '',
+      tecnico_nombre: tecnicoNombre,
+      modo_asignacion: 'preferencia',
     });
   }
 
-  // --- Asignación de técnico ---
-
-  getTecnicosActivos(): Usuario[] {
-    return this._usuarios.filter(u => u.rol === 'tecnico' && u.estado === 'Activo');
+  finalizarInspeccion(inspeccionId: string, observaciones?: string): Observable<any> {
+    return this.http.patch(`${this.insUrl}/inspecciones/${inspeccionId}/finalizar`, null, {
+      params: observaciones ? { observaciones } : {},
+    });
   }
 
-  asignarTecnicoAInspeccion(inspeccionId: string, tecnicoNombre: string): void {
-    const ins = this._inspecciones.find(i => i.id === inspeccionId);
-    if (ins) {
-      ins.tecnicoNombre = tecnicoNombre;
-      ins.modoAsignacion = 'preferencia';
-    }
+  // ── SUB-INSPECCIONES ───────────────────────────────────────────────────────
+
+  getSubInspeccionesPorInspeccion(inspeccionId: string): Observable<SubInspeccionLote[]> {
+    return this.http.get<SubInspeccionLote[]>(`${this.insUrl}/sub-inspecciones/inspeccion/${inspeccionId}`);
+  }
+
+  crearSubInspeccion(sub: Partial<SubInspeccionLote>): Observable<SubInspeccionLote> {
+    return this.http.post<SubInspeccionLote>(`${this.insUrl}/sub-inspecciones/`, sub);
+  }
+
+  actualizarSubInspeccion(subId: string, datos: Partial<SubInspeccionLote>): Observable<SubInspeccionLote> {
+    return this.http.put<SubInspeccionLote>(`${this.insUrl}/sub-inspecciones/${subId}`, datos);
+  }
+
+  // ── REGISTRO DE PLANTAS ────────────────────────────────────────────────────
+
+  getRegistrosPorSubInspeccion(subInspeccionId: string): Observable<RegistroPlanta[]> {
+    return this.http.get<RegistroPlanta[]>(`${this.insUrl}/registro-plantas/sub-inspeccion/${subInspeccionId}`);
+  }
+
+  registrarPlanta(registro: Partial<RegistroPlanta>): Observable<RegistroPlanta> {
+    return this.http.post<RegistroPlanta>(`${this.insUrl}/registro-plantas/`, registro);
+  }
+
+  registrarPlantasBulk(registros: Partial<RegistroPlanta>[]): Observable<any> {
+    return this.http.post(`${this.insUrl}/registro-plantas/bulk`, registros);
+  }
+
+  getResumenFitosanitario(subInspeccionId: string): Observable<any> {
+    return this.http.get(`${this.insUrl}/registro-plantas/resumen/sub-inspeccion/${subInspeccionId}`);
   }
 }

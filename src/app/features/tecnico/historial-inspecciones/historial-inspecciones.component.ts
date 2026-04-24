@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FitoDataService, Inspeccion, Predio, Lote } from '../../../core/services/fito-data.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-historial-inspecciones',
@@ -20,26 +21,29 @@ export class HistorialInspeccionesComponent implements OnInit {
   constructor(private dataService: FitoDataService) {}
 
   ngOnInit(): void {
-    // Construimos el historial a partir de las inspecciones completadas
-    const inspecciones = this.dataService.getInspecciones();
-    this.historial = inspecciones.map(ins => {
-      const predio = this.dataService.getPredio(ins.predioId);
-      const lotes = this.dataService.getLotesPorPredio(ins.predioId);
-      const totalPlantas = lotes.reduce((a, l) => a + (l.hectareas * l.plantasPorHectarea), 0);
-      const plagasDetectadas = ins.subInspecciones.reduce(
-        (a, s) => a + s.registroPlantas.filter(p => p.plagasDetectadas.length > 0).length, 0
+    this.dataService.getInspecciones().subscribe(inspecciones => {
+      if (!inspecciones.length) { this.historial = []; return; }
+
+      const predioRequests = inspecciones.map(ins =>
+        this.dataService.getPredio(ins.predio_id || ins.predioId || '')
       );
-      return {
-        id: ins.id,
-        fecha: ins.fechaSolicitada,
-        predio: predio?.nombre ?? '—',
-        ubicacion: predio?.ubicacion ?? '—',
-        lotes: lotes.length,
-        totalPlantas: Math.round(totalPlantas),
-        plagasDetectadas,
-        estado: ins.estado,
-        tecnico: ins.tecnicoNombre
-      };
+
+      forkJoin(predioRequests).subscribe(predios => {
+        this.historial = inspecciones.map((ins, i) => {
+          const predio = predios[i];
+          return {
+            id: ins.id,
+            fecha: ins.fecha_inspeccion || ins.fechaSolicitada || '—',
+            predio: predio?.nombre ?? '—',
+            ubicacion: predio?.ubicacion || `${predio?.municipio || ''}, ${predio?.departamento || ''}`,
+            lotes: 0,
+            totalPlantas: 0,
+            plagasDetectadas: 0,
+            estado: ins.estado,
+            tecnico: ins.tecnico_nombre || ins.tecnicoNombre || '—',
+          };
+        });
+      });
     });
   }
 

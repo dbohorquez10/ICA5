@@ -57,20 +57,20 @@
             <div class="lote-body">
               <div class="lote-dato">
                 <span class="material-icons">eco</span>
-                <span>{{ getNombreCultivo(lote.cultivoId) }}</span>
+                <span>{{ getNombreCultivo(lote.cultivo_id || lote.cultivoId || '') }}</span>
               </div>
               <div class="lote-dato">
                 <span class="material-icons">straighten</span>
-                <span>{{ lote.hectareas }} Ha</span>
+                <span>{{ lote.area || lote.hectareas }} Ha</span>
               </div>
               <div class="lote-dato">
                 <span class="material-icons">grass</span>
-                <span>{{ lote.plantasPorHectarea }} pl/Ha</span>
+                <span>{{ lote.plantas_por_hectarea || lote.plantasPorHectarea }} pl/Ha</span>
               </div>
               <div class="lote-dato">
                 <span class="material-icons">park</span>
                 <span
-                  >~{{ lote.plantasPorHectarea * lote.hectareas | number: '1.0-0' }} plantas</span
+                  >~{{ (lote.plantas_por_hectarea || lote.plantasPorHectarea || 0) * (lote.area || lote.hectareas || 0) | number: '1.0-0' }} plantas</span
                 >
               </div>
             </div>
@@ -78,7 +78,7 @@
               <button class="action-btn edit" (click)="abrirModalEditarLote(lote)" title="Editar lote">
                 <span class="material-icons">edit</span>
               </button>
-              <button class="action-btn delete" (click)="eliminarLote(lote.id)" title="Eliminar lote">
+              <button class="action-btn delete" (click)="eliminarLote(lote.id, predio.id)" title="Eliminar lote">
                 <span class="material-icons">delete_outline</span>
               </button>
             </div>

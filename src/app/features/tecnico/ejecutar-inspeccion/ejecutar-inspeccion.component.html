@@ -28,11 +28,11 @@
             <h3>{{ lote.nombre }}</h3>
             <p>
               <span class="material-icons small">eco</span>
-              {{ dataService.getCultivoPorId(lote.cultivoId)?.nombre }}
+              {{ getCultivoNombre(lote) }}
             </p>
             <p>
-              <span class="material-icons small">straighten</span> {{ lote.hectareas }} Ha — ~{{
-                lote.plantasPorHectarea * lote.hectareas | number: '1.0-0'
+              <span class="material-icons small">straighten</span> {{ lote.area || lote.hectareas }} Ha — ~{{
+                (lote.plantas_por_hectarea || lote.plantasPorHectarea || 0) * (lote.area || lote.hectareas || 0) | number: '1.0-0'
               }}
               plantas
             </p>
@@ -87,7 +87,7 @@
         </div>
         <div class="lote-sel-info">
           <h3>{{ lote.nombre }}</h3>
-          <p>{{ dataService.getCultivoPorId(lote.cultivoId)?.nombre }} • {{ lote.hectareas }} Ha</p>
+          <p>{{ getCultivoNombre(lote) }} • {{ lote.area || lote.hectareas }} Ha</p>
           <p *ngIf="getSubInspeccion(lote.id)?.plantasEvaluadas">
             {{ getSubInspeccion(lote.id)?.plantasEvaluadas }} plantas evaluadas
           </p>
@@ -131,11 +131,11 @@
       <div class="tap-header-info">
         <h3>
           {{ loteActual?.nombre }} —
-          {{ dataService.getCultivoPorId(loteActual?.cultivoId ?? '')?.nombre }}
+          {{ getCultivoNombre(loteActual) }}
         </h3>
-        <p>{{ loteActual?.hectareas }} Ha</p>
+        <p>{{ loteActual?.area || loteActual?.hectareas }} Ha</p>
       </div>
-      <button class="btn-guardar-parcial" (click)="guardarProgresoParcial()" title="Guardar">
+      <button class="btn-guardar-parcial" (click)="guardarParcial()" title="Guardar">
         <span class="material-icons">save</span>
       </button>
     </header>
@@ -164,7 +164,7 @@
           <div class="plaga-icon">
             <span class="material-icons">{{ plaga.icon }}</span>
           </div>
-          <span class="plaga-name">{{ plaga.nombre }}</span>
+          <span class="plaga-name">{{ plaga.nombre_comun || plaga.nombre }}</span>
           <div class="active-overlay" *ngIf="hasPlaga(plaga.id)">
             <span class="material-icons">check_circle</span>
           </div>

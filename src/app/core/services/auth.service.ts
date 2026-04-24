@@ -1,95 +1,121 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, tap, catchError, of } from 'rxjs';
+import { API_CONFIG } from './api.config';
 
 /**
- * Servicio encargado de gestionar la autenticación de la aplicación,
- * manejando el estado de la sesión, los tokens y la información del usuario actual.
+ * Servicio de autenticación conectado al backend real.
+ * Usa el endpoint /auth del ms-core-agricola vía el gateway Nginx.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  /**
-   * Sujeto reactivo que mantiene el estado de conexión del usuario.
-   * @private
-   */
   private loggedIn = new BehaviorSubject<boolean>(false);
-
-  /**
-   * Sujeto reactivo que almacena la información del usuario en sesión.
-   * Inicialmente nulo.
-   * @private
-   */
   private currentUserSubject = new BehaviorSubject<any>(null);
 
-  /**
-   * Inicializa el servicio de autenticación y restaura la sesión si existe en el almacenamiento local.
-   * @param platformId Identificador de la plataforma provisto por Angular (Browser/Server).
-   */
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+  private authUrl = `${API_CONFIG.CORE}/auth`;
+
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: Object,
+  ) {
+    // Restaurar sesión desde localStorage al iniciar
     if (isPlatformBrowser(this.platformId)) {
       const token = localStorage.getItem('fito_token');
       const savedUser = localStorage.getItem('fito_user');
-
       if (token && savedUser) {
         try {
           this.currentUserSubject.next(JSON.parse(savedUser));
           this.loggedIn.next(true);
-        } catch (error) {
-          console.error('Error al parsear el usuario del almacenamiento local', error);
+        } catch {
+          this.limpiarSesion();
         }
       }
     }
   }
 
-  /**
-   * Obtiene un observable que emite el estado actual de autenticación.
-   * @returns Un observable booleano (`true` si está autenticado).
-   */
   isLoggedIn(): Observable<boolean> {
     return this.loggedIn.asObservable();
   }
 
-  /**
-   * Obtiene un observable con la información del usuario actualmente autenticado.
-   * @returns Un observable con el objeto de usuario o nulo.
-   */
   getUsuario(): Observable<any> {
     return this.currentUserSubject.asObservable();
   }
 
-  /**
-   * Inicia sesión simulada basándose en el rol proporcionado.
-   * Actualiza el almacenamiento local y notifica a los suscriptores.
-   *
-   * @param rolSeleccionado El rol con el cual se desea iniciar sesión (ej. 'tecnico', 'productor').
-   */
-  login(rolSeleccionado: string): void {
+  getUsuarioActual(): any {
+    return this.currentUserSubject.value;
+  }
+
+  getToken(): string | null {
     if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem('fito_token', 'sesion_activa_proto');
-
-      let userData = {};
-      if (rolSeleccionado === 'tecnico') {
-        userData = { nombre: 'Técnico ICA', rol: 'tecnico', plan: 'Funcionario ICA' };
-      } else if (rolSeleccionado === 'admin') {
-        userData = { nombre: 'Administrador FitoGestión', rol: 'admin', plan: 'Administrador' };
-      } else {
-        userData = { nombre: 'Darwing Jaimes', rol: 'productor', plan: 'Premium Account' };
-      }
-
-      localStorage.setItem('fito_user', JSON.stringify(userData));
-      this.currentUserSubject.next(userData);
+      return localStorage.getItem('fito_token');
     }
-
-    this.loggedIn.next(true);
+    return null;
   }
 
   /**
-   * Cierra la sesión activa, limpiando el almacenamiento local
-   * y reseteando los estados reactivos.
+   * Login real contra el backend.
+   * Si falla el backend, cae al login simulado para desarrollo.
    */
+  login(rolOEmail: string, password?: string): Observable<any> {
+    // Si se provee contraseña → login real
+    if (password) {
+      return this.http.post<any>(`${this.authUrl}/login`, {
+        email: rolOEmail,
+        password,
+      }).pipe(
+        tap((res) => this.guardarSesion(res.access_token, res.user)),
+        catchError((err) => {
+          console.error('Error de login:', err);
+          return of(null);
+        }),
+      );
+    }
+
+    // Fallback: login simulado por rol (para desarrollo sin backend)
+    let userData: any = {};
+    if (rolOEmail === 'tecnico') {
+      userData = { nombre: 'Técnico ICA', rol: 'tecnico', plan: 'Funcionario ICA' };
+    } else if (rolOEmail === 'admin') {
+      userData = { nombre: 'Administrador FitoGestión', rol: 'admin', plan: 'Administrador' };
+    } else {
+      userData = { nombre: 'Darwing Jaimes', rol: 'productor', plan: 'Premium Account' };
+    }
+
+    this.guardarSesion('sesion_activa_proto', userData);
+    return of(userData);
+  }
+
+  /**
+   * Registro de nuevo usuario contra el backend.
+   */
+  register(data: {
+    email: string;
+    password: string;
+    nombre: string;
+    apellido: string;
+    cedula: string;
+    rol?: string;
+    telefono?: string;
+  }): Observable<any> {
+    return this.http.post(`${this.authUrl}/register`, data);
+  }
+
   logout(): void {
+    this.http.post(`${this.authUrl}/logout`, {}).subscribe({ error: () => {} });
+    this.limpiarSesion();
+  }
+
+  private guardarSesion(token: string, user: any): void {
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('fito_token', token);
+      localStorage.setItem('fito_user', JSON.stringify(user));
+    }
+    this.currentUserSubject.next(user);
+    this.loggedIn.next(true);
+  }
+
+  private limpiarSesion(): void {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('fito_token');
       localStorage.removeItem('fito_user');

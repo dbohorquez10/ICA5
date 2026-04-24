@@ -12,41 +12,49 @@ type Vista = 'ficha-predio' | 'lista-lotes' | 'inspeccion-lote';
 })
 export class EjecutarInspeccionComponent implements OnInit {
 
-  // ── Estado de navegación interna ──
   public vista: Vista = 'ficha-predio';
-
-  // ── Datos de la inspección ──
   public inspeccion!: Inspeccion;
   public predio!: Predio;
   public lotesDePredio: Lote[] = [];
-
-  // ── Sub-inspección activa (por lote) ──
   public loteActual!: Lote;
   public subActual!: SubInspeccionLote;
   public plagasDelLote: Plaga[] = [];
   public plagasMarcadas: Set<string> = new Set();
   public plantaActual: number = 1;
   public observacionesGenerales: string = '';
+  public cultivosMap: { [id: string]: string } = {};
 
   constructor(public dataService: FitoDataService, private router: Router) {}
 
-  ngOnInit(): void {
-    // Usamos la primera inspección pendiente como mock
-    const inspecciones = this.dataService.getInspecciones().filter(i => i.estado !== 'Completada');
-    if (!inspecciones.length) {
-      alert('No hay inspecciones asignadas pendientes.');
-      this.router.navigate(['/app/tecnico/inspecciones']);
-      return;
-    }
-    this.inspeccion = inspecciones[0];
-    this.predio = this.dataService.getPredio(this.inspeccion.predioId)!;
-    this.lotesDePredio = this.dataService.getLotesPorPredio(this.predio.id);
+  /** Resolves cultivo name from local cache */
+  public getCultivoNombre(lote: any): string {
+    const id = lote?.cultivo_id || lote?.cultivoId || '';
+    return this.cultivosMap[id] || '—';
   }
 
-  /**
-   * Abre Google Maps con ruta desde la posición GPS actual del técnico hasta el predio.
-   * Si el predio tiene coordenadas, las usa directamente; si no, usa la dirección textual.
-   */
+  public guardarParcial(): void {
+    // Progress is auto-saved on completarLote
+  }
+
+  ngOnInit(): void {
+    this.dataService.getInspecciones().subscribe(inspecciones => {
+      const pendientes = inspecciones.filter(i => !(i.estado || '').toLowerCase().includes('completada'));
+      if (!pendientes.length) {
+        alert('No hay inspecciones asignadas pendientes.');
+        this.router.navigate(['/app/tecnico/inspecciones']);
+        return;
+      }
+      this.inspeccion = pendientes[0];
+      const predioId = this.inspeccion.predio_id || this.inspeccion.predioId || '';
+
+      this.dataService.getPredio(predioId).subscribe(p => this.predio = p);
+      this.dataService.getLotesPorPredio(predioId).subscribe(l => this.lotesDePredio = l);
+      this.dataService.getCultivos().subscribe(cultivos => {
+        cultivos.forEach(c => this.cultivosMap[c.id] = c.nombre);
+      });
+    });
+  }
+
   public navegarAlPredio(): void {
     const destino = this.predio?.latitud
       ? `${this.predio.latitud},${this.predio.longitud}`
@@ -56,45 +64,35 @@ export class EjecutarInspeccionComponent implements OnInit {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const origen = `${pos.coords.latitude},${pos.coords.longitude}`;
-          window.open(
-            `https://www.google.com/maps/dir/${origen}/${destino}`,
-            '_blank'
-          );
+          window.open(`https://www.google.com/maps/dir/${origen}/${destino}`, '_blank');
         },
-        () => {
-          // Si no hay permiso de GPS, abre Maps solo con el destino
-          window.open(
-            `https://www.google.com/maps/search/?api=1&query=${destino}`,
-            '_blank'
-          );
-        }
+        () => window.open(`https://www.google.com/maps/search/?api=1&query=${destino}`, '_blank')
       );
     } else {
       window.open(`https://www.google.com/maps/search/?api=1&query=${destino}`, '_blank');
     }
   }
 
-  // ── Getters de progreso ──
-
   public getSubInspeccion(loteId: string): SubInspeccionLote | undefined {
-    return this.inspeccion.subInspecciones.find(s => s.loteId === loteId);
+    const subs = this.inspeccion.sub_inspecciones || this.inspeccion.subInspecciones || [];
+    return subs.find(s => s.loteId === loteId || s.id === loteId);
   }
 
   public getLoteName(loteId: string): string {
-    return this.dataService.getLotePorId(loteId)?.nombre ?? '—';
+    return this.lotesDePredio.find(l => l.id === loteId)?.nombre ?? '—';
   }
 
   public get progresoGlobal(): number {
-    const total = this.inspeccion.subInspecciones.length;
-    const completos = this.inspeccion.subInspecciones.filter(s => s.estado === 'Completada').length;
+    const subs = this.inspeccion.sub_inspecciones || this.inspeccion.subInspecciones || [];
+    const total = subs.length;
+    const completos = subs.filter(s => (s.estado || '').toLowerCase().includes('completad')).length;
     return total ? Math.round((completos / total) * 100) : 0;
   }
 
   public get todosLotesCompletos(): boolean {
-    return this.inspeccion.subInspecciones.every(s => s.estado === 'Completada');
+    const subs = this.inspeccion.sub_inspecciones || this.inspeccion.subInspecciones || [];
+    return subs.every(s => (s.estado || '').toLowerCase().includes('completad'));
   }
-
-  // ── Navegación ──
 
   public iniciarInspeccion(): void {
     this.vista = 'lista-lotes';
@@ -102,7 +100,7 @@ export class EjecutarInspeccionComponent implements OnInit {
 
   public seleccionarLote(lote: Lote): void {
     const sub = this.getSubInspeccion(lote.id);
-    if (sub?.estado === 'Completada') return;
+    if (sub && (sub.estado || '').toLowerCase().includes('completad')) return;
 
     this.loteActual = lote;
     this.subActual = sub ? { ...sub } : {
@@ -111,12 +109,9 @@ export class EjecutarInspeccionComponent implements OnInit {
     this.subActual.estado = 'En Progreso';
     this.plantaActual = (this.subActual.plantasEvaluadas || 0) + 1;
     this.plagasMarcadas = new Set();
-    this.plagasDelLote = this.dataService.getPlagasByPrediosCultivos(lote.cultivoId);
+    const cultivoId = lote.cultivo_id || lote.cultivoId || '';
+    this.dataService.getPlagasByPrediosCultivos(cultivoId).subscribe(p => this.plagasDelLote = p);
     this.vista = 'inspeccion-lote';
-
-    // Guardar estado "En Progreso"
-    this.dataService.actualizarSubInspeccion(this.inspeccion.id, this.subActual);
-    this.inspeccion = this.dataService.getInspeccionPorId(this.inspeccion.id)!;
   }
 
   public togglePlaga(plagaId: string): void {
@@ -128,48 +123,39 @@ export class EjecutarInspeccionComponent implements OnInit {
   }
 
   public siguientePlanta(): void {
+    if (!this.subActual.registroPlantas) this.subActual.registroPlantas = [];
     this.subActual.registroPlantas.push({
       numeroPlanta: this.plantaActual,
+      numero_planta: this.plantaActual,
       plagasDetectadas: Array.from(this.plagasMarcadas)
     });
     this.subActual.plantasEvaluadas = this.plantaActual;
     this.plantaActual++;
     this.plagasMarcadas.clear();
-    this.guardarProgresoParcial();
   }
 
   public completarLote(): void {
     if (!confirm(`¿Marcar la sub-inspección del ${this.loteActual.nombre} como completada?`)) return;
 
-    // Guardar última planta si hay algo marcado
+    if (!this.subActual.registroPlantas) this.subActual.registroPlantas = [];
     if (this.plagasMarcadas.size > 0 || this.plantaActual > 1) {
       this.subActual.registroPlantas.push({
         numeroPlanta: this.plantaActual,
+        numero_planta: this.plantaActual,
         plagasDetectadas: Array.from(this.plagasMarcadas)
       });
       this.subActual.plantasEvaluadas = this.plantaActual;
     }
 
-    // Calcular incidencias
-    if (this.subActual.plantasEvaluadas > 0) {
-      const incidencias: { [key: string]: number } = {};
-      this.plagasDelLote.forEach(p => incidencias[p.id] = 0);
+    this.subActual.estado = 'Completada';
 
-      this.subActual.registroPlantas.forEach(rp => {
-        rp.plagasDetectadas.forEach(pId => {
-          if (incidencias[pId] !== undefined) incidencias[pId]++;
-        });
-      });
-
-      this.subActual.incidenciasCalculadas = Object.keys(incidencias).map(plagaId => ({
-        plagaId,
-        porcentaje: (incidencias[plagaId] / this.subActual.plantasEvaluadas) * 100
-      }));
+    // Si el sub tiene id del backend, actualizarlo
+    if (this.subActual.id) {
+      this.dataService.actualizarSubInspeccion(this.subActual.id, {
+        estado: 'completado', observaciones: ''
+      }).subscribe();
     }
 
-    this.subActual.estado = 'Completada';
-    this.dataService.actualizarSubInspeccion(this.inspeccion.id, this.subActual);
-    this.inspeccion = this.dataService.getInspeccionPorId(this.inspeccion.id)!;
     this.vista = 'lista-lotes';
   }
 
@@ -178,27 +164,12 @@ export class EjecutarInspeccionComponent implements OnInit {
   }
 
   public finalizarInspeccionCompleta(): void {
-    if (confirm(`¿Finalizar y cerrar la inspección completa del predio "${this.predio.nombre}"?`)) {
-      // Asegurar que todas las sub-inspecciones queden marcadas como completadas
-      this.inspeccion.subInspecciones.forEach(sub => {
-        if (sub.estado !== 'Completada') {
-          sub.estado = 'Completada';
-          this.dataService.actualizarSubInspeccion(this.inspeccion.id, sub);
-        }
-      });
-
-      // Guardar observaciones
-      this.inspeccion.observaciones = this.observacionesGenerales;
-
-      // Refrescar el estado local de la inspección desde el servicio
-      this.inspeccion = this.dataService.getInspeccionPorId(this.inspeccion.id)!;
-
-      alert('¡Inspección del predio completada exitosamente! Los datos han sido actualizados.');
-      this.router.navigate(['/app/tecnico/inspecciones']);
+    if (confirm(`¿Finalizar la inspección del predio "${this.predio.nombre}"?`)) {
+      this.dataService.finalizarInspeccion(this.inspeccion.id, this.observacionesGenerales)
+        .subscribe(() => {
+          alert('¡Inspección completada exitosamente!');
+          this.router.navigate(['/app/tecnico/inspecciones']);
+        });
     }
-  }
-
-  public guardarProgresoParcial(): void {
-    this.dataService.actualizarSubInspeccion(this.inspeccion.id, this.subActual);
   }
 }

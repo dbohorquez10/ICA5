@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FitoDataService, Plaga, Cultivo } from '../../../core/services/fito-data.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-gestion-catalogos',
@@ -25,9 +26,14 @@ export class GestionCatalogosComponent implements OnInit {
   ngOnInit(): void { this.recargar(); }
 
   private recargar(): void {
-    this.plagas = this.dataService.getPlagas();
-    this.cultivos = this.dataService.getCultivos();
-    this.plagasDisponibles = this.plagas;
+    forkJoin({
+      plagas: this.dataService.getPlagas(),
+      cultivos: this.dataService.getCultivos(),
+    }).subscribe(({ plagas, cultivos }) => {
+      this.plagas = plagas;
+      this.cultivos = cultivos;
+      this.plagasDisponibles = plagas;
+    });
   }
 
   // --- Abrir modal para CREAR ---
@@ -37,7 +43,7 @@ export class GestionCatalogosComponent implements OnInit {
     this.editandoId = '';
     this.errorModal = '';
     this.nuevoItem = tipo === 'plaga'
-      ? { nombre: '', descripcion: '', riesgo: 'Bajo', icon: 'bug_report', cultivosAfectados: [] }
+      ? { nombre_comun: '', descripcion: '', riesgo: 'Bajo', tipo: 'insecto', cultivos_afectados: [] }
       : { nombre: '', variedad: '', icono: 'eco', color: '#22c55e', plagasSeleccionadas: [] };
     this.modalVisible = true;
   }
@@ -48,7 +54,7 @@ export class GestionCatalogosComponent implements OnInit {
     this.modalModo = 'editar';
     this.editandoId = plaga.id;
     this.errorModal = '';
-    this.nuevoItem = { ...plaga, cultivosAfectados: [...plaga.cultivosAfectados] };
+    this.nuevoItem = { ...plaga, cultivos_afectados: [...(plaga.cultivos_afectados || [])] };
     this.modalVisible = true;
   }
 
@@ -59,33 +65,21 @@ export class GestionCatalogosComponent implements OnInit {
     this.errorModal = '';
     this.nuevoItem = { ...cultivo };
     this.nuevoItem.plagasSeleccionadas = this.plagas
-      .filter(p => p.cultivosAfectados.includes(cultivo.id))
+      .filter(p => (p.cultivos_afectados || []).includes(cultivo.id))
       .map(p => p.id);
     this.modalVisible = true;
   }
 
   public togglePlaga(plagaId: string): void {
-    if (!this.nuevoItem.plagasSeleccionadas) {
-      this.nuevoItem.plagasSeleccionadas = [];
-    }
+    if (!this.nuevoItem.plagasSeleccionadas) this.nuevoItem.plagasSeleccionadas = [];
     const idx = this.nuevoItem.plagasSeleccionadas.indexOf(plagaId);
-    if (idx > -1) {
-      this.nuevoItem.plagasSeleccionadas.splice(idx, 1);
-    } else {
-      this.nuevoItem.plagasSeleccionadas.push(plagaId);
-    }
+    idx > -1 ? this.nuevoItem.plagasSeleccionadas.splice(idx, 1) : this.nuevoItem.plagasSeleccionadas.push(plagaId);
   }
 
   public toggleCultivo(cultivoId: string): void {
-    if (!this.nuevoItem.cultivosAfectados) {
-      this.nuevoItem.cultivosAfectados = [];
-    }
-    const idx = this.nuevoItem.cultivosAfectados.indexOf(cultivoId);
-    if (idx > -1) {
-      this.nuevoItem.cultivosAfectados.splice(idx, 1);
-    } else {
-      this.nuevoItem.cultivosAfectados.push(cultivoId);
-    }
+    if (!this.nuevoItem.cultivos_afectados) this.nuevoItem.cultivos_afectados = [];
+    const idx = this.nuevoItem.cultivos_afectados.indexOf(cultivoId);
+    idx > -1 ? this.nuevoItem.cultivos_afectados.splice(idx, 1) : this.nuevoItem.cultivos_afectados.push(cultivoId);
   }
 
   public cerrarModal(): void {
@@ -96,73 +90,48 @@ export class GestionCatalogosComponent implements OnInit {
   public guardar(): void {
     this.errorModal = '';
 
-    if (!this.nuevoItem.nombre?.trim()) {
+    const nombre = this.modalTipo === 'plaga'
+      ? this.nuevoItem.nombre_comun?.trim()
+      : this.nuevoItem.nombre?.trim();
+
+    if (!nombre) {
       this.errorModal = 'El nombre es obligatorio.';
       return;
     }
 
-    // Validación de duplicados
-    if (this.modalTipo === 'plaga') {
-      const nombreNuevo = this.nuevoItem.nombre.trim().toLowerCase();
-      const duplicado = this.plagas.some(p =>
-        p.nombre.toLowerCase().trim() === nombreNuevo && p.id !== this.editandoId
-      );
-      if (duplicado) {
-        this.errorModal = `Ya existe una plaga con el nombre "${this.nuevoItem.nombre.trim()}". No se permiten duplicados.`;
-        return;
-      }
-
-      if (!this.nuevoItem.descripcion?.trim()) {
-        this.errorModal = 'La descripción de la plaga es obligatoria.';
-        return;
-      }
-    } else {
-      const nombreNuevo = this.nuevoItem.nombre.trim().toLowerCase();
-      const duplicado = this.cultivos.some(c =>
-        c.nombre.toLowerCase().trim() === nombreNuevo && c.id !== this.editandoId
-      );
-      if (duplicado) {
-        this.errorModal = `Ya existe un cultivo con el nombre "${this.nuevoItem.nombre.trim()}". No se permiten duplicados.`;
-        return;
-      }
-
-      if (!this.nuevoItem.variedad?.trim()) {
-        this.errorModal = 'Las variedades del cultivo son obligatorias.';
-        return;
-      }
+    if (this.modalTipo === 'plaga' && !this.nuevoItem.descripcion?.trim()) {
+      this.errorModal = 'La descripción de la plaga es obligatoria.';
+      return;
+    }
+    if (this.modalTipo === 'cultivo' && !this.nuevoItem.variedad?.trim()) {
+      this.errorModal = 'Las variedades del cultivo son obligatorias.';
+      return;
     }
 
-    // Guardar o actualizar
     if (this.modalModo === 'crear') {
       if (this.modalTipo === 'plaga') {
-        this.dataService.agregarPlaga(this.nuevoItem);
+        this.dataService.agregarPlaga(this.nuevoItem).subscribe(() => { this.recargar(); this.cerrarModal(); });
       } else {
-        this.dataService.agregarCultivo(this.nuevoItem, this.nuevoItem.plagasSeleccionadas);
+        this.dataService.agregarCultivo(this.nuevoItem).subscribe(() => { this.recargar(); this.cerrarModal(); });
       }
     } else {
-      // Editar
       if (this.modalTipo === 'plaga') {
-        this.dataService.editarPlaga(this.editandoId, this.nuevoItem);
+        this.dataService.editarPlaga(this.editandoId, this.nuevoItem).subscribe(() => { this.recargar(); this.cerrarModal(); });
       } else {
-        this.dataService.editarCultivo(this.editandoId, this.nuevoItem, this.nuevoItem.plagasSeleccionadas);
+        this.dataService.editarCultivo(this.editandoId, this.nuevoItem).subscribe(() => { this.recargar(); this.cerrarModal(); });
       }
     }
-
-    this.recargar();
-    this.cerrarModal();
   }
 
   public eliminarPlaga(id: string): void {
     if (confirm('¿Eliminar esta plaga del catálogo?')) {
-      this.dataService.eliminarPlaga(id);
-      this.recargar();
+      this.dataService.eliminarPlaga(id).subscribe(() => this.recargar());
     }
   }
 
   public eliminarCultivo(id: string): void {
     if (confirm('¿Eliminar este cultivo?')) {
-      this.dataService.eliminarCultivo(id);
-      this.recargar();
+      this.dataService.eliminarCultivo(id).subscribe(() => this.recargar());
     }
   }
 }

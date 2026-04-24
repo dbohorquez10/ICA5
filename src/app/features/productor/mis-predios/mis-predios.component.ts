@@ -13,14 +13,12 @@ export class MisPrediosComponent implements OnInit {
   public predios: Predio[] = [];
   public cultivos: Cultivo[] = [];
   public predioExpandido: string | null = null;
-  public lotesDelPredioExpandido: Lote[] = [];
+  public lotesCache: { [predioId: string]: Lote[] } = {};
 
-  // Modal de Predio
   public modalPredioVisible = false;
   public modalPredioModo: 'nuevo' | 'editar' = 'nuevo';
   public predioEnEdicion: Partial<Predio> = {};
 
-  // Modal de Lote
   public modalLoteVisible = false;
   public modalLoteModo: 'crear' | 'editar' = 'crear';
   public predioActualParaLote: string = '';
@@ -41,36 +39,43 @@ export class MisPrediosComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.predios = this.dataService.getPredios();
-    this.cultivos = this.dataService.getCultivos();
+    this.dataService.getPredios().subscribe(p => this.predios = p);
+    this.dataService.getCultivos().subscribe(c => this.cultivos = c);
   }
 
   public getLotesDe(predioId: string): Lote[] {
-    return this.dataService.getLotesPorPredio(predioId);
+    return this.lotesCache[predioId] || [];
+  }
+
+  public cargarLotes(predioId: string): void {
+    this.dataService.getLotesPorPredio(predioId).subscribe(l => {
+      this.lotesCache[predioId] = l;
+    });
   }
 
   public getNombreCultivo(cultivoId: string): string {
-    return this.dataService.getCultivoPorId(cultivoId)?.nombre ?? '—';
+    return this.cultivos.find(c => c.id === cultivoId)?.nombre ?? '—';
   }
 
   public getTotalHectareas(predioId: string): number {
-    return this.getLotesDe(predioId).reduce((a, l) => a + l.hectareas, 0);
+    return this.getLotesDe(predioId).reduce((a, l) => a + (l.area || l.hectareas || 0), 0);
   }
 
   public toggleExpandir(predioId: string): void {
-    this.predioExpandido = this.predioExpandido === predioId ? null : predioId;
+    if (this.predioExpandido === predioId) {
+      this.predioExpandido = null;
+    } else {
+      this.predioExpandido = predioId;
+      this.cargarLotes(predioId);
+    }
   }
 
   // === MODAL PREDIO ===
-
   public abrirModalNuevoPredio(): void {
     this.modalPredioModo = 'nuevo';
-    this.predioEnEdicion = { 
-      nombre: '', 
-      departamento: '',
-      municipio: '',
-      vereda: '',
-      numeroRegistroIca: 'ICA-' + Math.floor(100000 + Math.random() * 900000)
+    this.predioEnEdicion = {
+      nombre: '', departamento: '', municipio: '', vereda: '',
+      numero_registro_ica: 'ICA-' + Math.floor(100000 + Math.random() * 900000)
     };
     this.erroresPredio = {};
     this.modalPredioVisible = true;
@@ -79,31 +84,26 @@ export class MisPrediosComponent implements OnInit {
 
   public guardarPredio(): void {
     this.erroresPredio = {};
-
     if (!this.predioEnEdicion.nombre?.trim()) {
       this.erroresPredio['nombre'] = 'El nombre del lugar de producción es obligatorio.';
     }
     if (!this.predioEnEdicion.departamento?.trim() || !this.predioEnEdicion.municipio?.trim() || !this.predioEnEdicion.vereda?.trim()) {
-      this.erroresPredio['ubicacion'] = 'La ubicación (Departamento, Municipio y Vereda) es obligatoria.';
+      this.erroresPredio['ubicacion'] = 'La ubicación completa es obligatoria.';
     }
-
     if (Object.keys(this.erroresPredio).length > 0) return;
-
-    this.predioEnEdicion.ubicacion = `${this.predioEnEdicion.vereda}, ${this.predioEnEdicion.municipio}, ${this.predioEnEdicion.departamento}`;
 
     this.dataService.agregarPredio({
       nombre: this.predioEnEdicion.nombre!,
-      ubicacion: this.predioEnEdicion.ubicacion,
       departamento: this.predioEnEdicion.departamento,
       municipio: this.predioEnEdicion.municipio,
       vereda: this.predioEnEdicion.vereda,
-      numeroRegistroIca: this.predioEnEdicion.numeroRegistroIca,
-      productorNombre: 'Darwing Jaimes',
+      numero_registro_ica: this.predioEnEdicion.numero_registro_ica || this.predioEnEdicion.numeroRegistroIca,
       latitud: this.predioEnEdicion.latitud,
-      longitud: this.predioEnEdicion.longitud
+      longitud: this.predioEnEdicion.longitud,
+    }).subscribe(() => {
+      this.dataService.getPredios().subscribe(p => this.predios = p);
+      this.cerrarModalPredio();
     });
-    this.predios = this.dataService.getPredios();
-    this.cerrarModalPredio();
   }
 
   public cerrarModalPredio(): void {
@@ -112,7 +112,6 @@ export class MisPrediosComponent implements OnInit {
     if (this.map) { this.map.remove(); this.map = null; }
   }
 
-  /** Captura la posición GPS del dispositivo y la coloca en el mapa */
   public capturarGPS(): void {
     if (!navigator.geolocation) { this.gpsStatus = 'error'; return; }
     this.gpsLoading = true;
@@ -120,8 +119,7 @@ export class MisPrediosComponent implements OnInit {
       (pos) => {
         this.predioEnEdicion.latitud = +pos.coords.latitude.toFixed(6);
         this.predioEnEdicion.longitud = +pos.coords.longitude.toFixed(6);
-        this.gpsLoading = false;
-        this.gpsStatus = 'ok';
+        this.gpsLoading = false; this.gpsStatus = 'ok';
         this.colocarMarcadorEnMapa(this.predioEnEdicion.latitud, this.predioEnEdicion.longitud);
       },
       () => { this.gpsLoading = false; this.gpsStatus = 'error'; },
@@ -129,14 +127,10 @@ export class MisPrediosComponent implements OnInit {
     );
   }
 
-  /** Actualiza el marcador en el mapa cuando el usuario escribe coordenadas manualmente */
   public actualizarMarcadorManual(): void {
     const lat = this.predioEnEdicion.latitud;
     const lng = this.predioEnEdicion.longitud;
-    if (lat && lng && this.map) {
-      this.colocarMarcadorEnMapa(lat, lng);
-      this.map.setView([lat, lng], 13);
-    }
+    if (lat && lng && this.map) { this.colocarMarcadorEnMapa(lat, lng); this.map.setView([lat, lng], 13); }
   }
 
   private colocarMarcadorEnMapa(lat: number, lng: number): void {
@@ -146,18 +140,17 @@ export class MisPrediosComponent implements OnInit {
   }
 
   // === MODAL LOTE ===
-
   public abrirModalNuevoLote(predioId: string): void {
     this.modalLoteModo = 'crear';
     this.predioActualParaLote = predioId;
-    const letras = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    const letras = ['A','B','C','D','E','F','G'];
     const existentes = this.getLotesDe(predioId).length;
     this.nuevoLote = {
-      predioId,
+      predio_id: predioId,
       nombre: `Lote ${letras[existentes] ?? (existentes + 1)}`,
-      cultivoId: this.cultivos[0]?.id ?? '',
-      hectareas: 1,
-      plantasPorHectarea: 1000,
+      cultivo_id: this.cultivos[0]?.id ?? '',
+      area: 1,
+      plantas_por_hectarea: 1000,
       estado: 'Óptimo'
     };
     this.modalLoteVisible = true;
@@ -166,32 +159,35 @@ export class MisPrediosComponent implements OnInit {
   public abrirModalEditarLote(lote: Lote): void {
     this.modalLoteModo = 'editar';
     this.loteEnEdicionId = lote.id;
-    this.predioActualParaLote = lote.predioId;
+    this.predioActualParaLote = lote.predio_id || lote.predioId || '';
     this.nuevoLote = { ...lote };
     this.modalLoteVisible = true;
   }
 
   public guardarLote(): void {
-    if (!this.nuevoLote.cultivoId || !this.nuevoLote.hectareas) {
-      alert('Completa todos los campos');
-      return;
+    if (!this.nuevoLote.cultivo_id || !this.nuevoLote.area) {
+      alert('Completa todos los campos'); return;
     }
     if (this.modalLoteModo === 'crear') {
-      this.dataService.agregarLote(this.nuevoLote as Omit<Lote, 'id'>);
+      this.dataService.agregarLote(this.nuevoLote).subscribe(() => {
+        this.cargarLotes(this.predioActualParaLote);
+        this.modalLoteVisible = false;
+      });
     } else {
-      this.dataService.editarLote(this.loteEnEdicionId, this.nuevoLote);
+      this.dataService.editarLote(this.loteEnEdicionId, this.nuevoLote).subscribe(() => {
+        this.cargarLotes(this.predioActualParaLote);
+        this.modalLoteVisible = false;
+      });
     }
-    this.modalLoteVisible = false;
   }
 
-  public eliminarLote(id: string): void {
+  public eliminarLote(id: string, predioId: string): void {
     if (confirm('¿Eliminar este lote?')) {
-      this.dataService.eliminarLote(id);
+      this.dataService.eliminarLote(id).subscribe(() => this.cargarLotes(predioId));
     }
   }
 
   // === MAPA ===
-
   public async iniciarMapa(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
     if (!this.L) this.L = await import('leaflet');

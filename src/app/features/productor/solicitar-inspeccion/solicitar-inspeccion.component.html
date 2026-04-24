@@ -51,10 +51,7 @@
           <div class="lotes-chips">
             <span class="lote-chip" *ngFor="let l of lotesDelPredio">
               <span class="material-icons">eco</span>
-              {{ l.nombre }} — {{ dataService.getCultivoPorId(l.cultivoId)?.nombre }} ({{
-                l.hectareas
-              }}
-              Ha)
+              {{ l.nombre }} ({{ l.area || l.hectareas }} Ha)
             </span>
           </div>
         </div>
@@ -72,7 +69,7 @@
           <input
             type="date"
             [(ngModel)]="fechaSugerida"
-            (change)="verificarDisponibilidad()"
+            (change)="setModo(asignacionAutomatica)"
             class="form-input"
           />
         </div>
@@ -101,16 +98,15 @@
             *ngFor="let t of tecnicosDisponibles"
             (click)="seleccionarTecnico(t.id)"
             [class.selected]="tecnicoElegido === t.id"
-            [class.ocupado]="t.ocupado"
+            [class.ocupado]="!t.activo"
           >
-            <div class="tecnico-avatar">{{ t.avatar }}</div>
+            <div class="tecnico-avatar">{{ (t.nombre || '').substring(0, 2).toUpperCase() }}</div>
             <div class="tecnico-info">
-              <h3>{{ t.nombre }}</h3>
-              <p>{{ t.zona }}</p>
-              <div class="rating">⭐ {{ t.rating }}</div>
+              <h3>{{ t.nombre }} {{ t.apellido }}</h3>
+              <p>{{ t.registro_ica || t.email }}</p>
             </div>
-            <span class="tecnico-status" [class.libre]="!t.ocupado" [class.busy]="t.ocupado">
-              {{ t.ocupado ? 'Ocupado' : 'Disponible' }}
+            <span class="tecnico-status" [class.libre]="t.activo" [class.busy]="!t.activo">
+              {{ t.activo !== false ? 'Disponible' : 'Ocupado' }}
             </span>
           </div>
         </div>

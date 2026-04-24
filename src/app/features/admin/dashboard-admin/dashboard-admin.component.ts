@@ -1,12 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FitoDataService, Inspeccion, Predio, Lote, Usuario } from '../../../core/services/fito-data.service';
+import { forkJoin } from 'rxjs';
 
 /**
- * @description
- * Controla el panel de control central para administradores en FitoGestión. Renderiza las métricas globales de la plataforma (productores, técnicos e inspecciones) y permite gestionar y asignar formalmente las solicitudes de inspección pendientes a los técnicos disponibles.
- *
- * @usageNotes
- * Componente de uso exclusivo para el rol 'admin'. Depende directamente de la inyección de `FitoDataService` para obtener indicadores métricos agregados, consultar técnicos activos y ejecutar la acción de asignación de inspecciones.
+ * Panel de control central para administradores.
  */
 @Component({
   selector: 'app-dashboard-admin',
@@ -17,9 +14,8 @@ import { FitoDataService, Inspeccion, Predio, Lote, Usuario } from '../../../cor
 export class DashboardAdminComponent implements OnInit {
 
   public metricas = { productores: 0, tecnicos: 0, inspeccionesPendientes: 0, alertas: 0 };
-  public solicitudesPendientes: Array<Inspeccion & { predio?: Predio; lotesCount: number }> = [];
+  public solicitudesPendientes: Array<any> = [];
 
-  // Modal de asignación
   public modalAsignacionVisible = false;
   public inspeccionSeleccionada: string = '';
   public tecnicosDisponibles: Usuario[] = [];
@@ -27,43 +23,41 @@ export class DashboardAdminComponent implements OnInit {
 
   constructor(private dataService: FitoDataService) {}
 
-  ngOnInit(): void {
-    this.recargar();
-  }
+  ngOnInit(): void { this.recargar(); }
 
   private recargar(): void {
-    const usuarios = this.dataService.getUsuarios();
-    const inspecciones = this.dataService.getInspecciones();
-
-    this.metricas = {
-      productores: usuarios.filter(u => u.rol === 'productor').length,
-      tecnicos: usuarios.filter(u => u.rol === 'tecnico').length,
-      inspeccionesPendientes: inspecciones.filter(i => i.estado === 'Pendiente').length,
-      alertas: inspecciones.filter(i => i.estado === 'En Progreso').length
-    };
-
-    this.solicitudesPendientes = this.dataService.getInspeccionesPendientes().map(ins => ({
-      ...ins,
-      predio: this.dataService.getPredio(ins.predioId),
-      lotesCount: this.dataService.getLotesPorPredio(ins.predioId).length
-    }));
+    forkJoin({
+      usuarios: this.dataService.getUsuarios(),
+      inspecciones: this.dataService.getInspecciones(),
+      pendientes: this.dataService.getInspeccionesPendientes(),
+    }).subscribe(({ usuarios, inspecciones, pendientes }) => {
+      this.metricas = {
+        productores: usuarios.filter(u => u.rol === 'productor').length,
+        tecnicos: usuarios.filter(u => u.rol === 'tecnico').length,
+        inspeccionesPendientes: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('pendiente')).length,
+        alertas: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('progreso')).length,
+      };
+      this.solicitudesPendientes = pendientes.map(ins => ({
+        ...ins,
+        predioId: ins.predio_id || ins.predioId,
+        tecnicoNombre: ins.tecnico_nombre || ins.tecnicoNombre || 'Sin asignar',
+      }));
+    });
   }
 
   public asignarTecnico(id: string): void {
     this.inspeccionSeleccionada = id;
-    this.tecnicosDisponibles = this.dataService.getTecnicosActivos();
-    this.tecnicoSeleccionado = '';
-    this.modalAsignacionVisible = true;
+    this.dataService.getTecnicosActivos().subscribe(t => {
+      this.tecnicosDisponibles = t;
+      this.tecnicoSeleccionado = '';
+      this.modalAsignacionVisible = true;
+    });
   }
 
   public confirmarAsignacion(): void {
-    if (!this.tecnicoSeleccionado) {
-      alert('Selecciona un técnico para asignar.');
-      return;
-    }
-    this.dataService.asignarTecnicoAInspeccion(this.inspeccionSeleccionada, this.tecnicoSeleccionado);
-    this.modalAsignacionVisible = false;
-    this.recargar();
+    if (!this.tecnicoSeleccionado) { alert('Selecciona un técnico.'); return; }
+    this.dataService.asignarTecnicoAInspeccion(this.inspeccionSeleccionada, this.tecnicoSeleccionado)
+      .subscribe(() => { this.modalAsignacionVisible = false; this.recargar(); });
   }
 
   public cerrarModalAsignacion(): void {

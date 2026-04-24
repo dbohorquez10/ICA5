@@ -2,11 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FitoDataService, Usuario } from '../../../core/services/fito-data.service';
 
 /**
- * @description
- * Gestiona el listado, filtrado y administración completa de los usuarios del sistema FitoGestión. Renderiza una interfaz que permite listar usuarios, aplicar filtros de búsqueda por texto o rol, ver detalles, editar información básica, suspender/reactivar y eliminar cuentas permanentemente.
- *
- * @usageNotes
- * Componente diseñado principalmente para el rol 'admin'. Requiere la inyección de la dependencia `FitoDataService` para interactuar con el estado global de usuarios y ejecutar operaciones CRUD sobre ellos. Utiliza estados locales para controlar la visibilidad de los modales de detalle y edición.
+ * Gestiona el listado, filtrado y administración de usuarios del sistema FitoGestión.
  */
 @Component({
   selector: 'app-gestion-usuarios',
@@ -20,7 +16,6 @@ export class GestionUsuariosComponent implements OnInit {
   public filtro: string = '';
   public rolFiltro: string = 'todos';
 
-  // Modal de detalle / edición
   public modalVisible = false;
   public modalModo: 'ver' | 'editar' = 'ver';
   public usuarioSeleccionado: Usuario | null = null;
@@ -29,18 +24,21 @@ export class GestionUsuariosComponent implements OnInit {
   constructor(private dataService: FitoDataService) {}
 
   ngOnInit(): void {
-    this.usuarios = this.dataService.getUsuarios();
+    this.cargarUsuarios();
   }
 
-  /** Filtra por nombre, correo, identificación (cédula) */
+  private cargarUsuarios(): void {
+    this.dataService.getUsuarios().subscribe(data => this.usuarios = data);
+  }
+
   get usuariosFiltrados(): Usuario[] {
     return this.usuarios.filter(u => {
       const termino = this.filtro.toLowerCase().trim();
       const matchTexto = !termino ||
         u.nombre.toLowerCase().includes(termino) ||
-        u.correo.toLowerCase().includes(termino) ||
-        (u.identificacion && u.identificacion.includes(termino)) ||
-        (u.telefono && u.telefono.includes(termino));
+        (u.email || u.correo || '').toLowerCase().includes(termino) ||
+        (u.cedula || u.identificacion || '').includes(termino) ||
+        (u.telefono || '').includes(termino);
       const matchRol = this.rolFiltro === 'todos' || u.rol === this.rolFiltro;
       return matchTexto && matchRol;
     });
@@ -51,28 +49,24 @@ export class GestionUsuariosComponent implements OnInit {
   }
 
   public toggleSuspender(usuario: Usuario): void {
-    const accion = usuario.estado === 'Activo' ? 'suspender' : 'reactivar';
+    const accion = usuario.activo !== false ? 'suspender' : 'reactivar';
     if (confirm(`¿Deseas ${accion} la cuenta de ${usuario.nombre}?`)) {
-      this.dataService.suspenderUsuario(usuario.id);
-      this.usuarios = this.dataService.getUsuarios();
+      this.dataService.suspenderUsuario(usuario.id).subscribe(() => this.cargarUsuarios());
     }
   }
 
   public eliminar(usuario: Usuario): void {
-    if (confirm(`¿Eliminar permanentemente la cuenta de ${usuario.nombre}? Esta acción no se puede deshacer.`)) {
-      this.dataService.eliminarUsuario(usuario.id);
-      this.usuarios = this.dataService.getUsuarios();
+    if (confirm(`¿Eliminar permanentemente la cuenta de ${usuario.nombre}?`)) {
+      this.dataService.eliminarUsuario(usuario.id).subscribe(() => this.cargarUsuarios());
     }
   }
 
-  // --- Ver detalle ---
   public verDetalle(usuario: Usuario): void {
     this.usuarioSeleccionado = usuario;
     this.modalModo = 'ver';
     this.modalVisible = true;
   }
 
-  // --- Editar usuario ---
   public editarUsuario(usuario: Usuario): void {
     this.usuarioSeleccionado = usuario;
     this.editDatos = { ...usuario };
@@ -81,18 +75,13 @@ export class GestionUsuariosComponent implements OnInit {
   }
 
   public guardarEdicion(): void {
-    if (!this.editDatos.nombre?.trim()) {
-      alert('El nombre es obligatorio.');
-      return;
-    }
+    if (!this.editDatos.nombre?.trim()) { alert('El nombre es obligatorio.'); return; }
     if (this.usuarioSeleccionado) {
       this.dataService.editarUsuario(this.usuarioSeleccionado.id, {
         nombre: this.editDatos.nombre?.trim(),
-        correo: this.editDatos.correo?.trim(),
-        zona: this.editDatos.zona?.trim(),
+        email: this.editDatos.email?.trim() || this.editDatos.correo?.trim(),
         telefono: this.editDatos.telefono?.trim(),
-      });
-      this.usuarios = this.dataService.getUsuarios();
+      } as any).subscribe(() => this.cargarUsuarios());
     }
     this.cerrarModal();
   }
