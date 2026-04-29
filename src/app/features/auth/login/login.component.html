@@ -14,47 +14,79 @@
       <div class="brand">
         <div class="brand-icon">F</div>
         <h2>Fito<span>Gestión</span></h2>
-        <p class="subtitle">Entorno de Pruebas • Selecciona tu perfil</p>
+        <p class="subtitle">Ingresa a tu cuenta</p>
       </div>
 
-      <div class="roles-list">
-        <button class="role-card" (click)="iniciarSesionComo('productor')">
-          <span class="material-icons icon-agri">agriculture</span>
-          <div>
-            <h3>Productor Agrícola</h3>
-            <small>Darwing Jaimes (Premium)</small>
-          </div>
-          <span class="material-icons arrow">arrow_forward</span>
-        </button>
+      <!-- Mensaje de error -->
+      @if (errorMensaje) {
+        <div class="error-banner animate-shake">
+          <span class="material-icons">error_outline</span>
+          <p>{{ errorMensaje }}</p>
+        </div>
+      }
 
-        <button class="role-card tecnico-card" (click)="iniciarSesionComo('tecnico')">
-          <span class="material-icons icon-tec">fact_check</span>
-          <div>
-            <h3>Técnico ICA</h3>
-            <small>Funcionario de Zona</small>
+      <form (submit)="iniciarSesion(); $event.preventDefault()" novalidate>
+        <!-- Correo -->
+        <div class="input-group">
+          <label for="login-email">Correo electrónico</label>
+          <div class="input-with-icon">
+            <span class="material-icons input-icon">email</span>
+            <input
+              id="login-email"
+              type="email"
+              placeholder="tucorreo@ejemplo.com"
+              [(ngModel)]="email"
+              name="email"
+              autocomplete="email"
+              [disabled]="cargando"
+              required
+            />
           </div>
-          <span class="material-icons arrow">arrow_forward</span>
-        </button>
+        </div>
 
-        <button class="role-card admin-card" (click)="iniciarSesionComo('admin')">
-          <span class="material-icons icon-admin">admin_panel_settings</span>
-          <div>
-            <h3>Administrador</h3>
-            <small>Control Total del Sistema</small>
+        <!-- Contraseña -->
+        <div class="input-group">
+          <label for="login-password">Contraseña</label>
+          <div class="input-with-icon">
+            <span class="material-icons input-icon">lock</span>
+            <input
+              id="login-password"
+              [type]="mostrarPassword ? 'text' : 'password'"
+              placeholder="Ingresa tu contraseña"
+              [(ngModel)]="password"
+              name="password"
+              autocomplete="current-password"
+              [disabled]="cargando"
+              required
+            />
+            <button
+              type="button"
+              class="toggle-pass"
+              (click)="togglePassword()"
+              tabindex="-1"
+              [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            >
+              <span class="material-icons">{{ mostrarPassword ? 'visibility_off' : 'visibility' }}</span>
+            </button>
           </div>
-          <span class="material-icons arrow">arrow_forward</span>
-        </button>
-      </div>
+        </div>
 
-      <p class="login-footer">
-        <span class="material-icons">info</span>
-        Al conectar el backend, esta pantalla será reemplazada por el formulario de correo y contraseña.
-      </p>
+        <!-- Botón de login -->
+        <button type="submit" class="btn-login" [disabled]="cargando">
+          @if (cargando) {
+            <span class="spinner"></span>
+            Verificando...
+          } @else {
+            <span class="material-icons">login</span>
+            Iniciar Sesión
+          }
+        </button>
+      </form>
 
       <div class="footer-link">
         ¿No tienes cuenta? <a routerLink="/auth/registro">Crear una cuenta</a>
       </div>
-      
+
       <div class="footer-link" style="margin-top: 10px;">
         ¿Volver al inicio? <a routerLink="/landing">Ir a la página principal</a>
       </div>

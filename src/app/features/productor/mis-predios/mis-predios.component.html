@@ -65,13 +65,7 @@
               </div>
               <div class="lote-dato">
                 <span class="material-icons">grass</span>
-                <span>{{ lote.plantas_por_hectarea || lote.plantasPorHectarea }} pl/Ha</span>
-              </div>
-              <div class="lote-dato">
-                <span class="material-icons">park</span>
-                <span
-                  >~{{ (lote.plantas_por_hectarea || lote.plantasPorHectarea || 0) * (lote.area || lote.hectareas || 0) | number: '1.0-0' }} plantas</span
-                >
+                <span>{{ lote.num_plantas || 0 }} plantas</span>
               </div>
             </div>
             <div class="lote-actions">
@@ -150,7 +144,7 @@
         <label>Número de Registro ICA (Asignado Automáticamente)</label>
         <input
           type="text"
-          [(ngModel)]="predioEnEdicion.numeroRegistroIca"
+          [(ngModel)]="predioEnEdicion.numero_registro_ica"
           readonly
           class="readonly-input"
           style="background-color: #f1f5f9; color: #475569;"
@@ -223,7 +217,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>Tipo de Cultivo *</label>
-          <select [(ngModel)]="nuevoLote.cultivoId">
+          <select [(ngModel)]="nuevoLote.cultivo_id">
             <option *ngFor="let c of cultivos" [value]="c.id">
               {{ c.nombre }} — {{ c.variedad }}
             </option>
@@ -233,7 +227,7 @@
           <label>Extensión (Hectáreas) *</label>
           <input
             type="number"
-            [(ngModel)]="nuevoLote.hectareas"
+            [(ngModel)]="nuevoLote.area"
             placeholder="Ej: 2.5"
             min="0.1"
             step="0.5"
@@ -241,23 +235,13 @@
         </div>
       </div>
       <div class="form-group">
-        <label>Densidad de Siembra (plantas por hectárea)</label>
+        <label>Número total de plantas</label>
         <input
           type="number"
-          [(ngModel)]="nuevoLote.plantasPorHectarea"
+          [(ngModel)]="nuevoLote.num_plantas"
           placeholder="Ej: 1100"
           min="1"
         />
-      </div>
-      <div class="info-calc" *ngIf="nuevoLote.hectareas && nuevoLote.plantasPorHectarea">
-        <span class="material-icons">park</span>
-        Total estimado:
-        <strong
-          >{{
-            nuevoLote.hectareas! * nuevoLote.plantasPorHectarea! | number: '1.0-0'
-          }}
-          plantas</strong
-        >
       </div>
     </div>
     <footer class="modal-footer">

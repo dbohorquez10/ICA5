@@ -1,7 +1,6 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FitoDataService, Inspeccion, Predio } from '../../../core/services/fito-data.service';
-import { forkJoin } from 'rxjs';
 
 /**
  * Panel de inspecciones del técnico con mapa interactivo.
@@ -55,20 +54,18 @@ export class InspeccionesComponent implements OnInit {
         completadas: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('completada')).length,
       };
 
-      // Para cada inspección, cargar datos del predio
-      const predioRequests = inspecciones.map(ins => {
-        const predioId = ins.predio_id || ins.predioId || '';
-        return this.dataService.getPredio(predioId);
-      });
-
-      if (predioRequests.length === 0) {
+      if (inspecciones.length === 0) {
         this.listaInspecciones = [];
         return;
       }
 
-      forkJoin(predioRequests).subscribe(predios => {
-        this.listaInspecciones = inspecciones.map((ins, i) => {
-          const predio = predios[i];
+      // ── BATCH: Cargar TODOS los predios en UNA sola petición (elimina N+1) ──
+      const predioIds = inspecciones.map(ins => ins.predio_id || ins.predioId || '');
+      this.dataService.getPrediosBatch(predioIds).subscribe(predios => {
+        const predioMap = new Map(predios.map(p => [p.id, p]));
+
+        this.listaInspecciones = inspecciones.map(ins => {
+          const predio = predioMap.get(ins.predio_id || ins.predioId || '');
           return {
             id: ins.id.toUpperCase(),
             productor: predio?.productorNombre || predio?.nombre || '—',

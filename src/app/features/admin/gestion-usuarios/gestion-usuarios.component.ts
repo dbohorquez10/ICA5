@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { FitoDataService, Usuario } from '../../../core/services/fito-data.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 /**
  * Gestiona el listado, filtrado y administración de usuarios del sistema FitoGestión.
+ * Permite a los administradores crear nuevas cuentas de administrador.
  */
 @Component({
   selector: 'app-gestion-usuarios',
@@ -21,7 +23,24 @@ export class GestionUsuariosComponent implements OnInit {
   public usuarioSeleccionado: Usuario | null = null;
   public editDatos: Partial<Usuario> = {};
 
-  constructor(private dataService: FitoDataService) {}
+  // Modal crear admin
+  public crearAdminVisible = false;
+  public adminForm = {
+    nombre: '',
+    apellido: '',
+    cedula: '',
+    email: '',
+    password: '',
+    telefono: '',
+  };
+  public adminCreando = false;
+  public adminError = '';
+  public adminExito = false;
+
+  constructor(
+    private dataService: FitoDataService,
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
     this.cargarUsuarios();
@@ -36,6 +55,7 @@ export class GestionUsuariosComponent implements OnInit {
       const termino = this.filtro.toLowerCase().trim();
       const matchTexto = !termino ||
         u.nombre.toLowerCase().includes(termino) ||
+        (u.apellido || '').toLowerCase().includes(termino) ||
         (u.email || u.correo || '').toLowerCase().includes(termino) ||
         (u.cedula || u.identificacion || '').includes(termino) ||
         (u.telefono || '').includes(termino);
@@ -48,15 +68,59 @@ export class GestionUsuariosComponent implements OnInit {
     return nombre.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
   }
 
+  public getNombreCompleto(u: Usuario): string {
+    return u.apellido ? `${u.nombre} ${u.apellido}` : u.nombre;
+  }
+
+  public getEmail(u: Usuario): string {
+    return u.email || u.correo || '—';
+  }
+
+  public getIdentificacion(u: Usuario): string {
+    return u.cedula || u.identificacion || '—';
+  }
+
+  public getFechaRegistro(u: Usuario): string {
+    if (u.created_at) {
+      return new Date(u.created_at as any).toLocaleDateString('es-CO');
+    }
+    return u.fechaRegistro || '—';
+  }
+
+  public getEstado(u: Usuario): string {
+    if (u.activo === false) return 'Suspendido';
+    if (u.activo === true) return 'Activo';
+    return u.estado || 'Activo';
+  }
+
+  public getRolLabel(u: Usuario): string {
+    switch (u.rol) {
+      case 'admin': return 'Administrador';
+      case 'tecnico': return 'Técnico ICA';
+      case 'productor': return 'Productor';
+      default: return u.rol;
+    }
+  }
+
+  public getRolIcon(u: Usuario): string {
+    switch (u.rol) {
+      case 'admin': return 'admin_panel_settings';
+      case 'tecnico': return 'fact_check';
+      case 'productor': return 'agriculture';
+      default: return 'person';
+    }
+  }
+
   public toggleSuspender(usuario: Usuario): void {
-    const accion = usuario.activo !== false ? 'suspender' : 'reactivar';
-    if (confirm(`¿Deseas ${accion} la cuenta de ${usuario.nombre}?`)) {
+    const estaActivo = this.getEstado(usuario) === 'Activo';
+    const accion = estaActivo ? 'suspender' : 'reactivar';
+    if (confirm(`¿Deseas ${accion} la cuenta de ${this.getNombreCompleto(usuario)}?`)) {
       this.dataService.suspenderUsuario(usuario.id).subscribe(() => this.cargarUsuarios());
     }
   }
 
   public eliminar(usuario: Usuario): void {
-    if (confirm(`¿Eliminar permanentemente la cuenta de ${usuario.nombre}?`)) {
+    if (confirm(`¿Eliminar permanentemente la cuenta de ${this.getNombreCompleto(usuario)}?`)) {
       this.dataService.eliminarUsuario(usuario.id).subscribe(() => this.cargarUsuarios());
     }
   }
@@ -89,5 +153,64 @@ export class GestionUsuariosComponent implements OnInit {
   public cerrarModal(): void {
     this.modalVisible = false;
     this.usuarioSeleccionado = null;
+  }
+
+  // ── Crear Admin ────────────────────────────────────────────────────────────
+
+  public abrirCrearAdmin(): void {
+    this.crearAdminVisible = true;
+    this.adminError = '';
+    this.adminExito = false;
+    this.adminForm = { nombre: '', apellido: '', cedula: '', email: '', password: '', telefono: '' };
+  }
+
+  public cerrarCrearAdmin(): void {
+    this.crearAdminVisible = false;
+    this.adminError = '';
+    this.adminExito = false;
+  }
+
+  public crearAdmin(): void {
+    this.adminError = '';
+
+    // Validaciones básicas
+    if (!this.adminForm.nombre.trim()) { this.adminError = 'El nombre es obligatorio.'; return; }
+    if (!this.adminForm.apellido.trim()) { this.adminError = 'El apellido es obligatorio.'; return; }
+    if (!this.adminForm.cedula.trim()) { this.adminError = 'La cédula es obligatoria.'; return; }
+    if (!this.adminForm.email.trim()) { this.adminError = 'El correo es obligatorio.'; return; }
+    if (!this.adminForm.password || this.adminForm.password.length < 6) {
+      this.adminError = 'La contraseña debe tener al menos 6 caracteres.';
+      return;
+    }
+
+    this.adminCreando = true;
+
+    this.authService.registerAdmin({
+      nombre: this.adminForm.nombre.trim(),
+      apellido: this.adminForm.apellido.trim(),
+      cedula: this.adminForm.cedula.trim(),
+      email: this.adminForm.email.trim(),
+      password: this.adminForm.password,
+      telefono: this.adminForm.telefono.trim() || undefined,
+    }).subscribe({
+      next: () => {
+        this.adminCreando = false;
+        this.adminExito = true;
+        this.cargarUsuarios();
+        // Cerrar automáticamente después de 2s
+        setTimeout(() => this.cerrarCrearAdmin(), 2000);
+      },
+      error: (err) => {
+        this.adminCreando = false;
+        const detail = err.error?.detail || '';
+        if (detail.includes('already') || detail.includes('duplicate') || detail.includes('existe')) {
+          this.adminError = 'Ya existe una cuenta con este correo o cédula.';
+        } else if (detail.includes('No autorizado') || detail.includes('403') || err.status === 403) {
+          this.adminError = 'No tienes permisos para crear administradores.';
+        } else {
+          this.adminError = detail || 'Error al crear administrador. Intenta nuevamente.';
+        }
+      },
+    });
   }
 }

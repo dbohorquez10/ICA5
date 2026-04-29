@@ -32,7 +32,7 @@
             <span class="material-icons" [style.color]="plaga.color">{{ plaga.icon }}</span>
           </div>
           <div class="card-content">
-            <h3>{{ plaga.nombre }}</h3>
+            <h3>{{ plaga.nombre_comun || plaga.nombre }}</h3>
             <p class="description">{{ plaga.descripcion }}</p>
             <span
               class="risk-badge"
@@ -122,12 +122,22 @@
     </div>
 
     <div class="modal-body">
-      <div class="form-group">
+      <div class="form-group" *ngIf="modalTipo === 'plaga'">
+        <label>Nombre Común *</label>
+        <input
+          type="text"
+          [(ngModel)]="nuevoItem.nombre_comun"
+          placeholder="Ej: Phytophthora"
+          class="modal-input"
+        />
+      </div>
+
+      <div class="form-group" *ngIf="modalTipo === 'cultivo'">
         <label>Nombre *</label>
         <input
           type="text"
           [(ngModel)]="nuevoItem.nombre"
-          [placeholder]="modalTipo === 'plaga' ? 'Ej: Phytophthora' : 'Ej: Plátano'"
+          placeholder="Ej: Plátano"
           class="modal-input"
         />
       </div>
@@ -164,7 +174,7 @@
             />
             <label [for]="'plaga-' + plaga.id" class="checkbox-label">
               <span class="material-icons pest-icon" [style.color]="plaga.color">{{ plaga.icon }}</span>
-              <span class="pest-name">{{ plaga.nombre }}</span>
+              <span class="pest-name">{{ plaga.nombre_comun || plaga.nombre }}</span>
             </label>
           </div>
           <div *ngIf="plagasDisponibles.length === 0" class="no-plagas-msg">
@@ -210,7 +220,7 @@
             <input 
               type="checkbox" 
               [id]="'cultivo-' + cultivo.id"
-              [checked]="nuevoItem.cultivosAfectados?.includes(cultivo.id)"
+              [checked]="nuevoItem.cultivos_afectados?.includes(cultivo.id)"
               (change)="toggleCultivo(cultivo.id)"
             />
             <label [for]="'cultivo-' + cultivo.id" class="checkbox-label">

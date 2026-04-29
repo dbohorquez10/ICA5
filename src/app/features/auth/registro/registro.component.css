@@ -156,9 +156,75 @@ input:focus {
   margin-top: 10px;
 }
 
-.btn-main:hover {
+.btn-main:hover:not(:disabled) {
   background: #4a6736;
   transform: translateY(-2px);
+}
+.btn-main:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Spinner de carga */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Banner de error del servidor */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #fff5f5, #fee2e2);
+  border: 1.5px solid #fca5a5;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+.error-banner .material-icons {
+  color: #ef4444;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.error-banner p {
+  color: #991b1b;
+  font-size: 0.88rem;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-out;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .footer-link {

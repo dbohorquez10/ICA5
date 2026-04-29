@@ -37,11 +37,35 @@ export class DashboardAdminComponent implements OnInit {
         inspeccionesPendientes: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('pendiente')).length,
         alertas: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('progreso')).length,
       };
-      this.solicitudesPendientes = pendientes.map(ins => ({
-        ...ins,
-        predioId: ins.predio_id || ins.predioId,
-        tecnicoNombre: ins.tecnico_nombre || ins.tecnicoNombre || 'Sin asignar',
-      }));
+
+      const prediosIds = pendientes.map(ins => ins.predio_id || ins.predioId || '').filter(id => !!id);
+      
+      if (prediosIds.length > 0) {
+        this.dataService.getPrediosBatch(prediosIds).subscribe(prediosBatch => {
+          const prediosMap = new Map<string, Predio>();
+          prediosBatch.forEach(p => prediosMap.set(p.id, p));
+
+          this.solicitudesPendientes = pendientes.map(ins => {
+            const predioId = ins.predio_id || ins.predioId || '';
+            const predioObj = prediosMap.get(predioId);
+            return {
+              ...ins,
+              predioId: predioId,
+              predioNombre: predioObj?.nombre || 'Predio Desconocido',
+              ubicacion: predioObj?.ubicacion || '—',
+              tecnicoNombre: ins.tecnico_nombre || ins.tecnicoNombre || 'Sin asignar',
+            };
+          });
+        });
+      } else {
+        this.solicitudesPendientes = pendientes.map(ins => ({
+          ...ins,
+          predioId: ins.predio_id || ins.predioId,
+          predioNombre: 'Desconocido',
+          ubicacion: '—',
+          tecnicoNombre: ins.tecnico_nombre || ins.tecnicoNombre || 'Sin asignar',
+        }));
+      }
     });
   }
 

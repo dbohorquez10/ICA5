@@ -1,6 +1,7 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FitoDataService, Predio, Lote, Cultivo } from '../../../core/services/fito-data.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-mis-predios',
@@ -32,15 +33,31 @@ export class MisPrediosComponent implements OnInit {
   private map: any;
   private marker: any;
   private L: any;
+  private productorId: string = '';
 
   constructor(
     private dataService: FitoDataService,
+    private authService: AuthService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
-    this.dataService.getPredios().subscribe(p => this.predios = p);
+    const user = this.authService.getUsuarioActual();
+    this.productorId = user?.id || '';
+    this.cargarPredios();
     this.dataService.getCultivos().subscribe(c => this.cultivos = c);
+  }
+
+  private cargarPredios(): void {
+    const loadPredios = this.productorId
+      ? this.dataService.getPrediosPorProductor(this.productorId)
+      : this.dataService.getPredios();
+
+    loadPredios.subscribe(p => {
+      this.predios = p;
+      // Auto-cargar lotes de cada predio para que se vean de inmediato
+      p.forEach(predio => this.cargarLotes(predio.id));
+    });
   }
 
   public getLotesDe(predioId: string): Lote[] {
@@ -94,6 +111,7 @@ export class MisPrediosComponent implements OnInit {
 
     this.dataService.agregarPredio({
       nombre: this.predioEnEdicion.nombre!,
+      productor_id: this.productorId,
       departamento: this.predioEnEdicion.departamento,
       municipio: this.predioEnEdicion.municipio,
       vereda: this.predioEnEdicion.vereda,
@@ -101,7 +119,7 @@ export class MisPrediosComponent implements OnInit {
       latitud: this.predioEnEdicion.latitud,
       longitud: this.predioEnEdicion.longitud,
     }).subscribe(() => {
-      this.dataService.getPredios().subscribe(p => this.predios = p);
+      this.cargarPredios();
       this.cerrarModalPredio();
     });
   }
@@ -150,7 +168,7 @@ export class MisPrediosComponent implements OnInit {
       nombre: `Lote ${letras[existentes] ?? (existentes + 1)}`,
       cultivo_id: this.cultivos[0]?.id ?? '',
       area: 1,
-      plantas_por_hectarea: 1000,
+      num_plantas: 1000,
       estado: 'Óptimo'
     };
     this.modalLoteVisible = true;

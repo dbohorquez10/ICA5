@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { FitoDataService, Inspeccion, Predio, Lote } from '../../../core/services/fito-data.service';
-import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-historial-inspecciones',
@@ -24,13 +23,13 @@ export class HistorialInspeccionesComponent implements OnInit {
     this.dataService.getInspecciones().subscribe(inspecciones => {
       if (!inspecciones.length) { this.historial = []; return; }
 
-      const predioRequests = inspecciones.map(ins =>
-        this.dataService.getPredio(ins.predio_id || ins.predioId || '')
-      );
+      // ── BATCH: Cargar TODOS los predios en UNA sola petición (elimina N+1) ──
+      const predioIds = inspecciones.map(ins => ins.predio_id || ins.predioId || '');
+      this.dataService.getPrediosBatch(predioIds).subscribe(predios => {
+        const predioMap = new Map(predios.map(p => [p.id, p]));
 
-      forkJoin(predioRequests).subscribe(predios => {
-        this.historial = inspecciones.map((ins, i) => {
-          const predio = predios[i];
+        this.historial = inspecciones.map(ins => {
+          const predio = predioMap.get(ins.predio_id || ins.predioId || '');
           return {
             id: ins.id,
             fecha: ins.fecha_inspeccion || ins.fechaSolicitada || '—',

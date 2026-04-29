@@ -61,11 +61,11 @@
           }}</span>
         </div>
         <div class="sol-info">
-          <h3>{{ sol.predio?.nombre || '—' }}</h3>
+          <h3>{{ sol.predioNombre || '—' }}</h3>
           <p>
             <span class="material-icons small">place</span>
-            {{ sol.predio?.ubicacion }} &nbsp;|&nbsp;
-            <span class="material-icons small">layers</span> {{ sol.lotesCount }} lotes
+            {{ sol.ubicacion || '—' }} &nbsp;|&nbsp;
+            <span class="material-icons small">layers</span> {{ sol.lotesCount || 0 }} lotes
           </p>
         </div>
         <div class="sol-meta">
@@ -110,8 +110,8 @@
       <div
         class="tecnico-option"
         *ngFor="let tec of tecnicosDisponibles"
-        [class.selected]="tecnicoSeleccionado === tec.nombre"
-        (click)="tecnicoSeleccionado = tec.nombre"
+        [class.selected]="tecnicoSeleccionado === tec.id"
+        (click)="tecnicoSeleccionado = tec.id"
       >
         <div class="tec-avatar">
           {{
@@ -127,7 +127,7 @@
           <h4>{{ tec.nombre }}</h4>
           <p>{{ tec.zona || 'Sin zona asignada' }} • {{ tec.correo }}</p>
         </div>
-        <span class="material-icons check-icon" *ngIf="tecnicoSeleccionado === tec.nombre"
+        <span class="material-icons check-icon" *ngIf="tecnicoSeleccionado === tec.id"
           >check_circle</span
         >
       </div>

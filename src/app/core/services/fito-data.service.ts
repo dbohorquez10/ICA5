@@ -126,6 +126,7 @@ export interface Usuario {
   telefono?: string;
   registro_ica?: string;
   activo?: boolean;
+  created_at?: string;
   /** Alias de compatibilidad frontend */
   correo?: string;
   estado?: 'Activo' | 'Suspendido';
@@ -171,8 +172,37 @@ export class FitoDataService {
 
   // ── PLAGAS ─────────────────────────────────────────────────────────────────
 
+  /** Normaliza la respuesta del backend añadiendo alias de compatibilidad frontend. */
+  private normalizarPlaga(p: any): Plaga {
+    const TIPO_ICONS: Record<string, string> = {
+      insecto: 'pest_control', hongo: 'spa', bacteria: 'coronavirus',
+      virus: 'biotech', nematodo: 'bug_report', maleza: 'grass',
+    };
+    const TIPO_COLORS: Record<string, string> = {
+      insecto: '#ef4444', hongo: '#8b5cf6', bacteria: '#f59e0b',
+      virus: '#06b6d4', nematodo: '#ec4899', maleza: '#22c55e',
+    };
+    return {
+      ...p,
+      nombre: p.nombre_comun || p.nombre,
+      icon: p.icon || TIPO_ICONS[p.tipo] || 'bug_report',
+      color: p.color || TIPO_COLORS[p.tipo] || '#64748b',
+      riesgo: p.riesgo || 'Medio',
+    };
+  }
+
+  /** Normaliza un predio añadiendo el campo `ubicacion` compuesto. */
+  private normalizarPredio(p: any): Predio {
+    return {
+      ...p,
+      ubicacion: p.ubicacion || [p.vereda, p.municipio, p.departamento].filter(Boolean).join(', ') || '—',
+    };
+  }
+
   getPlagas(): Observable<Plaga[]> {
-    return this.http.get<Plaga[]>(`${this.coreUrl}/catalogos/plagas`);
+    return this.http.get<any[]>(`${this.coreUrl}/catalogos/plagas`).pipe(
+      map(plagas => plagas.map(p => this.normalizarPlaga(p)))
+    );
   }
 
   getPlagasByPrediosCultivos(cultivoId: string): Observable<Plaga[]> {
@@ -194,23 +224,48 @@ export class FitoDataService {
   // ── PREDIOS ────────────────────────────────────────────────────────────────
 
   getPredios(): Observable<Predio[]> {
-    return this.http.get<Predio[]>(`${this.coreUrl}/predios/`);
+    return this.http.get<any[]>(`${this.coreUrl}/predios/`).pipe(
+      map(predios => predios.map(p => this.normalizarPredio(p)))
+    );
   }
 
   getPredio(id: string): Observable<Predio> {
-    return this.http.get<Predio>(`${this.coreUrl}/predios/${id}`);
+    return this.http.get<any>(`${this.coreUrl}/predios/${id}`).pipe(
+      map(p => this.normalizarPredio(p))
+    );
   }
 
   getPrediosPorProductor(productorId: string): Observable<Predio[]> {
-    return this.http.get<Predio[]>(`${this.coreUrl}/predios/productor/${productorId}`);
+    return this.http.get<any[]>(`${this.coreUrl}/predios/productor/${productorId}`).pipe(
+      map(predios => predios.map(p => this.normalizarPredio(p)))
+    );
+  }
+
+  /**
+   * Obtiene múltiples predios por sus IDs en UNA sola petición.
+   * Elimina el problema N+1 de llamar getPredio() en un loop.
+   */
+  getPrediosBatch(ids: string[]): Observable<Predio[]> {
+    if (!ids.length) return of([]);
+    // Deduplicar IDs
+    const uniqueIds = [...new Set(ids.filter(id => !!id))];
+    if (!uniqueIds.length) return of([]);
+    return this.http.post<any[]>(`${this.coreUrl}/predios/batch`, { ids: uniqueIds }).pipe(
+      map(predios => predios.map(p => this.normalizarPredio(p))),
+      catchError(() => of([]))
+    );
   }
 
   agregarPredio(predio: Partial<Predio>): Observable<Predio> {
-    return this.http.post<Predio>(`${this.coreUrl}/predios/`, predio);
+    return this.http.post<any>(`${this.coreUrl}/predios/`, predio).pipe(
+      map(p => this.normalizarPredio(p))
+    );
   }
 
   actualizarPredio(id: string, datos: Partial<Predio>): Observable<Predio> {
-    return this.http.put<Predio>(`${this.coreUrl}/predios/${id}`, datos);
+    return this.http.put<any>(`${this.coreUrl}/predios/${id}`, datos).pipe(
+      map(p => this.normalizarPredio(p))
+    );
   }
 
   // ── LOTES ──────────────────────────────────────────────────────────────────
@@ -295,11 +350,9 @@ export class FitoDataService {
     return this.http.put<Inspeccion>(`${this.insUrl}/inspecciones/${id}`, datos);
   }
 
-  asignarTecnicoAInspeccion(inspeccionId: string, tecnicoNombre: string, tecnicoId?: string): Observable<any> {
+  asignarTecnicoAInspeccion(inspeccionId: string, tecnicoIdOrNombre: string, tecnicoId?: string): Observable<any> {
     return this.http.patch(`${this.insUrl}/inspecciones/${inspeccionId}/asignar-tecnico`, {
-      tecnico_id: tecnicoId ?? '',
-      tecnico_nombre: tecnicoNombre,
-      modo_asignacion: 'preferencia',
+      tecnico_id: tecnicoId || tecnicoIdOrNombre,
     });
   }
 

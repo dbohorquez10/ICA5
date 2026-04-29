@@ -1,12 +1,13 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
-import { BehaviorSubject, Observable, tap, catchError, of } from 'rxjs';
+import { BehaviorSubject, Observable, tap, catchError, of, throwError } from 'rxjs';
 import { API_CONFIG } from './api.config';
 
 /**
  * Servicio de autenticación conectado al backend real.
  * Usa el endpoint /auth del ms-core-agricola vía el gateway Nginx.
+ * Autentica contra Supabase Auth y gestiona la sesión local (JWT + perfil).
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -54,40 +55,30 @@ export class AuthService {
   }
 
   /**
-   * Login real contra el backend.
-   * Si falla el backend, cae al login simulado para desarrollo.
+   * Login real contra el backend con email y contraseña.
+   * Autentica vía Supabase Auth y retorna el JWT + perfil del usuario.
    */
-  login(rolOEmail: string, password?: string): Observable<any> {
-    // Si se provee contraseña → login real
-    if (password) {
-      return this.http.post<any>(`${this.authUrl}/login`, {
-        email: rolOEmail,
-        password,
-      }).pipe(
-        tap((res) => this.guardarSesion(res.access_token, res.user)),
-        catchError((err) => {
-          console.error('Error de login:', err);
-          return of(null);
-        }),
-      );
-    }
-
-    // Fallback: login simulado por rol (para desarrollo sin backend)
-    let userData: any = {};
-    if (rolOEmail === 'tecnico') {
-      userData = { nombre: 'Técnico ICA', rol: 'tecnico', plan: 'Funcionario ICA' };
-    } else if (rolOEmail === 'admin') {
-      userData = { nombre: 'Administrador FitoGestión', rol: 'admin', plan: 'Administrador' };
-    } else {
-      userData = { nombre: 'Darwing Jaimes', rol: 'productor', plan: 'Premium Account' };
-    }
-
-    this.guardarSesion('sesion_activa_proto', userData);
-    return of(userData);
+  login(email: string, password: string): Observable<any> {
+    return this.http.post<any>(`${this.authUrl}/login`, {
+      email,
+      password,
+    }).pipe(
+      tap((res) => {
+        if (res && res.access_token) {
+          this.guardarSesion(res.access_token, res.user);
+        }
+      }),
+      catchError((err) => {
+        console.error('Error de login:', err);
+        // Retornar throwError para que el componente lo capture en el callback de error
+        return throwError(() => err);
+      }),
+    );
   }
 
   /**
    * Registro de nuevo usuario contra el backend.
+   * Crea el usuario en Supabase Auth + tabla usuarios.
    */
   register(data: {
     email: string;
@@ -97,8 +88,27 @@ export class AuthService {
     cedula: string;
     rol?: string;
     telefono?: string;
+    registro_ica?: string;
   }): Observable<any> {
     return this.http.post(`${this.authUrl}/register`, data);
+  }
+
+  /**
+   * Registro de un administrador. Requiere que el usuario actual sea admin.
+   * Envía el JWT del admin actual en el header para autorización.
+   */
+  registerAdmin(data: {
+    email: string;
+    password: string;
+    nombre: string;
+    apellido: string;
+    cedula: string;
+    telefono?: string;
+  }): Observable<any> {
+    return this.http.post(`${this.authUrl}/register`, {
+      ...data,
+      rol: 'admin',
+    });
   }
 
   logout(): void {

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FitoDataService, Predio, Lote, Inspeccion, Usuario } from '../../../core/services/fito-data.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-solicitar-inspeccion',
@@ -20,10 +21,20 @@ export class SolicitarInspeccionComponent implements OnInit {
   public agendaStatus: 'disponible' | 'ocupado' | null = null;
   public enviado = false;
 
-  constructor(private dataService: FitoDataService) {}
+  constructor(
+    private dataService: FitoDataService,
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
-    this.dataService.getPredios().subscribe(p => this.predios = p);
+    const user = this.authService.getUsuarioActual();
+    const productorId = user?.id || '';
+    // Cargar solo los predios del productor autenticado
+    if (productorId) {
+      this.dataService.getPrediosPorProductor(productorId).subscribe(p => this.predios = p);
+    } else {
+      this.dataService.getPredios().subscribe(p => this.predios = p);
+    }
     this.dataService.getTecnicosActivos().subscribe(t => this.tecnicosDisponibles = t);
   }
 

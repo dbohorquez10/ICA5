@@ -1,10 +1,16 @@
 <div class="usuarios-container fade-in">
   <div class="header-section">
-    <div>
-      <h1 class="page-title">Gestión de Registros</h1>
-      <p class="page-subtitle">
-        Administra las cuentas de técnicos y productores registrados en el sistema.
-      </p>
+    <div class="header-top-row">
+      <div>
+        <h1 class="page-title">Gestión de Registros</h1>
+        <p class="page-subtitle">
+          Administra las cuentas de técnicos, productores y administradores del sistema.
+        </p>
+      </div>
+      <button class="btn-crear-admin" (click)="abrirCrearAdmin()">
+        <span class="material-icons">person_add</span>
+        Crear Administrador
+      </button>
     </div>
   </div>
 
@@ -12,8 +18,9 @@
   <div class="info-notice">
     <span class="material-icons">info</span>
     <p>
-      El registro de nuevos usuarios se realiza a través del formulario público de registro. Desde
-      aquí puedes <strong>gestionar, visualizar y editar</strong> las cuentas existentes.
+      Los productores y técnicos se registran a través del formulario público. Desde
+      aquí puedes <strong>gestionar, visualizar y editar</strong> las cuentas existentes, y
+      <strong>crear nuevos administradores</strong> del sistema.
     </p>
   </div>
 
@@ -31,6 +38,9 @@
     <div class="rol-tabs">
       <button class="tab-btn" [class.active]="rolFiltro === 'todos'" (click)="rolFiltro = 'todos'">
         Todos
+      </button>
+      <button class="tab-btn" [class.active]="rolFiltro === 'admin'" (click)="rolFiltro = 'admin'">
+        Admins
       </button>
       <button
         class="tab-btn"
@@ -59,7 +69,6 @@
           <th>Correo</th>
           <th>Teléfono</th>
           <th>Rol</th>
-          <th>Zona / Info</th>
           <th>Registro</th>
           <th>Estado</th>
           <th>Acciones</th>
@@ -74,15 +83,16 @@
                 [ngClass]="{
                   'avatar-tecnico': u.rol === 'tecnico',
                   'avatar-productor': u.rol === 'productor',
+                  'avatar-admin': u.rol === 'admin',
                 }"
               >
-                {{ getIniciales(u.nombre) }}
+                {{ getIniciales(getNombreCompleto(u)) }}
               </div>
-              <span>{{ u.nombre }}</span>
+              <span>{{ getNombreCompleto(u) }}</span>
             </div>
           </td>
-          <td class="text-muted">{{ u.identificacion || '—' }}</td>
-          <td class="text-muted">{{ u.correo }}</td>
+          <td class="text-muted">{{ getIdentificacion(u) }}</td>
+          <td class="text-muted">{{ getEmail(u) }}</td>
           <td class="text-muted">{{ u.telefono || '—' }}</td>
           <td>
             <span
@@ -90,25 +100,23 @@
               [ngClass]="{
                 'badge-tecnico': u.rol === 'tecnico',
                 'badge-productor': u.rol === 'productor',
+                'badge-admin': u.rol === 'admin',
               }"
             >
-              <span class="material-icons">{{
-                u.rol === 'tecnico' ? 'fact_check' : 'agriculture'
-              }}</span>
-              {{ u.rol === 'tecnico' ? 'Técnico ICA' : 'Productor' }}
+              <span class="material-icons">{{ getRolIcon(u) }}</span>
+              {{ getRolLabel(u) }}
             </span>
           </td>
-          <td class="text-muted">{{ u.zona || '—' }}</td>
-          <td class="text-muted">{{ u.fechaRegistro }}</td>
+          <td class="text-muted">{{ getFechaRegistro(u) }}</td>
           <td>
             <span
               class="estado-badge"
               [ngClass]="{
-                'badge-activo': u.estado === 'Activo',
-                'badge-suspendido': u.estado === 'Suspendido',
+                'badge-activo': getEstado(u) === 'Activo',
+                'badge-suspendido': getEstado(u) === 'Suspendido',
               }"
             >
-              {{ u.estado }}
+              {{ getEstado(u) }}
             </span>
           </td>
           <td>
@@ -122,10 +130,10 @@
               <button
                 class="icon-btn suspend-btn"
                 (click)="toggleSuspender(u)"
-                [title]="u.estado === 'Activo' ? 'Suspender cuenta' : 'Reactivar cuenta'"
+                [title]="getEstado(u) === 'Activo' ? 'Suspender cuenta' : 'Reactivar cuenta'"
               >
                 <span class="material-icons">{{
-                  u.estado === 'Activo' ? 'block' : 'check_circle'
+                  getEstado(u) === 'Activo' ? 'block' : 'check_circle'
                 }}</span>
               </button>
               <button class="icon-btn delete-btn" (click)="eliminar(u)" title="Eliminar cuenta">
@@ -135,7 +143,7 @@
           </td>
         </tr>
         <tr *ngIf="usuariosFiltrados.length === 0">
-          <td colspan="9" class="empty-state">No se encontraron usuarios con ese criterio.</td>
+          <td colspan="8" class="empty-state">No se encontraron usuarios con ese criterio.</td>
         </tr>
       </tbody>
     </table>
@@ -163,52 +171,54 @@
           [ngClass]="{
             'avatar-tecnico': usuarioSeleccionado.rol === 'tecnico',
             'avatar-productor': usuarioSeleccionado.rol === 'productor',
+            'avatar-admin': usuarioSeleccionado.rol === 'admin',
           }"
         >
-          {{ getIniciales(usuarioSeleccionado.nombre) }}
+          {{ getIniciales(getNombreCompleto(usuarioSeleccionado)) }}
         </div>
-        <h3>{{ usuarioSeleccionado.nombre }}</h3>
+        <h3>{{ getNombreCompleto(usuarioSeleccionado) }}</h3>
         <span
           class="rol-badge"
           [ngClass]="{
             'badge-tecnico': usuarioSeleccionado.rol === 'tecnico',
             'badge-productor': usuarioSeleccionado.rol === 'productor',
+            'badge-admin': usuarioSeleccionado.rol === 'admin',
           }"
         >
-          {{ usuarioSeleccionado.rol === 'tecnico' ? 'Técnico ICA' : 'Productor' }}
+          {{ getRolLabel(usuarioSeleccionado) }}
         </span>
       </div>
       <div class="detalle-grid">
         <div class="detalle-item">
           <span class="detalle-label">Identificación (CC)</span>
-          <span class="detalle-value">{{ usuarioSeleccionado.identificacion || '—' }}</span>
+          <span class="detalle-value">{{ getIdentificacion(usuarioSeleccionado) }}</span>
         </div>
         <div class="detalle-item">
           <span class="detalle-label">Correo Electrónico</span>
-          <span class="detalle-value">{{ usuarioSeleccionado.correo }}</span>
+          <span class="detalle-value">{{ getEmail(usuarioSeleccionado) }}</span>
         </div>
         <div class="detalle-item">
           <span class="detalle-label">Teléfono</span>
           <span class="detalle-value">{{ usuarioSeleccionado.telefono || '—' }}</span>
         </div>
         <div class="detalle-item">
-          <span class="detalle-label">Zona Asignada</span>
-          <span class="detalle-value">{{ usuarioSeleccionado.zona || '—' }}</span>
+          <span class="detalle-label">Registro ICA</span>
+          <span class="detalle-value">{{ usuarioSeleccionado.registro_ica || '—' }}</span>
         </div>
         <div class="detalle-item">
           <span class="detalle-label">Fecha de Registro</span>
-          <span class="detalle-value">{{ usuarioSeleccionado.fechaRegistro }}</span>
+          <span class="detalle-value">{{ getFechaRegistro(usuarioSeleccionado) }}</span>
         </div>
         <div class="detalle-item">
           <span class="detalle-label">Estado</span>
           <span
             class="estado-badge"
             [ngClass]="{
-              'badge-activo': usuarioSeleccionado.estado === 'Activo',
-              'badge-suspendido': usuarioSeleccionado.estado === 'Suspendido',
+              'badge-activo': getEstado(usuarioSeleccionado) === 'Activo',
+              'badge-suspendido': getEstado(usuarioSeleccionado) === 'Suspendido',
             }"
           >
-            {{ usuarioSeleccionado.estado }}
+            {{ getEstado(usuarioSeleccionado) }}
           </span>
         </div>
       </div>
@@ -227,7 +237,7 @@
       </div>
       <div class="form-group">
         <label>Correo</label>
-        <input type="email" [(ngModel)]="editDatos.correo" class="form-input" />
+        <input type="email" [(ngModel)]="editDatos.email" class="form-input" />
       </div>
       <div class="form-row-edit">
         <div class="form-group">
@@ -235,12 +245,12 @@
           <input type="tel" [(ngModel)]="editDatos.telefono" class="form-input" />
         </div>
         <div class="form-group">
-          <label>Zona</label>
+          <label>Registro ICA</label>
           <input
             type="text"
-            [(ngModel)]="editDatos.zona"
+            [(ngModel)]="editDatos.registro_ica"
             class="form-input"
-            placeholder="Ej: Bucaramanga, Santander"
+            placeholder="Solo para técnicos"
           />
         </div>
       </div>
@@ -248,6 +258,88 @@
         <button class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
         <button class="btn-save" (click)="guardarEdicion()">
           <span class="material-icons">save</span> Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CREAR ADMINISTRADOR -->
+<div class="modal-overlay" *ngIf="crearAdminVisible" (click)="cerrarCrearAdmin()">
+  <div class="modal-box fade-in" (click)="$event.stopPropagation()">
+    <div class="modal-header-u">
+      <h2>
+        <span class="material-icons" style="color: #a855f7;">admin_panel_settings</span>
+        Crear Administrador
+      </h2>
+      <button class="close-btn" (click)="cerrarCrearAdmin()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <!-- Éxito -->
+    <div *ngIf="adminExito" class="admin-success-msg fade-in">
+      <span class="material-icons">check_circle</span>
+      <p>¡Administrador creado exitosamente!</p>
+    </div>
+
+    <!-- Formulario -->
+    <div *ngIf="!adminExito" class="edit-body">
+      <p class="admin-notice">
+        <span class="material-icons">shield</span>
+        Los administradores tienen acceso total al sistema. Solo crea cuentas para personal autorizado.
+      </p>
+
+      <!-- Error -->
+      <div *ngIf="adminError" class="admin-error-msg">
+        <span class="material-icons">error_outline</span>
+        <p>{{ adminError }}</p>
+      </div>
+
+      <div class="form-row-edit">
+        <div class="form-group">
+          <label>Nombres *</label>
+          <input type="text" [(ngModel)]="adminForm.nombre" class="form-input" placeholder="Ej: Carlos"
+            [disabled]="adminCreando" />
+        </div>
+        <div class="form-group">
+          <label>Apellidos *</label>
+          <input type="text" [(ngModel)]="adminForm.apellido" class="form-input" placeholder="Ej: Rodríguez"
+            [disabled]="adminCreando" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Cédula *</label>
+        <input type="text" [(ngModel)]="adminForm.cedula" class="form-input" placeholder="Solo números"
+          [disabled]="adminCreando" />
+      </div>
+      <div class="form-group">
+        <label>Correo electrónico *</label>
+        <input type="email" [(ngModel)]="adminForm.email" class="form-input" placeholder="admin@fitogestion.co"
+          [disabled]="adminCreando" />
+      </div>
+      <div class="form-row-edit">
+        <div class="form-group">
+          <label>Contraseña *</label>
+          <input type="password" [(ngModel)]="adminForm.password" class="form-input" placeholder="Mínimo 6 caracteres"
+            [disabled]="adminCreando" />
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" [(ngModel)]="adminForm.telefono" class="form-input" placeholder="Opcional"
+            [disabled]="adminCreando" />
+        </div>
+      </div>
+
+      <div class="modal-footer-u">
+        <button class="btn-cancel" (click)="cerrarCrearAdmin()" [disabled]="adminCreando">Cancelar</button>
+        <button class="btn-crear-admin-submit" (click)="crearAdmin()" [disabled]="adminCreando">
+          <ng-container *ngIf="!adminCreando">
+            <span class="material-icons">person_add</span> Crear Administrador
+          </ng-container>
+          <ng-container *ngIf="adminCreando">
+            <span class="spinner-admin"></span> Creando...
+          </ng-container>
         </button>
       </div>
     </div>

@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { FitoDataService } from '../../../core/services/fito-data.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -15,6 +14,7 @@ export class RegistroComponent {
   // Campos del formulario
   identificacion: string = '';
   nombre: string = '';
+  apellido: string = '';
   correo: string = '';
   telefono: string = '';
   tarjetaProfesional: string = '';
@@ -25,16 +25,18 @@ export class RegistroComponent {
 
   // Estado
   registroExitoso: boolean = false;
+  cargando: boolean = false;
+  errorServidor: string = '';
 
   constructor(
-    private dataService: FitoDataService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
   ) {}
 
   cambiarRol(rol: string): void {
     this.rolSeleccionado = rol;
     this.errores = {};
+    this.errorServidor = '';
   }
 
   /** Valida que un valor contenga solo letras y espacios */
@@ -70,8 +72,17 @@ export class RegistroComponent {
       this.errores['nombre'] = 'El nombre es obligatorio.';
     } else if (!this.soloLetras(this.nombre.trim())) {
       this.errores['nombre'] = 'El nombre solo puede contener letras y espacios.';
-    } else if (this.nombre.trim().length < 3) {
-      this.errores['nombre'] = 'Mínimo 3 caracteres.';
+    } else if (this.nombre.trim().length < 2) {
+      this.errores['nombre'] = 'Mínimo 2 caracteres.';
+    }
+
+    // Apellido: solo letras, mínimo 2 caracteres
+    if (!this.apellido.trim()) {
+      this.errores['apellido'] = 'El apellido es obligatorio.';
+    } else if (!this.soloLetras(this.apellido.trim())) {
+      this.errores['apellido'] = 'El apellido solo puede contener letras y espacios.';
+    } else if (this.apellido.trim().length < 2) {
+      this.errores['apellido'] = 'Mínimo 2 caracteres.';
     }
 
     // Correo: formato válido
@@ -111,30 +122,47 @@ export class RegistroComponent {
 
   registrarUsuario(event: Event): void {
     event.preventDefault();
+    this.errorServidor = '';
 
     if (!this.validarFormulario()) {
       return;
     }
 
-    // Registrar el usuario en el servicio de datos (mock)
-    this.dataService.agregarUsuario({
+    this.cargando = true;
+
+    // Registrar el usuario real en Supabase Auth + tabla usuarios
+    this.authService.register({
+      email: this.correo.trim(),
+      password: this.contrasena,
       nombre: this.nombre.trim(),
-      correo: this.correo.trim(),
-      rol: this.rolSeleccionado as 'productor' | 'tecnico',
-      estado: 'Activo',
-      fechaRegistro: new Date().toISOString().split('T')[0],
-      zona: this.rolSeleccionado === 'tecnico' ? 'Por asignar' : undefined,
-      identificacion: this.identificacion.trim(),
+      apellido: this.apellido.trim(),
+      cedula: this.identificacion.trim(),
+      rol: this.rolSeleccionado,
       telefono: this.telefono.trim(),
-      tarjetaProfesional: this.rolSeleccionado === 'tecnico' ? this.tarjetaProfesional.trim() : undefined,
+      registro_ica: this.rolSeleccionado === 'tecnico' ? this.tarjetaProfesional.trim() : undefined,
+    }).subscribe({
+      next: () => {
+        this.cargando = false;
+        this.registroExitoso = true;
+
+        // Redirigir al login después de 2.5 segundos
+        setTimeout(() => {
+          this.router.navigate(['/auth/login']);
+        }, 2500);
+      },
+      error: (err) => {
+        this.cargando = false;
+        const detail = err.error?.detail || '';
+        if (detail.includes('already') || detail.includes('duplicate') || detail.includes('existe')) {
+          this.errorServidor = 'Ya existe una cuenta con este correo electrónico.';
+        } else if (detail.includes('cedula')) {
+          this.errorServidor = 'Ya existe una cuenta con esta cédula.';
+        } else if (err.status === 0) {
+          this.errorServidor = 'No se pudo conectar al servidor. Verifica que el backend esté activo.';
+        } else {
+          this.errorServidor = detail || 'Error al registrar. Intenta nuevamente.';
+        }
+      },
     });
-
-    // Mostrar mensaje de éxito
-    this.registroExitoso = true;
-
-    // Redirigir al login después de 2 segundos
-    setTimeout(() => {
-      this.router.navigate(['/auth/login']);
-    }, 2500);
   }
 }
