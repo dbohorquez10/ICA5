@@ -125,6 +125,9 @@ export interface Usuario {
   rol: 'productor' | 'tecnico' | 'admin';
   telefono?: string;
   registro_ica?: string;
+  departamento?: string;
+  municipio?: string;
+  vereda?: string;
   activo?: boolean;
   created_at?: string;
   /** Alias de compatibilidad frontend */

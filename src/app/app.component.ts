@@ -1,4 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
+import { LoadingService } from './core/services/loading.service';
 
 @Component({
   selector: 'app-root',
@@ -8,4 +9,5 @@ import { Component, signal } from '@angular/core';
 })
 export class AppComponent {
   protected readonly title = signal('fito-gestion-app');
+  public loadingService = inject(LoadingService);
 }

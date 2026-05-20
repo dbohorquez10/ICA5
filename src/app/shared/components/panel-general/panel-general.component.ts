@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
 import { FitoDataService, Predio } from '../../../core/services/fito-data.service';
@@ -33,6 +33,7 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private dataService: FitoDataService,
     @Inject(PLATFORM_ID) private platformId: Object,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -89,6 +90,7 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
           if (isPlatformBrowser(this.platformId) && this.solicitudesMapa.length > 0) {
             setTimeout(() => this.iniciarMapa(), 300);
           }
+          this.cdr.detectChanges();
         });
       });
 
@@ -121,7 +123,10 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
             if (isPlatformBrowser(this.platformId) && this.solicitudesMapa.length > 0) {
               setTimeout(() => this.iniciarMapa(), 300);
             }
+            this.cdr.detectChanges();
           });
+        } else {
+          this.cdr.detectChanges();
         }
       });
 
@@ -155,6 +160,7 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
         if (isPlatformBrowser(this.platformId) && this.solicitudesMapa.length > 0) {
           setTimeout(() => this.iniciarMapa(), 300);
         }
+        this.cdr.detectChanges();
       });
     }
   }

@@ -1,0 +1,37 @@
+<div class="informe-container" *ngIf="informe">
+  <div class="informe-header">
+    <h2>Informe Fitosanitario de Inspección</h2>
+    <p>ID Inspección: {{ informe.inspeccion_id }}</p>
+    <p>Fecha Generación: {{ informe.fecha_generacion | date:'medium' }}</p>
+  </div>
+
+  <div class="informe-body">
+    <div class="metric-box">
+      <h4>Plantas Evaluadas</h4>
+      <p>{{ informe.plantas_evaluadas }}</p>
+    </div>
+    <div class="metric-box">
+      <h4>Plantas Afectadas</h4>
+      <p>{{ informe.plantas_afectadas }}</p>
+    </div>
+    <div class="metric-box">
+      <h4>Incidencia Global</h4>
+      <p>{{ informe.incidencia_global_pct }}%</p>
+    </div>
+  </div>
+
+  <div class="informe-alerta" [ngClass]="{'critico': informe.incidencia_global_pct >= 15, 'alerta': informe.incidencia_global_pct >= 5 && informe.incidencia_global_pct < 15}">
+    <h3>Nivel de Alerta Recomendado</h3>
+    <p>{{ informe.nivel_alerta }}</p>
+  </div>
+
+  <div class="informe-actions hide-on-print">
+    <button class="btn-print" (click)="imprimirInforme()">
+      <span class="material-icons">print</span> Imprimir / Exportar PDF
+    </button>
+  </div>
+</div>
+
+<div *ngIf="error" class="error-msg">
+  {{ error }}
+</div>

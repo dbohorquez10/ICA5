@@ -26,6 +26,15 @@ export class MisPrediosComponent implements OnInit {
   public loteEnEdicionId: string = '';
   public nuevoLote: Partial<Lote> = {};
 
+  public departamentos = ['Antioquia', 'Cundinamarca', 'Santander', 'Valle del Cauca'];
+  public municipiosPorDepto: { [key: string]: string[] } = {
+    'Antioquia': ['Medellín', 'Bello', 'Envigado', 'Itagüí'],
+    'Cundinamarca': ['Bogotá', 'Soacha', 'Chía', 'Zipaquirá'],
+    'Santander': ['Bucaramanga', 'Floridablanca', 'Girón', 'Lebrija', 'San Gil', 'Socorro'],
+    'Valle del Cauca': ['Cali', 'Buenaventura', 'Palmira', 'Buga']
+  };
+  public municipiosDisponibles: string[] = [];
+
   public gpsLoading = false;
   public gpsStatus: 'ok' | 'error' | null = null;
   public erroresPredio: { [key: string]: string } = {};
@@ -94,9 +103,16 @@ export class MisPrediosComponent implements OnInit {
       nombre: '', departamento: '', municipio: '', vereda: '',
       numero_registro_ica: 'ICA-' + Math.floor(100000 + Math.random() * 900000)
     };
+    this.municipiosDisponibles = [];
     this.erroresPredio = {};
     this.modalPredioVisible = true;
     setTimeout(() => this.iniciarMapa(), 200);
+  }
+
+  public onDepartamentoChange(): void {
+    const depto = this.predioEnEdicion.departamento;
+    this.municipiosDisponibles = depto ? this.municipiosPorDepto[depto] || [] : [];
+    this.predioEnEdicion.municipio = '';
   }
 
   public guardarPredio(): void {

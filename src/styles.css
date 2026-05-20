@@ -1,14 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  --color-principal: #30391f;
-  --color-comp-1: #668a4c;
+  --color-principal: #1b2610; /* Darkened for better contrast */
+  --color-comp-1: #4a6e30; /* Adjusted for AAA contrast on white */
   --color-comp-2: #accc78;
-  --color-comp-3: #464646;
+  --color-comp-3: #2d2d2d; /* Darkened */
   --color-claro: #ffffff;
   --bg-light: #f4f6f2;
   --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
   --shadow-login: 0 10px 40px rgba(0, 0, 0, 0.3);
+  
+  /* New Variables for UI/UX */
+  --font-base-size: 16px;
+  --font-large: 1.125rem;
+  --spacing-btn-y: 0.75rem;
+  --spacing-btn-x: 1.5rem;
+  --radius-btn: 8px;
 }
 
 html,
@@ -26,4 +33,89 @@ body {
     sans-serif;
   background-color: var(--bg-light);
   color: var(--color-principal);
+  font-size: var(--font-base-size);
+  line-height: 1.6;
+}
+
+/* Global Buttons UI/UX */
+button, .btn {
+  font-size: var(--font-base-size);
+  padding: var(--spacing-btn-y) var(--spacing-btn-x);
+  min-height: 44px; /* Apple UI Guideline for minimum touch area */
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+button:hover, .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Form Inputs UI/UX */
+input, select, textarea {
+  font-size: var(--font-base-size);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  min-height: 44px;
+}
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--color-comp-1);
+  outline-offset: 1px;
+}
+
+/* Table UI/UX */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+th, td {
+  padding: 1rem 1.25rem; /* Larger click areas for table rows */
+  font-size: var(--font-base-size);
+}
+tr {
+  transition: background-color 0.2s ease;
+}
+tr:hover td {
+  background-color: #f1f5f9;
+}
+
+/* Links and Navigation */
+a {
+  color: var(--color-comp-1);
+  text-decoration: none;
+  font-weight: 500;
+}
+a:hover {
+  text-decoration: underline;
+  color: var(--color-principal);
+}
+
+/* Spinner Styles */
+.global-spinner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+}
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #e2e8f0;
+  border-top-color: var(--color-comp-1);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

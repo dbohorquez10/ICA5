@@ -115,19 +115,17 @@
       </div>
       <div class="form-group" [class.has-error]="erroresPredio['ubicacion']">
         <label>Departamento *</label>
-        <input
-          type="text"
-          [(ngModel)]="predioEnEdicion.departamento"
-          placeholder="Ej: Santander"
-        />
+        <select [(ngModel)]="predioEnEdicion.departamento" (change)="onDepartamentoChange()">
+          <option value="">Seleccione un departamento...</option>
+          <option *ngFor="let depto of departamentos" [value]="depto">{{ depto }}</option>
+        </select>
       </div>
       <div class="form-group" [class.has-error]="erroresPredio['ubicacion']">
         <label>Municipio *</label>
-        <input
-          type="text"
-          [(ngModel)]="predioEnEdicion.municipio"
-          placeholder="Ej: Lebrija"
-        />
+        <select [(ngModel)]="predioEnEdicion.municipio" [disabled]="!predioEnEdicion.departamento">
+          <option value="">Seleccione un municipio...</option>
+          <option *ngFor="let mun of municipiosDisponibles" [value]="mun">{{ mun }}</option>
+        </select>
       </div>
       <div class="form-group" [class.has-error]="erroresPredio['ubicacion']">
         <label>Vereda *</label>
