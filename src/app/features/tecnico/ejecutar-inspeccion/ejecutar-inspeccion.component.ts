@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { FitoDataService, Inspeccion, Predio, Lote, Plaga, SubInspeccionLote } from '../../../core/services/fito-data.service';
+import { Component, OnInit, inject } from '@angular/core';
+import { NotificationService } from '../../../core/services/notification.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FitoDataService, Inspeccion, Predio, Lote, Plaga, SubInspeccionLote, RegistroPlanta } from '../../../core/services/fito-data.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 type Vista = 'ficha-predio' | 'lista-lotes' | 'inspeccion-lote';
 
@@ -11,6 +13,7 @@ type Vista = 'ficha-predio' | 'lista-lotes' | 'inspeccion-lote';
   standalone: false
 })
 export class EjecutarInspeccionComponent implements OnInit {
+  private notify = inject(NotificationService);
 
   public vista: Vista = 'ficha-predio';
   public inspeccion!: Inspeccion;
@@ -24,7 +27,12 @@ export class EjecutarInspeccionComponent implements OnInit {
   public observacionesGenerales: string = '';
   public cultivosMap: { [id: string]: string } = {};
 
-  constructor(public dataService: FitoDataService, private router: Router) {}
+  constructor(
+    public dataService: FitoDataService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private authService: AuthService
+  ) {}
 
   /** Resolves cultivo name from local cache */
   public getCultivoNombre(lote: any): string {
@@ -37,21 +45,36 @@ export class EjecutarInspeccionComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.dataService.getInspecciones().subscribe(inspecciones => {
-      const pendientes = inspecciones.filter(i => !(i.estado || '').toLowerCase().includes('completada'));
-      if (!pendientes.length) {
-        alert('No hay inspecciones asignadas pendientes.');
-        this.router.navigate(['/app/tecnico/inspecciones']);
-        return;
-      }
-      this.inspeccion = pendientes[0];
+    const user = this.authService.getUsuarioActual();
+    if (!user) {
+      this.router.navigate(['/app/tecnico/inspecciones']);
+      return;
+    }
+
+    const inspeccionId = this.route.snapshot.paramMap.get('inspeccionId');
+    if (!inspeccionId) {
+      this.notify.showInfo('No se especificó la inspección a ejecutar.');
+      this.router.navigate(['/app/tecnico/inspecciones']);
+      return;
+    }
+
+    this.dataService.getInspeccionPorId(inspeccionId).subscribe(ins => {
+      this.inspeccion = ins;
       const predioId = this.inspeccion.predio_id || this.inspeccion.predioId || '';
+
+      // Cargar sub-inspecciones existentes
+      this.dataService.getSubInspeccionesPorInspeccion(inspeccionId).subscribe(subs => {
+        this.inspeccion.sub_inspecciones = subs;
+      });
 
       this.dataService.getPredio(predioId).subscribe(p => this.predio = p);
       this.dataService.getLotesPorPredio(predioId).subscribe(l => this.lotesDePredio = l);
       this.dataService.getCultivos().subscribe(cultivos => {
         cultivos.forEach(c => this.cultivosMap[c.id] = c.nombre);
       });
+    }, err => {
+      this.notify.showError('No se pudo cargar la inspección.');
+      this.router.navigate(['/app/tecnico/inspecciones']);
     });
   }
 
@@ -103,12 +126,37 @@ export class EjecutarInspeccionComponent implements OnInit {
     if (sub && (sub.estado || '').toLowerCase().includes('completad')) return;
 
     this.loteActual = lote;
-    this.subActual = sub ? { ...sub } : {
-      loteId: lote.id, estado: 'En Progreso', plantasEvaluadas: 0, registroPlantas: []
-    };
-    this.subActual.estado = 'En Progreso';
-    this.plantaActual = (this.subActual.plantasEvaluadas || 0) + 1;
+    this.plantaActual = 1;
     this.plagasMarcadas = new Set();
+    
+    if (sub) {
+      this.subActual = { ...sub };
+      this.subActual.estado = 'En Progreso';
+      this.plantaActual = (this.subActual.plantasEvaluadas || 0) + 1;
+      this.iniciarLoteView(lote);
+    } else {
+      // Crear en el backend primero
+      this.dataService.crearSubInspeccion({
+        inspeccion_id: this.inspeccion.id,
+        codigo_punto: lote.id, // Using lote ID as codigo_punto to map it
+        ubicacion_referencia: lote.nombre,
+        estado: 'en_progreso' as any
+      }).subscribe(newSub => {
+        this.subActual = newSub;
+        this.subActual.loteId = lote.id; // local tracking
+        this.subActual.estado = 'En Progreso';
+        this.subActual.registroPlantas = [];
+        this.subActual.plantasEvaluadas = 0;
+        
+        if (!this.inspeccion.sub_inspecciones) this.inspeccion.sub_inspecciones = [];
+        this.inspeccion.sub_inspecciones.push(this.subActual);
+        
+        this.iniciarLoteView(lote);
+      });
+    }
+  }
+
+  private iniciarLoteView(lote: Lote): void {
     const cultivoId = lote.cultivo_id || lote.cultivoId || '';
     this.dataService.getPlagasByPrediosCultivos(cultivoId).subscribe(p => this.plagasDelLote = p);
     this.vista = 'inspeccion-lote';
@@ -140,7 +188,6 @@ export class EjecutarInspeccionComponent implements OnInit {
     if (!this.subActual.registroPlantas) this.subActual.registroPlantas = [];
     if (this.plagasMarcadas.size > 0 || this.plantaActual > 1) {
       this.subActual.registroPlantas.push({
-        numeroPlanta: this.plantaActual,
         numero_planta: this.plantaActual,
         plagasDetectadas: Array.from(this.plagasMarcadas)
       });
@@ -149,14 +196,54 @@ export class EjecutarInspeccionComponent implements OnInit {
 
     this.subActual.estado = 'Completada';
 
-    // Si el sub tiene id del backend, actualizarlo
-    if (this.subActual.id) {
-      this.dataService.actualizarSubInspeccion(this.subActual.id, {
-        estado: 'completado', observaciones: ''
-      }).subscribe();
-    }
+    // Construir los registros de plantas para el backend
+    if (this.subActual.id && this.subActual.registroPlantas.length > 0) {
+      const recordsToSave: Partial<RegistroPlanta>[] = [];
+      
+      this.subActual.registroPlantas.forEach(rp => {
+        if (rp.plagasDetectadas && rp.plagasDetectadas.length > 0) {
+          rp.plagasDetectadas.forEach(plagaId => {
+            recordsToSave.push({
+              sub_inspeccion_id: this.subActual.id,
+              numero_planta: rp.numero_planta || rp.numeroPlanta || 1,
+              plaga_id: plagaId,
+              sintoma: 'Detectado en inspección',
+              severidad: 'leve',
+              incidencia: 10,
+              estado_planta: 'enferma'
+            });
+          });
+        } else {
+          recordsToSave.push({
+            sub_inspeccion_id: this.subActual.id,
+            numero_planta: rp.numero_planta || rp.numeroPlanta || 1,
+            estado_planta: 'sana'
+          });
+        }
+      });
 
-    this.vista = 'lista-lotes';
+      this.dataService.registrarPlantasBulk(recordsToSave).subscribe({
+        next: () => {
+          this.dataService.actualizarSubInspeccion(this.subActual.id!, {
+            estado: 'completado' as any, 
+            observaciones: '',
+            plantas_evaluadas: this.subActual.plantasEvaluadas
+          }).subscribe(() => this.vista = 'lista-lotes');
+        },
+        error: (err) => {
+          console.error("Error al registrar plantas", err);
+          this.notify.showError("Hubo un error al guardar los registros de las plantas.");
+        }
+      });
+    } else if (this.subActual.id) {
+      this.dataService.actualizarSubInspeccion(this.subActual.id, {
+        estado: 'completado' as any, 
+        observaciones: '',
+        plantas_evaluadas: this.subActual.plantasEvaluadas || 0
+      }).subscribe(() => this.vista = 'lista-lotes');
+    } else {
+      this.vista = 'lista-lotes';
+    }
   }
 
   public volverALotes(): void {
@@ -167,7 +254,7 @@ export class EjecutarInspeccionComponent implements OnInit {
     if (confirm(`¿Finalizar la inspección del predio "${this.predio.nombre}"?`)) {
       this.dataService.finalizarInspeccion(this.inspeccion.id, this.observacionesGenerales)
         .subscribe(() => {
-          alert('¡Inspección completada exitosamente!');
+          this.notify.showSuccess('¡Inspección completada exitosamente!');
           this.router.navigate(['/app/tecnico/inspecciones']);
         });
     }

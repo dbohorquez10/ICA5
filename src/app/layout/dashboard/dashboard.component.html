@@ -8,7 +8,7 @@
     <nav class="sidebar-menu">
       <div class="menu-section">
         <small class="section-title">Principal</small>
-        <a routerLink="/app/inicio" routerLinkActive="active">
+        <a routerLink="/app/inicio" routerLinkActive="active" title="Ir al panel principal con el resumen de tu cuenta">
           <span class="material-icons">dashboard</span>
           <span class="menu-label">Panel Principal</span>
         </a>
@@ -17,15 +17,15 @@
       @if (usuarioActual?.rol === 'productor') {
         <div class="menu-section">
           <small class="section-title">Panel de Productor</small>
-          <a routerLink="/app/productor/mis-predios" routerLinkActive="active">
+          <a routerLink="/app/productor/mis-predios" routerLinkActive="active" title="Ver y gestionar mis predios registrados">
             <span class="material-icons">agriculture</span>
             <span class="menu-label">Mis Predios</span>
           </a>
-          <a routerLink="/app/productor/solicitar" routerLinkActive="active">
+          <a routerLink="/app/productor/solicitar" routerLinkActive="active" title="Solicitar una nueva inspección fitosanitaria">
             <span class="material-icons">assignment_add</span>
             <span class="menu-label">Solicitar Inspección</span>
           </a>
-          <a routerLink="/app/productor/reportes" routerLinkActive="active">
+          <a routerLink="/app/productor/reportes" routerLinkActive="active" title="Ver reportes y certificados de inspección">
             <span class="material-icons">description</span> <span class="menu-label">Reportes</span>
           </a>
         </div>
@@ -34,11 +34,15 @@
       @if (usuarioActual?.rol === 'tecnico') {
         <div class="menu-section">
           <small class="section-title">Panel de Técnico ICA</small>
-          <a routerLink="/app/tecnico/inspecciones" routerLinkActive="active">
+          <a routerLink="/app/tecnico/inspecciones" routerLinkActive="active" title="Ver inspecciones pendientes y asignadas">
             <span class="material-icons">fact_check</span>
             <span class="menu-label">Inspecciones</span>
           </a>
-          <a routerLink="/app/tecnico/historial-inspecciones" routerLinkActive="active">
+          <a routerLink="/app/tecnico/reportes" routerLinkActive="active" title="Ver reportes y certificados de inspección">
+            <span class="material-icons">description</span>
+            <span class="menu-label">Reportes</span>
+          </a>
+          <a routerLink="/app/tecnico/historial-inspecciones" routerLinkActive="active" title="Ver historial de inspecciones finalizadas">
             <span class="material-icons">history</span>
             <span class="menu-label">Historial</span>
           </a>
@@ -48,19 +52,23 @@
       @if (usuarioActual?.rol === 'admin') {
         <div class="menu-section">
           <small class="section-title">Administración</small>
-          <a routerLink="/app/admin/dashboard" routerLinkActive="active">
+          <a routerLink="/app/admin/dashboard" routerLinkActive="active" title="Ver estadísticas y panel general de administración">
             <span class="material-icons">query_stats</span>
             <span class="menu-label">Panel General</span>
           </a>
-          <a routerLink="/app/admin/usuarios" routerLinkActive="active">
+          <a routerLink="/app/admin/reportes" routerLinkActive="active" title="Ver y evaluar reportes de inspección">
+            <span class="material-icons">description</span>
+            <span class="menu-label">Reportes</span>
+          </a>
+          <a routerLink="/app/admin/usuarios" routerLinkActive="active" title="Gestionar usuarios del sistema">
             <span class="material-icons">manage_accounts</span>
             <span class="menu-label">Usuarios</span>
           </a>
-          <a routerLink="/app/admin/catalogos" routerLinkActive="active">
+          <a routerLink="/app/admin/catalogos" routerLinkActive="active" title="Administrar catálogos de plagas y cultivos">
             <span class="material-icons">category</span>
             <span class="menu-label">Catálogos</span>
           </a>
-          <a routerLink="/app/admin/configuracion" routerLinkActive="active">
+          <a routerLink="/app/admin/configuracion" routerLinkActive="active" title="Configurar preferencias de sistema y notificaciones">
             <span class="material-icons">settings</span>
             <span class="menu-label">Configuración</span>
           </a>
@@ -69,7 +77,7 @@
     </nav>
 
     <div class="sidebar-footer">
-      <button (click)="cerrarSesion()" class="btn-logout">
+      <button (click)="cerrarSesion()" class="btn-logout" title="Cerrar sesión de forma segura">
         <span class="material-icons">logout</span> <span class="menu-label">Cerrar Sesión</span>
       </button>
     </div>
@@ -78,8 +86,9 @@
   <main class="main-container">
     <header class="top-header">
       <div class="header-left">
-        <button class="toggle-btn" (click)="toggleSidebar()">
+        <button class="toggle-btn" (click)="toggleSidebar()" style="display: flex; align-items: center; gap: 8px; width: auto; padding: 8px 16px 8px 8px;" [title]="sidebarColapsada ? 'Expandir menú' : 'Contraer menú'">
           <span class="material-icons">{{ sidebarColapsada ? 'menu' : 'menu_open' }}</span>
+          <span class="toggle-menu-text" style="font-weight: 700; font-size: 1rem; color: #1b2610;">Menú</span>
         </button>
         <div class="breadcrumb">
           Sistema /
@@ -88,13 +97,38 @@
       </div>
 
       <div class="top-actions">
-        <div class="notification-wrapper" (click)="toggleNotificaciones()">
-          <button class="icon-btn" style="position: relative">
-            <span class="material-icons">notifications_none</span><span class="badge">2</span>
+        <div class="notification-wrapper" (click)="toggleNotificaciones()" title="Ver panel de notificaciones" style="position: relative;">
+          <button class="icon-btn" style="position: relative" title="Campana de notificaciones">
+            <span class="material-icons">notifications_none</span>
+            <span class="badge" *ngIf="noLeidas > 0">{{ noLeidas }}</span>
           </button>
+
+          <!-- Dropdown de Notificaciones -->
+          <div class="notif-dropdown fade-in" *ngIf="showNotificaciones" (click)="$event.stopPropagation()">
+            <div class="notif-header">
+              <h3>Notificaciones</h3>
+            </div>
+            <div class="notif-body">
+              <div class="notif-empty" *ngIf="notificaciones.length === 0">
+                <span class="material-icons">notifications_paused</span>
+                <p>No tienes notificaciones nuevas</p>
+              </div>
+              <div class="notif-item" *ngFor="let n of notificaciones" [class.unread]="!n.leido" (click)="marcarComoLeida(n, $event)">
+                <div class="notif-icon" [ngClass]="n.tipo === 'alerta' ? 'icon-alert' : 'icon-info'">
+                  <span class="material-icons">{{ n.tipo === 'alerta' ? 'warning' : 'info' }}</span>
+                </div>
+                <div class="notif-content">
+                  <h4>{{ n.titulo }}</h4>
+                  <p>{{ n.mensaje }}</p>
+                  <small>{{ n.created_at | date:'short' }}</small>
+                </div>
+                <div class="notif-status" *ngIf="!n.leido"></div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="divider"></div>
-        <div class="user-profile">
+        <div class="user-profile" title="Ver información del usuario logueado">
           <div class="user-meta">
             <span class="user-name">{{ usuarioActual?.nombre }}</span>
             <span class="user-status">{{ usuarioActual?.plan }}</span>

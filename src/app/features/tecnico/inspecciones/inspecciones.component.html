@@ -46,6 +46,12 @@
       <div class="section-header"><h2>Agenda Asignada</h2></div>
 
       <div class="tasks-list">
+        @if (listaInspecciones.length === 0) {
+          <div class="empty-state">
+            <span class="material-icons" style="font-size: 48px; color: #cbd5e1; margin-bottom: 10px;">inbox</span>
+            <p>No tienes inspecciones asignadas en este momento.</p>
+          </div>
+        }
         @for (item of listaInspecciones; track item.id) {
           <div class="task-card" [class.alta-prioridad]="item.prioridad === 'Alta'">
             <div class="task-header">
@@ -80,7 +86,7 @@
               </button>
               <button
                 class="btn-primary"
-                routerLink="/app/tecnico/ejecutar-inspeccion"
+                [routerLink]="['/app/tecnico/ejecutar-inspeccion', item.id]"
                 [disabled]="item.estado === 'Completada'"
               >
                 {{ item.estado === 'Completada' ? 'Cerrada' : 'Iniciar Visita' }}

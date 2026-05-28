@@ -1,19 +1,38 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { GestionUsuariosComponent } from './gestion-usuarios.component';
+import { FitoDataService } from '../../../core/services/fito-data.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { of } from 'rxjs';
+import { FormsModule } from '@angular/forms';
 
-import { GestionUsuarios } from './gestion-usuarios';
+describe('GestionUsuariosComponent', () => {
+  let component: GestionUsuariosComponent;
+  let fixture: ComponentFixture<GestionUsuariosComponent>;
 
-describe('GestionUsuarios', () => {
-  let component: GestionUsuarios;
-  let fixture: ComponentFixture<GestionUsuarios>;
+  const mockFitoDataService = {
+    getUsuarios: () => of([]),
+    editarUsuario: () => of({}),
+    suspenderUsuario: () => of({}),
+    eliminarUsuario: () => of({})
+  };
+
+  const mockAuthService = {
+    registerAdmin: () => of({})
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [GestionUsuarios],
+      imports: [FormsModule],
+      declarations: [GestionUsuariosComponent],
+      providers: [
+        { provide: FitoDataService, useValue: mockFitoDataService },
+        { provide: AuthService, useValue: mockAuthService }
+      ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(GestionUsuarios);
+    fixture = TestBed.createComponent(GestionUsuariosComponent);
     component = fixture.componentInstance;
-    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
   it('should create', () => {

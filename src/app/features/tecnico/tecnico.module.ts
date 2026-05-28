@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TecnicoRoutingModule } from './tecnico-routing.module';
+import { SharedModule } from '../../shared/shared.module';
 
 // Componentes del Técnico
 import { InspeccionesComponent } from './inspecciones/inspecciones.component';
@@ -14,6 +15,6 @@ import { HistorialInspeccionesComponent } from './historial-inspecciones/histori
     EjecutarInspeccionComponent,
     HistorialInspeccionesComponent,
   ],
-  imports: [CommonModule, FormsModule, TecnicoRoutingModule],
+  imports: [CommonModule, FormsModule, TecnicoRoutingModule, SharedModule],
 })
 export class TecnicoModule {}

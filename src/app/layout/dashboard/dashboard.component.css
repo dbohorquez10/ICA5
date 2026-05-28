@@ -245,3 +245,130 @@
   padding: 0;
   position: relative;
 }
+
+/* =========================================================
+   NOTIFICACIONES DROPDOWN
+========================================================= */
+.notif-dropdown {
+  position: absolute;
+  top: 50px;
+  right: -10px;
+  width: 340px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.notif-header {
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.notif-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #1b2610;
+  font-weight: 700;
+}
+
+.notif-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notif-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.notif-empty .material-icons {
+  font-size: 32px;
+  opacity: 0.5;
+}
+
+.notif-item {
+  display: flex;
+  padding: 16px;
+  gap: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  position: relative;
+}
+
+.notif-item:hover {
+  background: #f8fafc;
+}
+
+.notif-item.unread {
+  background: #f0fdf4;
+}
+
+.notif-item.unread:hover {
+  background: #dcfce7;
+}
+
+.notif-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.icon-info {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.icon-alert {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.notif-content {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.notif-content h4 {
+  margin: 0 0 4px 0;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.notif-content p {
+  margin: 0 0 8px 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.notif-content small {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.notif-status {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { COLOMBIA_DEPARTAMENTOS } from '../../../core/constants/colombia-regions';
 
 @Component({
   selector: 'app-registro',
@@ -22,6 +23,25 @@ export class RegistroComponent {
 
   // Errores de validación
   errores: { [key: string]: string } = {};
+
+  // Regionalización
+  departamentoSeleccionado: string = '';
+  municipioSeleccionado: string = '';
+  vereda: string = '';
+
+  departamentosMap = COLOMBIA_DEPARTAMENTOS;
+
+  get departamentos(): string[] {
+    return Object.keys(this.departamentosMap);
+  }
+
+  get municipiosDisponibles(): string[] {
+    return this.departamentoSeleccionado ? this.departamentosMap[this.departamentoSeleccionado] : [];
+  }
+
+  onDepartamentoChange(): void {
+    this.municipioSeleccionado = '';
+  }
 
   // Estado
   registroExitoso: boolean = false;
@@ -117,6 +137,16 @@ export class RegistroComponent {
       this.errores['contrasena'] = 'La contraseña debe tener al menos 6 caracteres.';
     }
 
+    // Departamento
+    if (!this.departamentoSeleccionado) {
+      this.errores['departamento'] = 'El departamento es obligatorio.';
+    }
+
+    // Municipio
+    if (!this.municipioSeleccionado) {
+      this.errores['municipio'] = 'El municipio es obligatorio.';
+    }
+
     return Object.keys(this.errores).length === 0;
   }
 
@@ -140,6 +170,9 @@ export class RegistroComponent {
       rol: this.rolSeleccionado,
       telefono: this.telefono.trim(),
       registro_ica: this.rolSeleccionado === 'tecnico' ? this.tarjetaProfesional.trim() : undefined,
+      departamento: this.departamentoSeleccionado,
+      municipio: this.municipioSeleccionado,
+      vereda: this.vereda.trim() || undefined
     }).subscribe({
       next: () => {
         this.cargando = false;

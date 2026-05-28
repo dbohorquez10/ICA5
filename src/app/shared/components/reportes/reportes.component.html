@@ -1,0 +1,179 @@
+<div class="reportes-container fade-in">
+  <div class="header-section">
+    <div>
+      <h1 class="page-title">Reportes y Certificados</h1>
+      <p class="page-subtitle">Historial de inspecciones y certificados fitosanitarios — FitoGestión.</p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading">
+    <span class="material-icons spin">autorenew</span>
+    <p>Cargando reportes fitosanitarios...</p>
+  </div>
+
+  <!-- Content when loaded -->
+  <ng-container *ngIf="!isLoading">
+    <!-- Resumen rápido -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <span class="material-icons icon-green">folder_copy</span>
+        <div>
+          <p class="summary-value">{{ listaReportes.length }}</p>
+          <p class="summary-label">Total Documentos</p>
+        </div>
+      </div>
+      <div class="summary-card">
+        <span class="material-icons icon-green">task_alt</span>
+        <div>
+          <p class="summary-value">{{ listaReportes | countByEstado: 'Aprobado' }}</p>
+          <p class="summary-label">Aprobados</p>
+        </div>
+      </div>
+      <div class="summary-card">
+        <span class="material-icons icon-red">warning_amber</span>
+        <div>
+          <p class="summary-value">{{ listaReportes | countByEstado: 'Alerta Detectada' }}</p>
+          <p class="summary-label">Con Alertas</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-bar" *ngIf="listaReportes.length > 0">
+      <button
+        class="filter-chip"
+        [class.active]="filtroActivo === 'todos'"
+        (click)="setFiltro('todos')"
+      >
+        Todos
+      </button>
+      <button
+        class="filter-chip"
+        [class.active]="filtroActivo === 'aprobado'"
+        (click)="setFiltro('aprobado')"
+      >
+        Aprobados
+      </button>
+      <button
+        class="filter-chip"
+        [class.active]="filtroActivo === 'alerta'"
+        (click)="setFiltro('alerta')"
+      >
+        Con Alerta
+      </button>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="listaReportes.length === 0">
+      <span class="material-icons empty-icon">folder_open</span>
+      <h2>No hay reportes disponibles</h2>
+      <p>Aún no se han completado inspecciones en tus predios registrados.</p>
+    </div>
+
+    <!-- Lista de Reportes -->
+    <div class="card" *ngIf="listaReportes.length > 0">
+      <div class="reporte-row" *ngFor="let reporte of reportesFiltrados">
+        <div
+          class="reporte-icon"
+          [ngClass]="{
+            'icon-bg-green': reporte.estado === 'Aprobado',
+            'icon-bg-red': reporte.estado === 'Alerta Detectada',
+            'icon-bg-yellow': reporte.estado === 'En Revisión',
+          }"
+        >
+          <span class="material-icons">
+            {{
+              reporte.estado === 'Aprobado'
+                ? 'picture_as_pdf'
+                : reporte.estado === 'Alerta Detectada'
+                  ? 'warning_amber'
+                  : 'pending'
+            }}
+          </span>
+        </div>
+
+        <div class="reporte-info">
+          <h3>{{ reporte.archivo }}</h3>
+          <p>{{ reporte.predio }} • {{ reporte.cultivo }} • {{ reporte.fecha }}</p>
+          <span class="tecnico-badge"
+            ><span class="material-icons">engineering</span> {{ reporte.tecnico }}</span
+          >
+        </div>
+
+        <div class="reporte-meta">
+          <div class="incidencia-wrapper">
+            <small>Incidencia Global</small>
+            <div class="incidencia-bar">
+              <div
+                class="bar-fill"
+                [style.width]="reporte.incidencia + '%'"
+                [ngClass]="{
+                  'bar-green': reporte.incidencia < 10,
+                  'bar-red': reporte.incidencia >= 10,
+                }"
+              ></div>
+            </div>
+            <span class="incidencia-pct">{{ reporte.incidencia }}%</span>
+          </div>
+        </div>
+
+        <div class="reporte-status">
+          <span
+            class="status-badge"
+            [ngClass]="{
+              'badge-green': reporte.estado === 'Aprobado',
+              'badge-red': reporte.estado === 'Alerta Detectada',
+              'badge-yellow': reporte.estado === 'En Revisión',
+            }"
+          >
+            {{ reporte.estado }}
+          </span>
+        </div>
+
+        <div class="reporte-actions">
+          <button class="btn-action secondary" (click)="verInforme(reporte)" title="Ver Informe Detallado" style="margin-right: 8px; background-color: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb;">
+            <span class="material-icons">visibility</span>
+          </button>
+          
+          <button class="btn-action" (click)="descargar(reporte)" title="Descargar Informe PDF">
+            <span class="material-icons">download</span>
+          </button>
+          
+          <!-- Botón de descargar certificado fitosanitario (solo si está aprobado) -->
+          <button *ngIf="reporte.estado === 'Aprobado'" class="btn-action certificate-btn" (click)="descargarCertificado(reporte)" title="Descargar Certificado Fitosanitario" style="margin-left: 8px; background-color: #2d6a4f; color: white; display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; border-radius: 4px; border: none; cursor: pointer;">
+            <span class="material-icons">workspace_premium</span>
+          </button>
+          
+          <!-- Botones de acción del administrador para aprobar/rechazar (solo si está En Revisión y rol es admin) -->
+          <ng-container *ngIf="usuarioActual?.rol === 'admin' && reporte.estado === 'En Revisión'">
+            <button class="btn-action approve-btn" (click)="evaluarReporte(reporte.id, 'aprobado')" title="Aprobar Inspección" style="margin-left: 8px; background-color: #10b981; color: white; display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; border-radius: 4px; border: none; cursor: pointer;">
+              <span class="material-icons">check</span>
+            </button>
+            <button class="btn-action reject-btn" (click)="evaluarReporte(reporte.id, 'rechazado')" title="Rechazar Inspección" style="margin-left: 8px; background-color: #ef4444; color: white; display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; border-radius: 4px; border: none; cursor: pointer;">
+              <span class="material-icons">close</span>
+            </button>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal del Informe Fitosanitario Detallado -->
+    <div class="modal-overlay" *ngIf="informeSeleccionadoId" (click)="cerrarInforme()">
+      <div class="modal-box fade-in" (click)="$event.stopPropagation()" style="max-width: 800px; width: 90%;">
+        <div class="modal-header-asign" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 15px;">
+          <h2 style="display: flex; align-items: center; gap: 8px; margin: 0; color: #1b2610;">
+            <span class="material-icons">analytics</span> Visor de Informe
+          </h2>
+          <button class="close-btn" (click)="cerrarInforme()" style="background: none; border: none; cursor: pointer; color: #6b7280;">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        
+        <div style="max-height: 70vh; overflow-y: auto; padding: 15px;">
+          <app-informe-fitosanitario [inspeccionId]="informeSeleccionadoId"></app-informe-fitosanitario>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

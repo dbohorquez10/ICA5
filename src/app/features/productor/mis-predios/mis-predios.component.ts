@@ -1,7 +1,9 @@
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID, inject } from '@angular/core';
+import { NotificationService } from '../../../core/services/notification.service';
 import { isPlatformBrowser } from '@angular/common';
 import { FitoDataService, Predio, Lote, Cultivo } from '../../../core/services/fito-data.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { COLOMBIA_DEPARTAMENTOS } from '../../../core/constants/colombia-regions';
 
 @Component({
   selector: 'app-mis-predios',
@@ -10,6 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: false
 })
 export class MisPrediosComponent implements OnInit {
+  private notify = inject(NotificationService);
 
   public predios: Predio[] = [];
   public cultivos: Cultivo[] = [];
@@ -26,13 +29,7 @@ export class MisPrediosComponent implements OnInit {
   public loteEnEdicionId: string = '';
   public nuevoLote: Partial<Lote> = {};
 
-  public departamentos = ['Antioquia', 'Cundinamarca', 'Santander', 'Valle del Cauca'];
-  public municipiosPorDepto: { [key: string]: string[] } = {
-    'Antioquia': ['Medellín', 'Bello', 'Envigado', 'Itagüí'],
-    'Cundinamarca': ['Bogotá', 'Soacha', 'Chía', 'Zipaquirá'],
-    'Santander': ['Bucaramanga', 'Floridablanca', 'Girón', 'Lebrija', 'San Gil', 'Socorro'],
-    'Valle del Cauca': ['Cali', 'Buenaventura', 'Palmira', 'Buga']
-  };
+  public departamentos = Object.keys(COLOMBIA_DEPARTAMENTOS);
   public municipiosDisponibles: string[] = [];
 
   public gpsLoading = false;
@@ -111,7 +108,7 @@ export class MisPrediosComponent implements OnInit {
 
   public onDepartamentoChange(): void {
     const depto = this.predioEnEdicion.departamento;
-    this.municipiosDisponibles = depto ? this.municipiosPorDepto[depto] || [] : [];
+    this.municipiosDisponibles = depto ? COLOMBIA_DEPARTAMENTOS[depto] || [] : [];
     this.predioEnEdicion.municipio = '';
   }
 
@@ -200,7 +197,7 @@ export class MisPrediosComponent implements OnInit {
 
   public guardarLote(): void {
     if (!this.nuevoLote.cultivo_id || !this.nuevoLote.area) {
-      alert('Completa todos los campos'); return;
+      this.notify.showError('Completa todos los campos'); return;
     }
     if (this.modalLoteModo === 'crear') {
       this.dataService.agregarLote(this.nuevoLote).subscribe(() => {
@@ -215,9 +212,35 @@ export class MisPrediosComponent implements OnInit {
     }
   }
 
-  public eliminarLote(id: string, predioId: string): void {
-    if (confirm('¿Eliminar este lote?')) {
-      this.dataService.eliminarLote(id).subscribe(() => this.cargarLotes(predioId));
+  public eliminarLote(id: string | undefined, predioId: string): void {
+    if (!id) return;
+    if (confirm('¿Estás seguro de que deseas eliminar este lote de forma permanente?')) {
+      this.dataService.eliminarLote(id).subscribe({
+        next: () => {
+          this.cargarLotes(predioId);
+          this.notify.showSuccess("Lote eliminado correctamente.");
+        },
+        error: (err) => {
+          console.error("Error al eliminar lote", err);
+          this.notify.showError("Hubo un error al intentar eliminar el lote.");
+        }
+      });
+    }
+  }
+
+  public eliminarPredio(id: string | undefined): void {
+    if (!id) return;
+    if (confirm('¿Estás seguro de que deseas eliminar este lugar de producción de forma permanente? Se eliminarán todos los lotes e inspecciones asociadas.')) {
+      this.dataService.eliminarPredio(id).subscribe({
+        next: () => {
+          this.cargarPredios();
+          this.notify.showSuccess("Lugar de producción eliminado correctamente.");
+        },
+        error: (err) => {
+          console.error("Error al eliminar predio", err);
+          this.notify.showError("Hubo un error al intentar eliminar el lugar de producción.");
+        }
+      });
     }
   }
 

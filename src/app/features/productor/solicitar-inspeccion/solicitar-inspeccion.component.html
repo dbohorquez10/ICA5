@@ -46,13 +46,15 @@
         <div class="lotes-preview" *ngIf="predioSeleccionado && lotesDelPredio.length > 0">
           <p class="lotes-label">
             <span class="material-icons">layers</span>
-            {{ lotesDelPredio.length }} lotes a inspeccionar en este predio:
+            {{ lotesDelPredio.length }} lotes en este predio. Selecciona el lote a inspeccionar:
           </p>
-          <div class="lotes-chips">
-            <span class="lote-chip" *ngFor="let l of lotesDelPredio">
-              <span class="material-icons">eco</span>
-              {{ l.nombre }} ({{ l.area || l.hectareas }} Ha)
-            </span>
+          <div class="form-group" style="margin-top: 10px;">
+            <select [(ngModel)]="loteSeleccionado" class="form-input">
+              <option *ngFor="let l of lotesDelPredio" [value]="l.id">
+                {{ l.nombre }} ({{ l.area || l.hectareas }} Ha)
+              </option>
+            </select>
+            <small class="text-muted" style="display: block; margin-top: 5px;">*Solo se puede solicitar inspección para un lote a la vez.</small>
           </div>
         </div>
       </div>
@@ -90,6 +92,10 @@
         <p class="toggle-desc" *ngIf="asignacionAutomatica">
           El ICA asignará al técnico disponible más cercano a tu zona según la fecha.
         </p>
+
+        <div class="status-alert alert-warn" *ngIf="asignacionAutomatica && tecnicosDisponibles.length === 0" style="margin-top: 15px;">
+          <span class="material-icons">warning</span> No hay técnicos disponibles en la región del predio ({{ predioSeleccionado.departamento }}).
+        </div>
 
         <!-- Lista técnicos -->
         <div class="tecnicos-list" *ngIf="!asignacionAutomatica">
@@ -133,9 +139,11 @@
         <button
           class="btn-enviar"
           (click)="enviar()"
-          [disabled]="!fechaSugerida || (!asignacionAutomatica && agendaStatus === 'ocupado')"
+          [disabled]="!fechaSugerida || (!asignacionAutomatica && agendaStatus === 'ocupado') || isLoading"
         >
-          <span class="material-icons">send</span> Enviar Solicitud
+          <span class="material-icons" *ngIf="!isLoading">send</span>
+          <span class="material-icons spin" *ngIf="isLoading">autorenew</span>
+          {{ isLoading ? 'Enviando...' : 'Enviar Solicitud' }}
         </button>
       </div>
     </div>

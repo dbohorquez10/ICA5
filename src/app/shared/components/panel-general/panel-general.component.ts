@@ -24,7 +24,7 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
   private sub: Subscription | null = null;
 
   resumenAgricola = { totalPredios: 0, hectareas: 0, pendientes: 0 };
-  climaActual = { temp: 26, condicion: 'Parcialmente Nublado', lluvia: 30 };
+  climaActual = { temp: 0, condicion: 'Cargando...', lluvia: 0 };
   statsTecnico = { pendientes: 0, alertas: 0, completadas: 0 };
 
   solicitudesMapa: Array<{ id: string; predio: string; lat: number; lng: number; prioridad: string }> = [];
@@ -87,7 +87,7 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
               prioridad: 'Normal',
             }));
 
-          if (isPlatformBrowser(this.platformId) && this.solicitudesMapa.length > 0) {
+          if (isPlatformBrowser(this.platformId)) {
             setTimeout(() => this.iniciarMapa(), 300);
           }
           this.cdr.detectChanges();
@@ -95,7 +95,7 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
       });
 
     } else if (rol === 'tecnico') {
-      this.dataService.getInspecciones().subscribe(inspecciones => {
+      this.dataService.getInspeccionesPorTecnico(this.usuarioActual.id).subscribe(inspecciones => {
         this.statsTecnico = {
           pendientes: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('pendiente')).length,
           alertas: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('progreso')).length,
@@ -120,12 +120,16 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
                 } : null;
               })
               .filter((x): x is NonNullable<typeof x> => !!x);
-            if (isPlatformBrowser(this.platformId) && this.solicitudesMapa.length > 0) {
+            if (isPlatformBrowser(this.platformId)) {
               setTimeout(() => this.iniciarMapa(), 300);
             }
             this.cdr.detectChanges();
           });
         } else {
+          this.solicitudesMapa = [];
+          if (isPlatformBrowser(this.platformId)) {
+            setTimeout(() => this.iniciarMapa(), 300);
+          }
           this.cdr.detectChanges();
         }
       });
@@ -157,7 +161,7 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
             lng: p.longitud!,
             prioridad: 'Normal',
           }));
-        if (isPlatformBrowser(this.platformId) && this.solicitudesMapa.length > 0) {
+        if (isPlatformBrowser(this.platformId)) {
           setTimeout(() => this.iniciarMapa(), 300);
         }
         this.cdr.detectChanges();
@@ -167,10 +171,21 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
 
   async iniciarMapa() {
     if (isPlatformBrowser(this.platformId)) {
+      if (this.map) {
+        try {
+          this.map.remove();
+        } catch (e) {
+          console.warn('Error removing map:', e);
+        }
+        this.map = null;
+      }
+
       if (!this.L) this.L = await import('leaflet');
       const center = this.solicitudesMapa.length > 0
         ? [this.solicitudesMapa[0].lat, this.solicitudesMapa[0].lng]
         : [7.1193, -73.1227];
+
+      this.cargarClima(center[0] as number, center[1] as number);
 
       this.map = this.L.map('mapaGeneral').setView(center as any, 11);
       this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
@@ -187,5 +202,28 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
           .addTo(this.map);
       });
     }
+  }
+
+  private cargarClima(lat: number, lng: number): void {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,precipitation,weather_code`;
+    fetch(url).then(res => res.json()).then(data => {
+      if (data && data.current) {
+        this.climaActual.temp = Math.round(data.current.temperature_2m);
+        this.climaActual.lluvia = data.current.precipitation || 0;
+        const code = data.current.weather_code;
+        if (code === 0) this.climaActual.condicion = 'Despejado';
+        else if (code >= 1 && code <= 3) this.climaActual.condicion = 'Parcialmente Nublado';
+        else if (code >= 45 && code <= 48) this.climaActual.condicion = 'Niebla';
+        else if (code >= 51 && code <= 67) this.climaActual.condicion = 'Lluvia';
+        else if (code >= 71 && code <= 77) this.climaActual.condicion = 'Nieve';
+        else if (code >= 80 && code <= 82) this.climaActual.condicion = 'Aguaceros';
+        else if (code >= 95) this.climaActual.condicion = 'Tormenta';
+        else this.climaActual.condicion = 'Variable';
+        this.cdr.detectChanges();
+      }
+    }).catch(err => {
+      console.error('Error fetching weather:', err);
+      this.climaActual = { temp: 26, condicion: 'Desconocido', lluvia: 0 };
+    });
   }
 }

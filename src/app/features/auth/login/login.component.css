@@ -12,7 +12,7 @@
   background: linear-gradient(135deg, #1b2610 0%, #30391f 100%);
   display: flex;
   align-items: center;
-  padding: 80px;
+  padding: 40px;
   position: relative;
   color: white;
 }
@@ -23,23 +23,23 @@
 .badge {
   background: rgba(140, 179, 105, 0.2);
   color: #8cb369;
-  padding: 5px 12px;
+  padding: 2px 8px;
   border-radius: 20px;
   font-weight: bold;
-  font-size: 0.8rem;
-  margin-bottom: 20px;
+  font-size: 1rem;
+  margin-bottom: 10px;
   display: inline-block;
 }
 .auth-visual h1 {
-  font-size: 3.5rem;
+  font-size: 4rem;
   line-height: 1.1;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 .highlight {
   color: #8cb369;
 }
 .auth-visual p {
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   opacity: 0.8;
   max-width: 400px;
 }
@@ -57,7 +57,7 @@
 .auth-form-side {
   flex: 1;
   background: white;
-  padding: 40px;
+  padding: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,7 +71,7 @@
 
 /* Brand info (Header de login) */
 .brand {
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 }
 .brand-icon {
   width: 60px;
@@ -83,11 +83,11 @@
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 2rem;
-  margin: 0 auto 15px auto;
+  font-size: 2.2rem;
+  margin: 0 auto 10px auto;
 }
 .brand h2 {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 850;
   color: #1b2610;
   margin: 0 0 5px 0;
@@ -97,7 +97,7 @@
 }
 .subtitle {
   color: #64748b;
-  font-size: 0.85rem;
+  font-size: 1rem;
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 1px;
@@ -106,14 +106,14 @@
 
 /* Inputs del formulario */
 .input-group {
-  margin-bottom: 22px;
+  margin-bottom: 14px;
   text-align: left;
 }
 .input-group label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: #1b2610;
 }
 
@@ -132,10 +132,10 @@
 }
 .input-with-icon input {
   width: 100%;
-  padding: 14px 14px 14px 46px;
+  padding: 10px 10px 10px 42px;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   box-sizing: border-box;
   transition: all 0.25s ease;
   background: #fafbfc;
@@ -182,13 +182,13 @@
 /* Botón de login */
 .btn-login {
   width: 100%;
-  padding: 16px;
+  padding: 10px;
   background: #1b2610;
   color: white;
   border: none;
   border-radius: 12px;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.15rem;
   cursor: pointer;
   transition: all 0.3s ease;
   margin-top: 8px;
@@ -235,8 +235,8 @@
   background: linear-gradient(135deg, #fff5f5, #fee2e2);
   border: 1.5px solid #fca5a5;
   border-radius: 12px;
-  padding: 14px 16px;
-  margin-bottom: 24px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
   text-align: left;
 }
 .error-banner .material-icons {
@@ -246,7 +246,7 @@
 }
 .error-banner p {
   color: #991b1b;
-  font-size: 0.88rem;
+  font-size: 1rem;
   font-weight: 500;
   margin: 0;
   line-height: 1.4;
@@ -281,8 +281,8 @@
 /* Footer */
 .footer-link {
   text-align: center;
-  margin-top: 25px;
-  font-size: 0.9rem;
+  margin-top: 15px;
+  font-size: 1rem;
   color: #666;
 }
 .footer-link a {

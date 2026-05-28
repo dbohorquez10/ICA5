@@ -1,19 +1,37 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { GestionCatalogosComponent } from './gestion-catalogos.component';
+import { FitoDataService } from '../../../core/services/fito-data.service';
+import { of } from 'rxjs';
+import { FormsModule } from '@angular/forms';
 
-import { GestionCatalogos } from './gestion-catalogos';
+describe('GestionCatalogosComponent', () => {
+  let component: GestionCatalogosComponent;
+  let fixture: ComponentFixture<GestionCatalogosComponent>;
 
-describe('GestionCatalogos', () => {
-  let component: GestionCatalogos;
-  let fixture: ComponentFixture<GestionCatalogos>;
+  const mockFitoDataService = {
+    getPlagas: () => of([]),
+    getCultivos: () => of([]),
+    agregarPlaga: () => of({}),
+    editarPlaga: () => of({}),
+    eliminarPlaga: () => of({}),
+    agregarCultivo: () => of({}),
+    editarCultivo: () => of({}),
+    eliminarCultivo: () => of({}),
+    getPlagasPorCultivo: () => of([])
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [GestionCatalogos],
+      imports: [FormsModule],
+      declarations: [GestionCatalogosComponent],
+      providers: [
+        { provide: FitoDataService, useValue: mockFitoDataService }
+      ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(GestionCatalogos);
+    fixture = TestBed.createComponent(GestionCatalogosComponent);
     component = fixture.componentInstance;
-    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
   it('should create', () => {

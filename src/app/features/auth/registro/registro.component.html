@@ -30,10 +30,11 @@
           <button
             [class.active]="rolSeleccionado === 'productor'"
             (click)="cambiarRol('productor')"
+            title="Seleccionar rol de Productor"
           >
             Productor
           </button>
-          <button [class.active]="rolSeleccionado === 'tecnico'" (click)="cambiarRol('tecnico')">
+          <button [class.active]="rolSeleccionado === 'tecnico'" (click)="cambiarRol('tecnico')" title="Seleccionar rol de Técnico ICA">
             Técnico ICA
           </button>
         </div>
@@ -60,6 +61,7 @@
                 maxlength="15"
                 [disabled]="cargando"
                 required
+                title="Ingresa tu número de identificación sin puntos ni espacios"
               />
               <span class="error-msg" *ngIf="errores['identificacion']">{{
                 errores['identificacion']
@@ -79,6 +81,7 @@
                   maxlength="50"
                   [disabled]="cargando"
                   required
+                  title="Ingresa tus nombres completos"
                 />
                 <span class="error-msg" *ngIf="errores['nombre']">{{ errores['nombre'] }}</span>
               </div>
@@ -93,6 +96,7 @@
                   maxlength="50"
                   [disabled]="cargando"
                   required
+                  title="Ingresa tus apellidos completos"
                 />
                 <span class="error-msg" *ngIf="errores['apellido']">{{ errores['apellido'] }}</span>
               </div>
@@ -109,6 +113,7 @@
                   name="correo"
                   [disabled]="cargando"
                   required
+                  title="Ingresa un correo electrónico válido y activo"
                 />
                 <span class="error-msg" *ngIf="errores['correo']">{{ errores['correo'] }}</span>
               </div>
@@ -124,9 +129,58 @@
                   maxlength="10"
                   [disabled]="cargando"
                   required
+                  title="Ingresa tu número de teléfono celular"
                 />
                 <span class="error-msg" *ngIf="errores['telefono']">{{ errores['telefono'] }}</span>
               </div>
+            </div>
+
+            <!-- Regionalización (Departamento y Municipio) -->
+            <div class="input-row">
+              <div class="input-group" [class.has-error]="errores['departamento']">
+                <label>Departamento *</label>
+                <select
+                  [(ngModel)]="departamentoSeleccionado"
+                  name="departamento"
+                  (change)="onDepartamentoChange()"
+                  [disabled]="cargando"
+                  required
+                  title="Selecciona tu departamento de residencia o trabajo"
+                >
+                  <option value="">Selecciona un Departamento</option>
+                  <option *ngFor="let dep of departamentos" [value]="dep">{{ dep }}</option>
+                </select>
+                <span class="error-msg" *ngIf="errores['departamento']">{{ errores['departamento'] }}</span>
+              </div>
+
+              <div class="input-group" [class.has-error]="errores['municipio']">
+                <label>Municipio *</label>
+                <select
+                  [(ngModel)]="municipioSeleccionado"
+                  name="municipio"
+                  [disabled]="cargando || !departamentoSeleccionado"
+                  required
+                  title="Selecciona tu municipio"
+                >
+                  <option value="">Selecciona un Municipio</option>
+                  <option *ngFor="let mun of municipiosDisponibles" [value]="mun">{{ mun }}</option>
+                </select>
+                <span class="error-msg" *ngIf="errores['municipio']">{{ errores['municipio'] }}</span>
+              </div>
+            </div>
+
+            <!-- Vereda -->
+            <div class="input-group">
+              <label>Vereda / Sector (Opcional)</label>
+              <input
+                type="text"
+                placeholder="Ej: El Hato"
+                [(ngModel)]="vereda"
+                name="vereda"
+                maxlength="100"
+                [disabled]="cargando"
+                title="Ingresa la vereda o sector (opcional)"
+              />
             </div>
 
             @if (rolSeleccionado === 'productor') {
@@ -151,6 +205,7 @@
                   name="tarjetaProfesional"
                   [disabled]="cargando"
                   required
+                  title="Ingresa tu número de Tarjeta Profesional o Registro ICA"
                 />
                 <span class="error-msg" *ngIf="errores['tarjetaProfesional']">{{
                   errores['tarjetaProfesional']
@@ -168,6 +223,7 @@
                 name="contrasena"
                 [disabled]="cargando"
                 required
+                title="Crea una contraseña segura de al menos 6 caracteres"
               />
               <span class="error-msg" *ngIf="errores['contrasena']">{{
                 errores['contrasena']
@@ -175,7 +231,7 @@
             </div>
           </div>
 
-          <button type="submit" class="btn-main" [disabled]="cargando">
+          <button type="submit" class="btn-main" [disabled]="cargando" title="Haz clic para crear tu cuenta en FitoGestión">
             @if (cargando) {
               <span class="spinner"></span>
               Registrando...
@@ -186,11 +242,11 @@
         </form>
 
         <div class="footer-link">
-          ¿Ya tienes cuenta? <a routerLink="/auth/login">Inicia Sesión</a>
+          ¿Ya tienes cuenta? <a routerLink="/auth/login" title="Ir a la página de inicio de sesión">Inicia Sesión</a>
         </div>
         
         <div class="footer-link" style="margin-top: 10px;">
-          ¿Volver al inicio? <a routerLink="/landing">Ir a la página principal</a>
+          ¿Volver al inicio? <a routerLink="/landing" title="Regresar a la página principal">Ir a la página principal</a>
         </div>
       }
     </div>

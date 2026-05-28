@@ -3,12 +3,17 @@ import { Injectable, signal } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class LoadingService {
   isLoading = signal<boolean>(false);
+  private activeRequests = 0;
 
   show() {
+    this.activeRequests++;
     this.isLoading.set(true);
   }
 
   hide() {
-    this.isLoading.set(false);
+    this.activeRequests = Math.max(0, this.activeRequests - 1);
+    if (this.activeRequests === 0) {
+      this.isLoading.set(false);
+    }
   }
 }

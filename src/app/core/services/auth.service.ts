@@ -89,6 +89,9 @@ export class AuthService {
     rol?: string;
     telefono?: string;
     registro_ica?: string;
+    departamento?: string;
+    municipio?: string;
+    vereda?: string;
   }): Observable<any> {
     return this.http.post(`${this.authUrl}/register`, data);
   }
@@ -104,11 +107,16 @@ export class AuthService {
     apellido: string;
     cedula: string;
     telefono?: string;
+    departamento?: string;
+    municipio?: string;
+    vereda?: string;
   }): Observable<any> {
+    const token = this.getToken();
+    const headers = { Authorization: `Bearer ${token}` };
     return this.http.post(`${this.authUrl}/register`, {
       ...data,
       rol: 'admin',
-    });
+    }, { headers });
   }
 
   logout(): void {

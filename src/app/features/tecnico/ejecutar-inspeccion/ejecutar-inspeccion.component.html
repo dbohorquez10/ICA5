@@ -7,15 +7,15 @@
       </button>
       <div style="flex-grow: 1">
         <p class="tag">Inspección Asignada</p>
-        <h1>{{ predio?.nombre }}</h1>
-        <p class="sub">{{ predio?.ubicacion }} • {{ predio?.productorNombre }}</p>
+        <h1>{{ predio.nombre }}</h1>
+        <p class="sub">{{ predio.ubicacion }} • {{ predio.productorNombre }}</p>
         <button class="btn-navegar" (click)="navegarAlPredio()">
           <span class="material-icons">navigation</span> Navegar al Predio
         </button>
-        <div class="nav-info" *ngIf="predio?.latitud">
+        <div class="nav-info" *ngIf="predio.latitud">
           <span class="material-icons small">location_on</span>
-          Coordenadas: {{ predio?.latitud | number: '1.4-4' }},
-          {{ predio?.longitud | number: '1.4-4' }}
+          Coordenadas: {{ predio.latitud | number: '1.4-4' }},
+          {{ predio.longitud | number: '1.4-4' }}
         </div>
       </div>
     </div>
@@ -54,7 +54,7 @@
         <span class="material-icons">arrow_back</span>
       </button>
       <div class="header-info">
-        <h2>{{ predio?.nombre }}</h2>
+        <h2>{{ predio.nombre }}</h2>
         <p>Selecciona un lote para inspeccionar</p>
       </div>
       <div class="progress-global">
@@ -130,10 +130,10 @@
       </button>
       <div class="tap-header-info">
         <h3>
-          {{ loteActual?.nombre }} —
+          {{ loteActual.nombre }} —
           {{ getCultivoNombre(loteActual) }}
         </h3>
-        <p>{{ loteActual?.area || loteActual?.hectareas }} Ha</p>
+        <p>{{ loteActual.area || loteActual.hectareas }} Ha</p>
       </div>
       <button class="btn-guardar-parcial" (click)="guardarParcial()" title="Guardar">
         <span class="material-icons">save</span>
@@ -146,7 +146,7 @@
         <span class="counter-number">#{{ plantaActual }}</span>
       </div>
       <p class="counter-summary">
-        Evaluadas: <strong>{{ subActual?.plantasEvaluadas || 0 }}</strong>
+        Evaluadas: <strong>{{ subActual.plantasEvaluadas || 0 }}</strong>
       </p>
     </div>
 
@@ -180,7 +180,7 @@
 
     <div class="bottom-bar">
       <button class="btn-completar-lote" (click)="completarLote()">
-        <span class="material-icons">done_all</span> Completar {{ loteActual?.nombre }}
+        <span class="material-icons">done_all</span> Completar {{ loteActual.nombre }}
       </button>
       <button class="btn-siguiente-planta" (click)="siguientePlanta()">
         <span class="material-icons">add_circle</span> Siguiente Planta

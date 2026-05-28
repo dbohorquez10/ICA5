@@ -7,7 +7,7 @@
   margin-bottom: 28px;
 }
 .tag {
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #accc78;
@@ -92,11 +92,11 @@
 .predio-option h3 {
   color: #1b2610;
   margin: 0 0 2px;
-  font-size: 1rem;
+  font-size: 1.15rem;
 }
 .predio-option small {
   color: #668a4c;
-  font-size: 0.82rem;
+  font-size: 0.95rem;
 }
 .predio-option .check-icon {
   margin-left: auto;
@@ -142,7 +142,7 @@
   color: #30391f;
   padding: 5px 12px;
   border-radius: 20px;
-  font-size: 0.82rem;
+  font-size: 0.95rem;
 }
 .lote-chip .material-icons {
   font-size: 14px;
@@ -165,7 +165,7 @@
   border: 1.5px solid #d4e5c4;
   border-radius: 10px;
   padding: 12px;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: #1b2610;
   background: #f9fbf7;
   transition: all 0.2s;

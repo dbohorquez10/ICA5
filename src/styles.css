@@ -1,21 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  --color-principal: #1b2610; /* Darkened for better contrast */
-  --color-comp-1: #4a6e30; /* Adjusted for AAA contrast on white */
+  --color-principal: #1b2610;
+  /* Darkened for better contrast */
+  --color-comp-1: #4a6e30;
+  /* Adjusted for AAA contrast on white */
   --color-comp-2: #accc78;
-  --color-comp-3: #2d2d2d; /* Darkened */
+  --color-comp-3: #2d2d2d;
+  /* Darkened */
   --color-claro: #ffffff;
   --bg-light: #f4f6f2;
   --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
   --shadow-login: 0 10px 40px rgba(0, 0, 0, 0.3);
-  
+
   /* New Variables for UI/UX */
-  --font-base-size: 16px;
-  --font-large: 1.125rem;
-  --spacing-btn-y: 0.75rem;
-  --spacing-btn-x: 1.5rem;
+  --font-base-size: 15px;
+  --font-large: 1.15rem;
+  --spacing-btn-y: 0.5rem;
+  --spacing-btn-x: 1rem;
   --radius-btn: 8px;
+}
+
+html {
+  font-size: 100%;
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
 }
 
 html,
@@ -34,34 +46,42 @@ body {
   background-color: var(--bg-light);
   color: var(--color-principal);
   font-size: var(--font-base-size);
-  line-height: 1.6;
+  line-height: 1.4;
 }
 
 /* Global Buttons UI/UX */
-button, .btn {
+button,
+.btn {
   font-size: var(--font-base-size);
   padding: var(--spacing-btn-y) var(--spacing-btn-x);
-  min-height: 44px; /* Apple UI Guideline for minimum touch area */
+  min-height: 38px;
+  /* Apple UI Guideline for minimum touch area */
   border-radius: var(--radius-btn);
   font-weight: 600;
   transition: all 0.2s ease-in-out;
   cursor: pointer;
 }
 
-button:hover, .btn:hover {
+button:hover,
+.btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Form Inputs UI/UX */
-input, select, textarea {
+input,
+select,
+textarea {
   font-size: var(--font-base-size);
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 8px;
   border: 1px solid #cbd5e1;
-  min-height: 44px;
+  min-height: 38px;
 }
-input:focus, select:focus, textarea:focus {
+
+input:focus,
+select:focus,
+textarea:focus {
   outline: 2px solid var(--color-comp-1);
   outline-offset: 1px;
 }
@@ -72,13 +92,18 @@ table {
   border-collapse: separate;
   border-spacing: 0;
 }
-th, td {
-  padding: 1rem 1.25rem; /* Larger click areas for table rows */
+
+th,
+td {
+  padding: 0.5rem 0.75rem;
+  /* Larger click areas for table rows */
   font-size: var(--font-base-size);
 }
+
 tr {
   transition: background-color 0.2s ease;
 }
+
 tr:hover td {
   background-color: #f1f5f9;
 }
@@ -89,6 +114,7 @@ a {
   text-decoration: none;
   font-weight: 500;
 }
+
 a:hover {
   text-decoration: underline;
   color: var(--color-principal);
@@ -108,6 +134,7 @@ a:hover {
   z-index: 9999;
   backdrop-filter: blur(2px);
 }
+
 .spinner {
   width: 50px;
   height: 50px;
@@ -116,6 +143,39 @@ a:hover {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================================
+   Print Styles for Reports
+   ========================================================================= */
+@media print {
+  /* Si existe un contenedor de informe, ocultar TODO lo demás */
+  body:has(.informe-container) * {
+    visibility: hidden;
+  }
+  
+  /* Hacer visible sólo el contenedor de informe y sus hijos */
+  body:has(.informe-container) .informe-container,
+  body:has(.informe-container) .informe-container * {
+    visibility: visible;
+  }
+  
+  /* Posicionar el contenedor en la parte superior izquierda */
+  body:has(.informe-container) .informe-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .hide-on-print {
+    display: none !important;
+  }
 }

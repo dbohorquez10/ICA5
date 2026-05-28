@@ -7,6 +7,7 @@ import { GestionUsuariosComponent } from './gestion-usuarios/gestion-usuarios.co
 import { DashboardAdminComponent } from './dashboard-admin/dashboard-admin.component';
 import { ConfiguracionComponent } from './configuracion/configuracion.component';
 import { GestionCatalogosComponent } from './gestion-catalogos/gestion-catalogos.component';
+import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -15,6 +16,6 @@ import { GestionCatalogosComponent } from './gestion-catalogos/gestion-catalogos
     ConfiguracionComponent,
     GestionCatalogosComponent,
   ],
-  imports: [CommonModule, FormsModule, AdminRoutingModule],
+  imports: [CommonModule, FormsModule, AdminRoutingModule, SharedModule],
 })
 export class AdminModule {}

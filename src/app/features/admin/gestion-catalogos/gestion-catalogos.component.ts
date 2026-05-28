@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FitoDataService, Plaga, Cultivo } from '../../../core/services/fito-data.service';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 
 @Component({
   selector: 'app-gestion-catalogos',
@@ -110,15 +110,62 @@ export class GestionCatalogosComponent implements OnInit {
 
     if (this.modalModo === 'crear') {
       if (this.modalTipo === 'plaga') {
-        this.dataService.agregarPlaga(this.nuevoItem).subscribe(() => { this.recargar(); this.cerrarModal(); });
+        this.dataService.agregarPlaga(this.nuevoItem).subscribe({
+          next: () => { this.recargar(); this.cerrarModal(); },
+          error: () => { this.errorModal = 'Error al agregar la plaga en el servidor.'; }
+        });
       } else {
-        this.dataService.agregarCultivo(this.nuevoItem).subscribe(() => { this.recargar(); this.cerrarModal(); });
+        const { plagasSeleccionadas, ...cultivoPayload } = this.nuevoItem;
+        this.dataService.agregarCultivo(cultivoPayload).subscribe({
+          next: (nuevoCultivo) => {
+            if (plagasSeleccionadas && plagasSeleccionadas.length > 0) {
+              const updates = plagasSeleccionadas.map((pid: string) => {
+                const plaga = this.plagas.find(p => p.id === pid);
+                if (plaga) {
+                  const cultivos = [...(plaga.cultivos_afectados || [])];
+                  if (!cultivos.includes(nuevoCultivo.id)) {
+                    cultivos.push(nuevoCultivo.id);
+                    return this.dataService.editarPlaga(plaga.id, { ...plaga, cultivos_afectados: cultivos });
+                  }
+                }
+                return of(null);
+              });
+              forkJoin(updates).subscribe(() => { this.recargar(); this.cerrarModal(); });
+            } else {
+              this.recargar();
+              this.cerrarModal();
+            }
+          },
+          error: () => { this.errorModal = 'Error al crear el cultivo en el servidor.'; }
+        });
       }
     } else {
       if (this.modalTipo === 'plaga') {
-        this.dataService.editarPlaga(this.editandoId, this.nuevoItem).subscribe(() => { this.recargar(); this.cerrarModal(); });
+        this.dataService.editarPlaga(this.editandoId, this.nuevoItem).subscribe({
+          next: () => { this.recargar(); this.cerrarModal(); },
+          error: () => { this.errorModal = 'Error al actualizar la plaga en el servidor.'; }
+        });
       } else {
-        this.dataService.editarCultivo(this.editandoId, this.nuevoItem).subscribe(() => { this.recargar(); this.cerrarModal(); });
+        const { plagasSeleccionadas, ...cultivoPayload } = this.nuevoItem;
+        this.dataService.editarCultivo(this.editandoId, cultivoPayload).subscribe({
+          next: () => {
+            const selectedSet = new Set(plagasSeleccionadas || []);
+            const updates = this.plagas.map(plaga => {
+              const hasCultivo = (plaga.cultivos_afectados || []).includes(this.editandoId);
+              const wantCultivo = selectedSet.has(plaga.id);
+              if (wantCultivo && !hasCultivo) {
+                const newCultivos = [...(plaga.cultivos_afectados || []), this.editandoId];
+                return this.dataService.editarPlaga(plaga.id, { ...plaga, cultivos_afectados: newCultivos });
+              } else if (!wantCultivo && hasCultivo) {
+                const newCultivos = (plaga.cultivos_afectados || []).filter(cid => cid !== this.editandoId);
+                return this.dataService.editarPlaga(plaga.id, { ...plaga, cultivos_afectados: newCultivos });
+              }
+              return of(null);
+            });
+            forkJoin(updates).subscribe(() => { this.recargar(); this.cerrarModal(); });
+          },
+          error: () => { this.errorModal = 'Error al actualizar el cultivo en el servidor.'; }
+        });
       }
     }
   }

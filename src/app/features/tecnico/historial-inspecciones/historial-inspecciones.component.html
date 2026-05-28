@@ -28,6 +28,7 @@
           <th>Técnico</th>
           <th>Fecha</th>
           <th>Estado</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -54,19 +55,58 @@
             <span
               class="estado-badge"
               [ngClass]="{
-                'badge-ok': h.estado === 'Completada',
-                'badge-warn': h.estado === 'En Progreso',
-                'badge-pend': h.estado === 'Pendiente',
+                'badge-ok': h.estado === 'Completada' || h.estado === 'completada',
+                'badge-warn': h.estado === 'En Progreso' || h.estado === 'en_progreso',
+                'badge-pend': h.estado === 'Pendiente' || h.estado === 'pendiente',
               }"
             >
               {{ h.estado }}
             </span>
           </td>
+          <td>
+            <button 
+              *ngIf="h.estado === 'Completada' || h.estado === 'completada'"
+              class="icon-btn view-btn" 
+              (click)="verInforme(h.id)" 
+              title="Ver Informe Detallado"
+              style="background: none; border: none; cursor: pointer; color: #4b5563; display: inline-flex; align-items: center; justify-content: center; margin-right: 8px;"
+            >
+              <span class="material-icons">visibility</span>
+            </button>
+            <button 
+              *ngIf="h.estado === 'Completada' || h.estado === 'completada'"
+              class="icon-btn download-btn" 
+              (click)="descargarPDF(h.id)" 
+              title="Descargar Reporte PDF"
+              style="background: none; border: none; cursor: pointer; color: #a855f7; display: inline-flex; align-items: center; justify-content: center;"
+            >
+              <span class="material-icons">download</span>
+            </button>
+            <span *ngIf="h.estado !== 'Completada' && h.estado !== 'completada'">—</span>
+          </td>
         </tr>
         <tr *ngIf="historialFiltrado.length === 0">
-          <td colspan="8" class="empty">No hay registros que coincidan.</td>
+          <td colspan="9" class="empty">No hay registros que coincidan.</td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Modal del Informe Fitosanitario Detallado -->
+  <div class="modal-overlay" *ngIf="informeSeleccionadoId" (click)="cerrarInforme()">
+    <div class="modal-box fade-in" (click)="$event.stopPropagation()" style="max-width: 800px; width: 90%;">
+      <div class="modal-header-asign" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 15px;">
+        <h2 style="display: flex; align-items: center; gap: 8px; margin: 0; color: #1b2610;">
+          <span class="material-icons">analytics</span> Visor de Informe
+        </h2>
+        <button class="close-btn" (click)="cerrarInforme()" style="background: none; border: none; cursor: pointer; color: #6b7280;">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      
+      <div style="max-height: 70vh; overflow-y: auto; padding: 15px;">
+        <app-informe-fitosanitario [inspeccionId]="informeSeleccionadoId"></app-informe-fitosanitario>
+      </div>
+    </div>
   </div>
 </div>

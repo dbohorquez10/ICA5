@@ -40,6 +40,7 @@
               autocomplete="email"
               [disabled]="cargando"
               required
+              title="Ingresa tu correo electrónico registrado"
             />
           </div>
         </div>
@@ -58,6 +59,7 @@
               autocomplete="current-password"
               [disabled]="cargando"
               required
+              title="Ingresa tu contraseña"
             />
             <button
               type="button"
@@ -65,6 +67,7 @@
               (click)="togglePassword()"
               tabindex="-1"
               [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              [title]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
             >
               <span class="material-icons">{{ mostrarPassword ? 'visibility_off' : 'visibility' }}</span>
             </button>
@@ -72,7 +75,7 @@
         </div>
 
         <!-- Botón de login -->
-        <button type="submit" class="btn-login" [disabled]="cargando">
+        <button type="submit" class="btn-login" [disabled]="cargando" title="Iniciar sesión en tu cuenta">
           @if (cargando) {
             <span class="spinner"></span>
             Verificando...
@@ -84,11 +87,11 @@
       </form>
 
       <div class="footer-link">
-        ¿No tienes cuenta? <a routerLink="/auth/registro">Crear una cuenta</a>
+        ¿No tienes cuenta? <a routerLink="/auth/registro" title="Ir a la página de registro de nueva cuenta">Crear una cuenta</a>
       </div>
 
       <div class="footer-link" style="margin-top: 10px;">
-        ¿Volver al inicio? <a routerLink="/landing">Ir a la página principal</a>
+        ¿Volver al inicio? <a routerLink="/landing" title="Regresar a la página principal">Ir a la página principal</a>
       </div>
     </div>
   </div>

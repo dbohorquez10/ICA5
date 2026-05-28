@@ -5,16 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { ProductorRoutingModule } from './productor-routing.module';
 import { MisPrediosComponent } from './mis-predios/mis-predios.component';
 import { SolicitarInspeccionComponent } from './solicitar-inspeccion/solicitar-inspeccion.component';
-import { ReportesComponent } from './reportes/reportes.component';
-import { CountByEstadoPipe } from '../../shared/pipes/count-by-estado-pipe';
+import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
   declarations: [
     MisPrediosComponent,
     SolicitarInspeccionComponent,
-    ReportesComponent,
-    CountByEstadoPipe,
   ],
-  imports: [CommonModule, FormsModule, ProductorRoutingModule],
+  imports: [CommonModule, FormsModule, ProductorRoutingModule, SharedModule],
 })
 export class ProductorModule {}

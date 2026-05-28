@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { NotificationService } from '../../../core/services/notification.service';
 import { FitoDataService, Usuario } from '../../../core/services/fito-data.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { COLOMBIA_DEPARTAMENTOS } from '../../../core/constants/colombia-regions';
 
 /**
  * Gestiona el listado, filtrado y administración de usuarios del sistema FitoGestión.
@@ -13,6 +15,7 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: false
 })
 export class GestionUsuariosComponent implements OnInit {
+  private notify = inject(NotificationService);
 
   public usuarios: Usuario[] = [];
   public filtro: string = '';
@@ -23,6 +26,13 @@ export class GestionUsuariosComponent implements OnInit {
   public usuarioSeleccionado: Usuario | null = null;
   public editDatos: Partial<Usuario> = {};
 
+  // Catálogo de regionalización
+  public departamentosMap = COLOMBIA_DEPARTAMENTOS;
+
+  get departamentos(): string[] {
+    return Object.keys(this.departamentosMap);
+  }
+
   // Modal crear admin
   public crearAdminVisible = false;
   public adminForm = {
@@ -32,6 +42,9 @@ export class GestionUsuariosComponent implements OnInit {
     email: '',
     password: '',
     telefono: '',
+    departamento: '',
+    municipio: '',
+    vereda: '',
   };
   public adminCreando = false;
   public adminError = '';
@@ -47,7 +60,17 @@ export class GestionUsuariosComponent implements OnInit {
   }
 
   private cargarUsuarios(): void {
-    this.dataService.getUsuarios().subscribe(data => this.usuarios = data);
+    const admin = this.authService.getUsuarioActual();
+    const adminDep = admin?.departamento || '';
+
+    this.dataService.getUsuarios().subscribe(data => {
+      // Filtrar usuarios si el admin logueado pertenece a una región específica, pero mostrar siempre a otros admins
+      if (adminDep) {
+        this.usuarios = data.filter(u => u.departamento === adminDep || u.rol === 'admin');
+      } else {
+        this.usuarios = data;
+      }
+    });
   }
 
   get usuariosFiltrados(): Usuario[] {
@@ -138,16 +161,42 @@ export class GestionUsuariosComponent implements OnInit {
     this.modalVisible = true;
   }
 
+  public getEditMunicipiosDisponibles(): string[] {
+    const dep = this.editDatos.departamento;
+    return dep ? this.departamentosMap[dep] || [] : [];
+  }
+
+  public onEditDepartamentoChange(): void {
+    this.editDatos.municipio = '';
+  }
+
   public guardarEdicion(): void {
-    if (!this.editDatos.nombre?.trim()) { alert('El nombre es obligatorio.'); return; }
+    if (!this.editDatos.nombre?.trim()) { this.notify.showError('El nombre es obligatorio.'); return; }
+    if (!this.editDatos.departamento) { this.notify.showError('El departamento es obligatorio.'); return; }
+    if (!this.editDatos.municipio) { this.notify.showError('El municipio es obligatorio.'); return; }
+
     if (this.usuarioSeleccionado) {
       this.dataService.editarUsuario(this.usuarioSeleccionado.id, {
         nombre: this.editDatos.nombre?.trim(),
         email: this.editDatos.email?.trim() || this.editDatos.correo?.trim(),
         telefono: this.editDatos.telefono?.trim(),
-      } as any).subscribe(() => this.cargarUsuarios());
+        registro_ica: this.editDatos.rol === 'tecnico' ? this.editDatos.registro_ica?.trim() : undefined,
+        departamento: this.editDatos.departamento,
+        municipio: this.editDatos.municipio,
+        vereda: this.editDatos.vereda?.trim() || undefined
+      } as any).subscribe({
+        next: () => {
+          this.cargarUsuarios();
+          this.cerrarModal();
+        },
+        error: (err) => {
+          console.error('Error al guardar edición de usuario:', err);
+          this.notify.showError('Hubo un error al guardar los cambios.');
+        }
+      });
+    } else {
+      this.cerrarModal();
     }
-    this.cerrarModal();
   }
 
   public cerrarModal(): void {
@@ -157,11 +206,30 @@ export class GestionUsuariosComponent implements OnInit {
 
   // ── Crear Admin ────────────────────────────────────────────────────────────
 
+  public getAdminMunicipiosDisponibles(): string[] {
+    const dep = this.adminForm.departamento;
+    return dep ? this.departamentosMap[dep] || [] : [];
+  }
+
+  public onAdminDepartamentoChange(): void {
+    this.adminForm.municipio = '';
+  }
+
   public abrirCrearAdmin(): void {
     this.crearAdminVisible = true;
     this.adminError = '';
     this.adminExito = false;
-    this.adminForm = { nombre: '', apellido: '', cedula: '', email: '', password: '', telefono: '' };
+    this.adminForm = {
+      nombre: '',
+      apellido: '',
+      cedula: '',
+      email: '',
+      password: '',
+      telefono: '',
+      departamento: '',
+      municipio: '',
+      vereda: ''
+    };
   }
 
   public cerrarCrearAdmin(): void {
@@ -182,6 +250,8 @@ export class GestionUsuariosComponent implements OnInit {
       this.adminError = 'La contraseña debe tener al menos 6 caracteres.';
       return;
     }
+    if (!this.adminForm.departamento) { this.adminError = 'El departamento es obligatorio.'; return; }
+    if (!this.adminForm.municipio) { this.adminError = 'El municipio es obligatorio.'; return; }
 
     this.adminCreando = true;
 
@@ -192,6 +262,9 @@ export class GestionUsuariosComponent implements OnInit {
       email: this.adminForm.email.trim(),
       password: this.adminForm.password,
       telefono: this.adminForm.telefono.trim() || undefined,
+      departamento: this.adminForm.departamento,
+      municipio: this.adminForm.municipio,
+      vereda: this.adminForm.vereda.trim() || undefined,
     }).subscribe({
       next: () => {
         this.adminCreando = false;

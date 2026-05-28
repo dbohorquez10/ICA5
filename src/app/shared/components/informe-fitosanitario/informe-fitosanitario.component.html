@@ -1,37 +1,202 @@
-<div class="informe-container" *ngIf="informe">
-  <div class="informe-header">
-    <h2>Informe Fitosanitario de Inspección</h2>
-    <p>ID Inspección: {{ informe.inspeccion_id }}</p>
-    <p>Fecha Generación: {{ informe.fecha_generacion | date:'medium' }}</p>
-  </div>
-
-  <div class="informe-body">
-    <div class="metric-box">
-      <h4>Plantas Evaluadas</h4>
-      <p>{{ informe.plantas_evaluadas }}</p>
+<div class="informe-container" *ngIf="!isLoading && inspeccion">
+  
+  <!-- Encabezado ICA -->
+  <div class="informe-header-ica">
+    <div class="ica-logos">
+      <span class="material-icons" style="font-size: 40px;">eco</span>
+      <div>
+        <h1>INSTITUTO COLOMBIANO AGROPECUARIO - ICA</h1>
+        <h2>SISTEMA DE GESTIÓN FITOSANITARIA</h2>
+      </div>
     </div>
-    <div class="metric-box">
-      <h4>Plantas Afectadas</h4>
-      <p>{{ informe.plantas_afectadas }}</p>
-    </div>
-    <div class="metric-box">
-      <h4>Incidencia Global</h4>
-      <p>{{ informe.incidencia_global_pct }}%</p>
+    <div class="informe-title">
+      <h3>INFORME DE INSPECCIÓN FITOSANITARIA</h3>
+      <p>ID: {{ inspeccion.id | uppercase }}</p>
     </div>
   </div>
 
-  <div class="informe-alerta" [ngClass]="{'critico': informe.incidencia_global_pct >= 15, 'alerta': informe.incidencia_global_pct >= 5 && informe.incidencia_global_pct < 15}">
-    <h3>Nivel de Alerta Recomendado</h3>
-    <p>{{ informe.nivel_alerta }}</p>
+  <!-- Nivel de Alerta General -->
+  <div class="alerta-banner" 
+       *ngIf="informeMetrics"
+       [ngClass]="{
+         'alerta-critica': informeMetrics.nivel_alerta === 'Crítico',
+         'alerta-media': informeMetrics.nivel_alerta === 'Alerta',
+         'alerta-baja': informeMetrics.nivel_alerta === 'Normal'
+       }">
+    <span class="material-icons">
+      {{ informeMetrics.nivel_alerta === 'Normal' ? 'check_circle' : 'warning' }}
+    </span>
+    <div>
+      <strong>Nivel de Alerta: {{ informeMetrics.nivel_alerta }}</strong>
+      <p>Incidencia Global Fitosanitaria: {{ informeMetrics.incidencia_global_pct }}%</p>
+    </div>
   </div>
 
+  <!-- Banner de Rechazo -->
+  <div class="alerta-banner alerta-critica" *ngIf="inspeccion.estado_aprobacion === 'rechazado'" style="margin-top: 10px; background-color: #fde8e8; border-left: 5px solid #e74c3c; color: #c0392b;">
+    <span class="material-icons" style="color: #e74c3c;">cancel</span>
+    <div>
+      <strong>Inspección Rechazada / Anulada</strong>
+      <p style="margin: 4px 0 0 0; color: #7f8c8d;">Motivo: {{ inspeccion.razon_rechazo || 'No se especificó un motivo.' }}</p>
+    </div>
+  </div>
+
+  <!-- Metadatos de Inspección -->
+  <div class="informe-section">
+    <h4>Datos de la Inspección</h4>
+    <div class="info-grid">
+      <div class="info-item">
+        <label>Estado</label>
+        <p class="estado-badge" 
+           [ngClass]="{'bg-green': inspeccion.estado === 'completada' || inspeccion.estado === 'Completada'}">
+          {{ inspeccion.estado | titlecase }}
+        </p>
+      </div>
+      <div class="info-item">
+        <label>Fecha de Visita</label>
+        <p>{{ inspeccion.fecha_inspeccion || 'No registrada' }}</p>
+      </div>
+      <div class="info-item">
+        <label>Fecha de Cierre</label>
+        <p>{{ inspeccion.fecha_cierre || 'Pendiente' }}</p>
+      </div>
+      <div class="info-item">
+        <label>Técnico Responsable</label>
+        <p *ngIf="tecnico">
+          <strong>{{ tecnico.nombre }} {{ tecnico.apellido || '' }}</strong><br>
+          <small>Registro: {{ tecnico.registro_ica || 'N/A' }}</small>
+        </p>
+        <p *ngIf="!tecnico">{{ inspeccion.tecnico_nombre || 'Asignación Automática' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Datos del Predio y Productor -->
+  <div class="informe-section" *ngIf="predio">
+    <h4>Identificación del Lugar de Producción</h4>
+    <div class="info-grid predio-grid">
+      <div class="info-item">
+        <label>Nombre del Predio</label>
+        <p><strong>{{ predio.nombre }}</strong></p>
+      </div>
+      <div class="info-item">
+        <label>Productor</label>
+        <p *ngIf="productor">{{ productor.nombre }} {{ productor.apellido || '' }} <br> <small>CC/NIT: {{ productor.cedula || 'N/A' }}</small></p>
+        <p *ngIf="!productor">{{ predio.productorNombre || '—' }}</p>
+      </div>
+      <div class="info-item">
+        <label>Registro ICA Predio</label>
+        <p>{{ predio.numero_registro_ica || predio.numeroRegistroIca || 'En trámite' }}</p>
+      </div>
+      <div class="info-item">
+        <label>Ubicación</label>
+        <p>
+          {{ predio.vereda ? predio.vereda + ', ' : '' }}
+          {{ predio.municipio }}, {{ predio.departamento }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resumen Numérico -->
+  <div class="informe-section" *ngIf="informeMetrics">
+    <h4>Resumen Cuantitativo</h4>
+    <div class="metrics-row">
+      <div class="metric-card">
+        <span class="material-icons text-blue">eco</span>
+        <div class="metric-val">{{ informeMetrics.plantas_evaluadas }}</div>
+        <div class="metric-lbl">Plantas Evaluadas</div>
+      </div>
+      <div class="metric-card">
+        <span class="material-icons text-red">pest_control</span>
+        <div class="metric-val">{{ informeMetrics.plantas_afectadas }}</div>
+        <div class="metric-lbl">Plantas Afectadas</div>
+      </div>
+      <div class="metric-card">
+        <span class="material-icons text-orange">analytics</span>
+        <div class="metric-val">{{ informeMetrics.incidencia_global_pct }}%</div>
+        <div class="metric-lbl">Incidencia Global</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lotes Evaluados y Hallazgos -->
+  <div class="informe-section" *ngIf="inspeccion.sub_inspecciones && inspeccion.sub_inspecciones.length > 0">
+    <h4>Evaluación por Lotes</h4>
+    
+    <div class="lotes-scroll-container">
+      <div class="lote-block" *ngFor="let sub of inspeccion.sub_inspecciones; let i = index">
+        <div class="lote-header">
+          <h5>Lote: {{ getLoteName(sub.codigo_punto || sub.loteId || '') }}</h5>
+          <span class="lote-status">Estado: {{ sub.estado }} | Plantas Evaluadas: {{ sub.plantasEvaluadas || sub.plantas_evaluadas || 0 }}</span>
+        </div>
+        
+        <!-- Tabla de Plantas -->
+        <table class="report-table" *ngIf="sub.registroPlantas && sub.registroPlantas.length > 0">
+          <thead>
+            <tr>
+              <th>Planta #</th>
+              <th>Estado</th>
+              <th>Plaga Detectada</th>
+              <th>Síntomas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let rp of sub.registroPlantas" [ngClass]="{'row-danger': rp.estado_planta === 'Afectada' || (rp.plagasDetectadas && rp.plagasDetectadas.length > 0)}">
+              <td>{{ rp.numero_planta || rp.numeroPlanta }}</td>
+              <td>
+                <span class="status-indicator" [class.sana]="rp.estado_planta === 'Sana' || (!rp.plagasDetectadas || rp.plagasDetectadas.length === 0)">
+                  {{ rp.estado_planta || ((rp.plagasDetectadas && rp.plagasDetectadas.length > 0) ? 'Afectada' : 'Sana') }}
+                </span>
+              </td>
+              <td>
+                <ng-container *ngIf="rp.plaga_id">
+                  {{ getPlagaName(rp.plaga_id) }}
+                </ng-container>
+                <ng-container *ngIf="rp.plagasDetectadas && rp.plagasDetectadas.length > 0">
+                  <span *ngFor="let pId of rp.plagasDetectadas; let last = last">
+                    {{ getPlagaName(pId) }}{{ !last ? ', ' : '' }}
+                  </span>
+                </ng-container>
+                <span *ngIf="!rp.plaga_id && (!rp.plagasDetectadas || rp.plagasDetectadas.length === 0)">—</span>
+              </td>
+              <td>{{ rp.sintoma || rp.observaciones || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p *ngIf="!sub.registroPlantas || sub.registroPlantas.length === 0" class="text-muted" style="padding: 10px;">
+          No hay registros detallados de plantas para este lote.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Observaciones Generales -->
+  <div class="informe-section">
+    <h4>Observaciones y Recomendaciones Generales</h4>
+    <div class="observaciones-box">
+      {{ inspeccion.observaciones || 'Sin observaciones registradas' }}
+    </div>
+  </div>
+
+  <!-- Botones de Acción -->
   <div class="informe-actions hide-on-print">
-    <button class="btn-print" (click)="imprimirInforme()">
-      <span class="material-icons">print</span> Imprimir / Exportar PDF
+    <button class="btn-action secondary" (click)="imprimirInforme()">
+      <span class="material-icons">print</span> Imprimir Informe
+    </button>
+    <button *ngIf="inspeccion.estado_aprobacion === 'aprobado'" class="btn-action primary" (click)="descargarCertificado()">
+      <span class="material-icons">picture_as_pdf</span> Descargar Certificado PDF
     </button>
   </div>
 </div>
 
-<div *ngIf="error" class="error-msg">
-  {{ error }}
+<!-- Estados -->
+<div class="loading-state" *ngIf="isLoading">
+  <span class="material-icons spin">autorenew</span>
+  <p>Generando reporte fitosanitario...</p>
+</div>
+
+<div class="error-state" *ngIf="error">
+  <span class="material-icons">error_outline</span>
+  <p>{{ error }}</p>
 </div>

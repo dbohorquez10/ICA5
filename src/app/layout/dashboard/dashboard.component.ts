@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { FitoDataService, Notificacion } from '../../core/services/fito-data.service';
 
 /**
  * Componente principal de la interfaz de usuario (Layout/Dashboard).
@@ -14,11 +16,17 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: false,
 })
 export class DashboardComponent implements OnInit {
+  private notify = inject(NotificationService);
+
   /**
    * Estado visual de la barra lateral.
    * `true` si la barra está colapsada (minimizada).
    */
   public sidebarColapsada: boolean = true;
+
+  public showNotificaciones = false;
+  public notificaciones: Notificacion[] = [];
+  public noLeidas: number = 0;
 
   /**
    * Objeto que contiene la información del usuario autenticado en sesión.
@@ -33,6 +41,7 @@ export class DashboardComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
+    private dataService: FitoDataService
   ) {}
 
   /**
@@ -42,6 +51,20 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.authService.getUsuario().subscribe((user) => {
       this.usuarioActual = user;
+      if (user && user.id) {
+        this.cargarNotificaciones();
+      }
+    });
+  }
+
+  public cargarNotificaciones(): void {
+    if (!this.usuarioActual?.id) return;
+    this.dataService.getNotificaciones(this.usuarioActual.id).subscribe({
+      next: (nots) => {
+        this.notificaciones = nots || [];
+        this.noLeidas = this.notificaciones.filter(n => !n.leido).length;
+      },
+      error: (err) => console.error('Error cargando notificaciones:', err)
     });
   }
 
@@ -54,10 +77,23 @@ export class DashboardComponent implements OnInit {
 
   /**
    * Despliega u oculta el panel de notificaciones.
-   * (Lógica pendiente de implementación).
    */
   public toggleNotificaciones(): void {
-    // Lógica futura
+    this.showNotificaciones = !this.showNotificaciones;
+    if (this.showNotificaciones) {
+      this.cargarNotificaciones();
+    }
+  }
+
+  public marcarComoLeida(notif: Notificacion, event: Event): void {
+    event.stopPropagation();
+    if (notif.leido) return;
+    this.dataService.marcarNotificacionComoLeida(notif.id).subscribe({
+      next: () => {
+        notif.leido = true;
+        this.noLeidas = this.notificaciones.filter(n => !n.leido).length;
+      }
+    });
   }
 
   /**

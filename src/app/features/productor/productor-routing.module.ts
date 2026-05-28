@@ -4,7 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 // Importaciones EXACTAS
 import { MisPrediosComponent } from './mis-predios/mis-predios.component';
 import { SolicitarInspeccionComponent } from './solicitar-inspeccion/solicitar-inspeccion.component';
-import { ReportesComponent } from './reportes/reportes.component';
+import { ReportesComponent } from '../../shared/components/reportes/reportes.component';
 
 const routes: Routes = [
   { path: 'mis-predios', component: MisPrediosComponent },

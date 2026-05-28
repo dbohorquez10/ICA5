@@ -7,7 +7,7 @@
           Administra las cuentas de técnicos, productores y administradores del sistema.
         </p>
       </div>
-      <button class="btn-crear-admin" (click)="abrirCrearAdmin()">
+      <button class="btn-crear-admin" (click)="abrirCrearAdmin()" title="Registrar un nuevo administrador en el sistema">
         <span class="material-icons">person_add</span>
         Crear Administrador
       </button>
@@ -33,19 +33,21 @@
         [(ngModel)]="filtro"
         placeholder="Buscar por nombre, correo, cédula o teléfono..."
         class="search-input"
+        title="Escribe para filtrar la lista de usuarios"
       />
     </div>
     <div class="rol-tabs">
-      <button class="tab-btn" [class.active]="rolFiltro === 'todos'" (click)="rolFiltro = 'todos'">
+      <button class="tab-btn" [class.active]="rolFiltro === 'todos'" (click)="rolFiltro = 'todos'" title="Ver todos los roles">
         Todos
       </button>
-      <button class="tab-btn" [class.active]="rolFiltro === 'admin'" (click)="rolFiltro = 'admin'">
+      <button class="tab-btn" [class.active]="rolFiltro === 'admin'" (click)="rolFiltro = 'admin'" title="Filtrar solo administradores">
         Admins
       </button>
       <button
         class="tab-btn"
         [class.active]="rolFiltro === 'tecnico'"
         (click)="rolFiltro = 'tecnico'"
+        title="Filtrar solo técnicos ICA"
       >
         Técnicos
       </button>
@@ -53,6 +55,7 @@
         class="tab-btn"
         [class.active]="rolFiltro === 'productor'"
         (click)="rolFiltro = 'productor'"
+        title="Filtrar solo productores"
       >
         Productores
       </button>
@@ -158,7 +161,7 @@
         <span class="material-icons">{{ modalModo === 'ver' ? 'person' : 'edit' }}</span>
         {{ modalModo === 'ver' ? 'Detalle del Usuario' : 'Editar Usuario' }}
       </h2>
-      <button class="close-btn" (click)="cerrarModal()">
+      <button class="close-btn" (click)="cerrarModal()" title="Cerrar ventana">
         <span class="material-icons">close</span>
       </button>
     </div>
@@ -206,6 +209,18 @@
           <span class="detalle-value">{{ usuarioSeleccionado.registro_ica || '—' }}</span>
         </div>
         <div class="detalle-item">
+          <span class="detalle-label">Departamento</span>
+          <span class="detalle-value">{{ usuarioSeleccionado.departamento || '—' }}</span>
+        </div>
+        <div class="detalle-item">
+          <span class="detalle-label">Municipio</span>
+          <span class="detalle-value">{{ usuarioSeleccionado.municipio || '—' }}</span>
+        </div>
+        <div class="detalle-item">
+          <span class="detalle-label">Vereda</span>
+          <span class="detalle-value">{{ usuarioSeleccionado.vereda || '—' }}</span>
+        </div>
+        <div class="detalle-item">
           <span class="detalle-label">Fecha de Registro</span>
           <span class="detalle-value">{{ getFechaRegistro(usuarioSeleccionado) }}</span>
         </div>
@@ -223,7 +238,7 @@
         </div>
       </div>
       <div class="modal-footer-u">
-        <button class="btn-edit-mode" (click)="editarUsuario(usuarioSeleccionado!)">
+        <button class="btn-edit-mode" (click)="editarUsuario(usuarioSeleccionado!)" title="Activar modo de edición para este usuario">
           <span class="material-icons">edit</span> Editar
         </button>
       </div>
@@ -254,9 +269,29 @@
           />
         </div>
       </div>
+      <div class="form-row-edit">
+        <div class="form-group">
+          <label>Departamento *</label>
+          <select [(ngModel)]="editDatos.departamento" class="form-input" (change)="onEditDepartamentoChange()">
+            <option value="">Selecciona un Departamento</option>
+            <option *ngFor="let dep of departamentos" [value]="dep">{{ dep }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Municipio *</label>
+          <select [(ngModel)]="editDatos.municipio" class="form-input" [disabled]="!editDatos.departamento">
+            <option value="">Selecciona un Municipio</option>
+            <option *ngFor="let mun of getEditMunicipiosDisponibles()" [value]="mun">{{ mun }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Vereda / Sector</label>
+        <input type="text" [(ngModel)]="editDatos.vereda" class="form-input" placeholder="Ej: El Hato" />
+      </div>
       <div class="modal-footer-u">
-        <button class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
-        <button class="btn-save" (click)="guardarEdicion()">
+        <button class="btn-cancel" (click)="cerrarModal()" title="Descartar los cambios">Cancelar</button>
+        <button class="btn-save" (click)="guardarEdicion()" title="Guardar los cambios realizados">
           <span class="material-icons">save</span> Guardar Cambios
         </button>
       </div>
@@ -329,6 +364,26 @@
           <input type="tel" [(ngModel)]="adminForm.telefono" class="form-input" placeholder="Opcional"
             [disabled]="adminCreando" />
         </div>
+      </div>
+      <div class="form-row-edit">
+        <div class="form-group">
+          <label>Departamento *</label>
+          <select [(ngModel)]="adminForm.departamento" class="form-input" (change)="onAdminDepartamentoChange()" [disabled]="adminCreando">
+            <option value="">Selecciona un Departamento</option>
+            <option *ngFor="let dep of departamentos" [value]="dep">{{ dep }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Municipio *</label>
+          <select [(ngModel)]="adminForm.municipio" class="form-input" [disabled]="adminCreando || !adminForm.departamento">
+            <option value="">Selecciona un Municipio</option>
+            <option *ngFor="let mun of getAdminMunicipiosDisponibles()" [value]="mun">{{ mun }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Vereda / Sector</label>
+        <input type="text" [(ngModel)]="adminForm.vereda" class="form-input" placeholder="Opcional — Ej: Centro" [disabled]="adminCreando" />
       </div>
 
       <div class="modal-footer-u">

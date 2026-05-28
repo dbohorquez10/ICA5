@@ -13,7 +13,7 @@
   color: #8cb369;
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   letter-spacing: 1px;
 }
 
@@ -50,7 +50,7 @@
   display: block;
   color: #64748b;
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   text-transform: uppercase;
 }
 .metric-data b {
@@ -143,7 +143,7 @@
   margin-bottom: 12px;
 }
 .tag-status {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 12px;
@@ -162,7 +162,7 @@
 }
 
 .priority-badge {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: #64748b;
 }
@@ -177,7 +177,7 @@
 }
 .task-desc {
   margin: 0 0 15px 0;
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: #64748b;
 }
 

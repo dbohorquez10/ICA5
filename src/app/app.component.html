@@ -1,4 +1,7 @@
-<div class="global-spinner-overlay" *ngIf="loadingService.isLoading()">
-  <div class="spinner"></div>
-</div>
+@if (loadingService.isLoading()) {
+  <div class="global-spinner-overlay">
+    <div class="spinner"></div>
+  </div>
+}
 <router-outlet></router-outlet>
+<app-toast></app-toast>

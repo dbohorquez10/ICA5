@@ -1,53 +1,53 @@
 .panel-container {
-  padding: 40px;
+  padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
 }
 .header-section h1 {
-  font-size: 2.8rem;
+  font-size: 3.2rem;
   font-weight: 850;
   color: #1b2610;
-  margin: 5px 0 30px 0;
+  margin: 5px 0 15px 0;
 }
 .project-tag {
   color: #8cb369;
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 1rem;
   letter-spacing: 1px;
 }
 .metrics-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 30px;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 .metric-box {
   background: white;
-  padding: 25px;
+  padding: 15px;
   border-radius: 20px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 10px;
   border: 1px solid #f1f5f9;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
 }
 .metric-box .material-icons {
-  font-size: 36px;
+  font-size: 40px;
   color: #8cb369;
   background: #f0fdf4;
-  padding: 15px;
+  padding: 10px;
   border-radius: 16px;
 }
 .metric-box small {
   display: block;
   color: #64748b;
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 1rem;
   text-transform: uppercase;
 }
 .metric-box b {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   color: #1b2610;
   line-height: 1.2;
 }
@@ -67,7 +67,7 @@
 .map-card {
   background: white;
   border-radius: 24px;
-  padding: 30px;
+  padding: 15px;
   border: 1px solid #f1f5f9;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
 }
@@ -76,29 +76,29 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   border-bottom: 2px solid #f8fafc;
-  padding-bottom: 15px;
+  padding-bottom: 10px;
 }
 .w-head h3,
 .m-head h3 {
   margin: 0;
   color: #1b2610;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
 }
 .w-body {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 10px;
 }
 .w-body h1 {
-  font-size: 4rem;
+  font-size: 4.5rem;
   margin: 0;
   color: #1b2610;
 }
 .w-body p {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: #475569;
 }

@@ -1,19 +1,30 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ConfiguracionComponent } from './configuracion.component';
+import { AuthService } from '../../../core/services/auth.service';
+import { of } from 'rxjs';
+import { FormsModule } from '@angular/forms';
 
-import { Configuracion } from './configuracion';
+describe('ConfiguracionComponent', () => {
+  let component: ConfiguracionComponent;
+  let fixture: ComponentFixture<ConfiguracionComponent>;
 
-describe('Configuracion', () => {
-  let component: Configuracion;
-  let fixture: ComponentFixture<Configuracion>;
+  const mockAuthService = {
+    getUsuarioActual: () => ({ nombre: 'Test', apellido: 'User', rol: 'admin', registro_ica: '123' }),
+    getUsuario: () => of({ nombre: 'Test', apellido: 'User', rol: 'admin', registro_ica: '123' })
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [Configuracion],
+      imports: [FormsModule],
+      declarations: [ConfiguracionComponent],
+      providers: [
+        { provide: AuthService, useValue: mockAuthService }
+      ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(Configuracion);
+    fixture = TestBed.createComponent(ConfiguracionComponent);
     component = fixture.componentInstance;
-    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
   it('should create', () => {

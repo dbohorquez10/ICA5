@@ -33,6 +33,10 @@
           </div>
         </div>
 
+        <button class="action-btn delete btn-delete-predio" (click)="eliminarPredio(predio.id); $event.stopPropagation()" title="Eliminar lugar de producción" style="margin-left: auto; margin-right: 15px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #fee2e2; color: #ef4444; border: none; cursor: pointer; transition: all 0.2s;">
+          <span class="material-icons">delete_outline</span>
+        </button>
+
         <span class="material-icons toggle-icon" [class.rotated]="predioExpandido === predio.id">
           expand_more
         </span>

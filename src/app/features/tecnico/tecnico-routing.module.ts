@@ -5,11 +5,13 @@ import { RouterModule, Routes } from '@angular/router';
 import { InspeccionesComponent } from './inspecciones/inspecciones.component';
 import { EjecutarInspeccionComponent } from './ejecutar-inspeccion/ejecutar-inspeccion.component';
 import { HistorialInspeccionesComponent } from './historial-inspecciones/historial-inspecciones.component';
+import { ReportesComponent } from '../../shared/components/reportes/reportes.component';
 
 const routes: Routes = [
   { path: 'inspecciones', component: InspeccionesComponent },
-  { path: 'ejecutar-inspeccion', component: EjecutarInspeccionComponent },
+  { path: 'ejecutar-inspeccion/:inspeccionId', component: EjecutarInspeccionComponent },
   { path: 'historial-inspecciones', component: HistorialInspeccionesComponent },
+  { path: 'reportes', component: ReportesComponent },
   // Si alguien intenta entrar a dashboard o a la raíz, lo mandamos a inspecciones
   { path: 'dashboard', redirectTo: 'inspecciones', pathMatch: 'full' },
   { path: '', redirectTo: 'inspecciones', pathMatch: 'full' },

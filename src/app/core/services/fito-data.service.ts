@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
 import { API_CONFIG } from './api.config';
@@ -52,6 +52,7 @@ export interface Predio {
   id: string;
   nombre: string;
   productor_id?: string;
+  lugar_id?: string;
   departamento?: string;
   municipio?: string;
   vereda?: string;
@@ -63,6 +64,21 @@ export interface Predio {
   ubicacion?: string;
   numeroRegistroIca?: string;
   productorNombre?: string;
+}
+
+export interface LugarProduccion {
+  id: string;
+  productor_id: string;
+  nombre: string;
+  numero_registro_ica?: string;
+  departamento: string;
+  municipio: string;
+  vereda?: string;
+  latitud?: number;
+  longitud?: number;
+  activo?: boolean;
+  created_at?: string;
+  predios?: Predio[];
 }
 
 export interface RegistroPlanta {
@@ -90,6 +106,7 @@ export interface SubInspeccionLote {
   /** Campos de compatibilidad frontend */
   loteId?: string;
   plantasEvaluadas?: number;
+  plantas_evaluadas?: number;
   registroPlantas?: RegistroPlanta[];
   incidenciasCalculadas?: { plagaId: string; porcentaje: number }[];
 }
@@ -114,6 +131,10 @@ export interface Inspeccion {
   fechaSolicitada?: string;
   modoAsignacion?: string;
   subInspecciones?: SubInspeccionLote[];
+  estado_aprobacion?: 'pendiente' | 'aprobado' | 'rechazado';
+  razon_rechazo?: string;
+  incidencia_global_pct?: number;
+  nivel_alerta?: string;
 }
 
 export interface Usuario {
@@ -137,6 +158,16 @@ export interface Usuario {
   zona?: string;
   identificacion?: string;
   tarjetaProfesional?: string;
+}
+
+export interface Notificacion {
+  id: string;
+  usuario_id: string;
+  titulo: string;
+  mensaje: string;
+  tipo: string;
+  leido: boolean;
+  created_at: string;
 }
 
 // =============================================
@@ -177,19 +208,11 @@ export class FitoDataService {
 
   /** Normaliza la respuesta del backend añadiendo alias de compatibilidad frontend. */
   private normalizarPlaga(p: any): Plaga {
-    const TIPO_ICONS: Record<string, string> = {
-      insecto: 'pest_control', hongo: 'spa', bacteria: 'coronavirus',
-      virus: 'biotech', nematodo: 'bug_report', maleza: 'grass',
-    };
-    const TIPO_COLORS: Record<string, string> = {
-      insecto: '#ef4444', hongo: '#8b5cf6', bacteria: '#f59e0b',
-      virus: '#06b6d4', nematodo: '#ec4899', maleza: '#22c55e',
-    };
     return {
       ...p,
       nombre: p.nombre_comun || p.nombre,
-      icon: p.icon || TIPO_ICONS[p.tipo] || 'bug_report',
-      color: p.color || TIPO_COLORS[p.tipo] || '#64748b',
+      icon: p.icon || 'bug_report',
+      color: p.color || '#64748b',
       riesgo: p.riesgo || 'Medio',
     };
   }
@@ -271,6 +294,32 @@ export class FitoDataService {
     );
   }
 
+  // ── LUGARES DE PRODUCCIÓN ───────────────────────────────────────────────────
+
+  getLugaresPorProductor(productorId: string): Observable<LugarProduccion[]> {
+    return this.http.get<LugarProduccion[]>(`${this.coreUrl}/lugares/productor/${productorId}`);
+  }
+
+  getLugar(id: string): Observable<LugarProduccion> {
+    return this.http.get<LugarProduccion>(`${this.coreUrl}/lugares/${id}`);
+  }
+
+  agregarLugar(lugar: Partial<LugarProduccion>): Observable<LugarProduccion> {
+    return this.http.post<LugarProduccion>(`${this.coreUrl}/lugares/`, lugar);
+  }
+
+  actualizarLugar(id: string, datos: Partial<LugarProduccion>): Observable<LugarProduccion> {
+    return this.http.put<LugarProduccion>(`${this.coreUrl}/lugares/${id}`, datos);
+  }
+
+  eliminarLugar(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.coreUrl}/lugares/${id}`);
+  }
+
+  eliminarPredio(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.coreUrl}/predios/${id}`);
+  }
+
   // ── LOTES ──────────────────────────────────────────────────────────────────
 
   getLotesPorPredio(predioId: string): Observable<Lote[]> {
@@ -323,10 +372,32 @@ export class FitoDataService {
     return this.http.get<Usuario[]>(`${this.coreUrl}/usuarios/tecnicos/activos`);
   }
 
+  getPreferenciasUsuario(id: string): Observable<any> {
+    return this.http.get<any>(`${this.coreUrl}/usuarios/${id}/preferencias`);
+  }
+
+  actualizarPreferenciasUsuario(id: string, preferencias: any): Observable<any> {
+    return this.http.put<any>(`${this.coreUrl}/usuarios/${id}/preferencias`, preferencias);
+  }
+
+  // ── NOTIFICACIONES ──────────────────────────────────────────────────────────
+
+  getNotificaciones(usuarioId: string): Observable<Notificacion[]> {
+    return this.http.get<Notificacion[]>(`${this.coreUrl}/notificaciones/usuario/${usuarioId}`);
+  }
+
+  marcarNotificacionComoLeida(notificacionId: string): Observable<any> {
+    return this.http.put(`${this.coreUrl}/notificaciones/${notificacionId}/leer`, {});
+  }
+
   // ── INSPECCIONES ───────────────────────────────────────────────────────────
 
-  getInspecciones(): Observable<Inspeccion[]> {
-    return this.http.get<Inspeccion[]>(`${this.insUrl}/inspecciones/`);
+  getInspecciones(tecnicoId?: string): Observable<Inspeccion[]> {
+    let params = new HttpParams();
+    if (tecnicoId) {
+      params = params.set('tecnico_id', tecnicoId);
+    }
+    return this.http.get<Inspeccion[]>(`${this.insUrl}/inspecciones/`, { params });
   }
 
   getInspeccionPorId(id: string): Observable<Inspeccion> {
@@ -395,5 +466,24 @@ export class FitoDataService {
 
   getResumenFitosanitario(subInspeccionId: string): Observable<any> {
     return this.http.get(`${this.insUrl}/registro-plantas/resumen/sub-inspeccion/${subInspeccionId}`);
+  }
+
+  descargarInformePDF(inspeccionId: string): Observable<Blob> {
+    return this.http.get(`${this.insUrl}/inspecciones/${inspeccionId}/informe/pdf`, {
+      responseType: 'blob'
+    });
+  }
+
+  evaluarAprobacion(inspeccionId: string, estadoAprobacion: string, justificacion?: string): Observable<any> {
+    return this.http.patch(`${this.insUrl}/inspecciones/${inspeccionId}/aprobacion`, {
+      estado_aprobacion: estadoAprobacion,
+      justificacion: justificacion
+    });
+  }
+
+  descargarCertificadoPDF(inspeccionId: string): Observable<Blob> {
+    return this.http.get(`${this.insUrl}/inspecciones/${inspeccionId}/certificado/pdf`, {
+      responseType: 'blob'
+    });
   }
 }
