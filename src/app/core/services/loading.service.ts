@@ -1,19 +1,34 @@
 import { Injectable, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 
+/**
+ * PILAR 1: SERVICIO DE CARGA GLOBAL
+ * Maneja el estado visible/oculto del spinner
+ * Soporta acceso como Signal e interoperabilidad como Observable (isLoading$)
+ * Lugar: src/app/core/services/loading.service.ts
+ */
 @Injectable({ providedIn: 'root' })
 export class LoadingService {
-  isLoading = signal<boolean>(false);
-  private activeRequests = 0;
+  readonly isLoading = signal<boolean>(false);
+  readonly isLoading$ = toObservable(this.isLoading);
 
-  show() {
-    this.activeRequests++;
+  private requestCount = 0;
+
+  show(): void {
+    this.requestCount++;
     this.isLoading.set(true);
   }
 
-  hide() {
-    this.activeRequests = Math.max(0, this.activeRequests - 1);
-    if (this.activeRequests === 0) {
+  hide(): void {
+    this.requestCount--;
+    if (this.requestCount <= 0) {
+      this.requestCount = 0;
       this.isLoading.set(false);
     }
+  }
+
+  reset(): void {
+    this.requestCount = 0;
+    this.isLoading.set(false);
   }
 }

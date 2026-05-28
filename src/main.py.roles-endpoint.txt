@@ -1,0 +1,263 @@
+# PILAR 4: ENDPOINT FASTAPI PARA CONTROL DE ROLES Y ASIGNACIÓN
+# Lugar: backend/app/core/routers/roles.py
+# 
+# Maneja:
+# - Validación de permisos por rol
+# - Filtrado de datos según rol
+# - Asignación de técnicos a predios
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+from sqlalchemy import and_
+from typing import Optional
+
+router = APIRouter(prefix="/roles", tags=["roles"])
+
+
+@router.get("/permisos/{usuario_id}")
+def get_permisos_usuario(
+    usuario_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Retorna los permisos específicos del usuario actual
+    Usado por Angular guardias (role.guard.ts)
+    
+    Respuesta:
+    {
+      "rol": "admin",
+      "departamento_id": "15",
+      "departamento_nombre": "Cundinamarca",
+      "puede_ver_todo": false,
+      "puede_asignar_tecnicos": true,
+      "puede_generar_reportes": true,
+      "predios_asignados": 5
+    }
+    """
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404)
+
+    permisos = {
+        "rol": usuario.rol,
+        "usuario_id": usuario.id,
+        "nombre": usuario.nombre,
+        "email": usuario.email,
+        "departamento_id": usuario.departamento_id,
+        "departamento_nombre": None,
+        "puede_ver_todo": usuario.rol == "admin",
+        "puede_asignar_tecnicos": usuario.rol == "admin",
+        "puede_generar_reportes": usuario.rol in ["admin", "tecnico"],
+        "puede_crear_inspecciones": usuario.rol in ["admin", "tecnico"],
+    }
+
+    if usuario.departamento_id:
+        dept = db.query(Departamento).filter(
+            Departamento.id == usuario.departamento_id
+        ).first()
+        permisos["departamento_nombre"] = dept.nombre if dept else None
+
+    # Contar predios asignados (para técnicos)
+    if usuario.rol == "tecnico":
+        predios_count = db.query(Predio).filter(
+            Predio.tecnico_asignado_id == usuario_id
+        ).count()
+        permisos["predios_asignados"] = predios_count
+
+    # Contar productores (para administradores)
+    elif usuario.rol == "admin" and usuario.departamento_id:
+        productores_count = db.query(Usuario).filter(
+            and_(
+                Usuario.rol == "productor",
+                Usuario.departamento_id == usuario.departamento_id,
+            )
+        ).count()
+        permisos["productores_asignados"] = productores_count
+
+    return permisos
+
+
+@router.get("/ver-predios")
+def get_predios_segun_rol(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    departamento_id: Optional[str] = Query(None)
+):
+    """
+    PILAR 4: Retorna predios filtrados según el rol del usuario
+    
+    - Admin: Ve todos los predios de su departamento
+    - Técnico: Solo predios asignados a él
+    - Productor: Solo sus propios predios
+    
+    Uso desde inspectionService.getPrediosFiltrados(rol, deptId)
+    """
+    query = db.query(Predio).options(
+        selectinload(Predio.agricultor),
+        selectinload(Predio.departamento)
+    )
+
+    # Filtrar por rol
+    if current_user.rol == "admin":
+        if departamento_id:
+            query = query.filter(Predio.departamento_id == departamento_id)
+        else:
+            # Admin sin dept específico: ver todos
+            pass
+
+    elif current_user.rol == "tecnico":
+        # Técnico: solo predios asignados
+        query = query.filter(Predio.tecnico_asignado_id == current_user.id)
+
+    elif current_user.rol == "productor":
+        # Productor: solo sus propios predios
+        query = query.filter(Predio.agricultor_id == current_user.id)
+
+    else:
+        raise HTTPException(status_code=403, detail="Rol no autorizado")
+
+    predios = query.all()
+
+    return [
+        {
+            "id": p.id,
+            "nombre": p.nombre,
+            "departamento": p.departamento.nombre if p.departamento else None,
+            "productor_nombre": p.agricultor.nombre if p.agricultor else None,
+            "latitud": p.latitud,
+            "longitud": p.longitud,
+            "numero_registro_ica": p.numero_registro_ica,
+            "tecnico_asignado_id": p.tecnico_asignado_id,
+            "area_total": p.area_total,
+        }
+        for p in predios
+    ]
+
+
+@router.post("/asignar-tecnico")
+def asignar_tecnico_admin(
+    predio_id: str,
+    tecnico_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    PILAR 4: Solo Admin puede asignar técnicos
+    Asigna un técnico oficial específico a un Lugar de Producción
+    
+    Payload JSON:
+    {
+      "predio_id": "uuid",
+      "tecnico_id": "uuid"
+    }
+    
+    Respuesta:
+    {
+      "predio_id": "...",
+      "tecnico_asignado": {
+        "id": "...",
+        "nombre": "Juan Pérez",
+        "email": "juan@ica.gov.co"
+      },
+      "timestamp": "2026-05-14T11:30:00Z"
+    }
+    """
+    # Solo Admin puede asignar
+    if current_user.rol != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Solo administradores pueden asignar técnicos"
+        )
+
+    # Validar predio
+    predio = db.query(Predio).filter(Predio.id == predio_id).first()
+    if not predio:
+        raise HTTPException(status_code=404, detail="Predio no encontrado")
+
+    # Validar técnico
+    tecnico = db.query(Usuario).filter(
+        and_(
+            Usuario.id == tecnico_id,
+            Usuario.rol == "tecnico",
+            Usuario.activo == True
+        )
+    ).first()
+    if not tecnico:
+        raise HTTPException(status_code=404, detail="Técnico no encontrado o inactivo")
+
+    # Asignar
+    predio.tecnico_asignado_id = tecnico_id
+    db.commit()
+
+    return {
+        "predio_id": predio_id,
+        "tecnico_asignado": {
+            "id": tecnico.id,
+            "nombre": tecnico.nombre,
+            "email": tecnico.email,
+            "registro_ica": tecnico.registro_ica,
+        },
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@router.get("/verificar-acceso/{recurso_id}")
+def verificar_acceso_recurso(
+    recurso_id: str,
+    recurso_tipo: str,  # "predio", "inspeccion", "reporte"
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    PILAR 4: Verifica si el usuario tiene acceso a un recurso específico
+    Usado en guardias de Angular (role.guard.ts)
+    
+    Respuesta:
+    {
+      "tiene_acceso": true,
+      "razon": "Usuario es técnico asignado a este predio"
+    }
+    """
+    puede_acceder = False
+    razon = ""
+
+    if current_user.rol == "admin":
+        puede_acceder = True
+        razon = "Usuario es administrador"
+
+    elif recurso_tipo == "predio":
+        predio = db.query(Predio).filter(Predio.id == recurso_id).first()
+        if not predio:
+            return {"tiene_acceso": False, "razon": "Recurso no encontrado"}
+
+        if current_user.rol == "tecnico":
+            puede_acceder = predio.tecnico_asignado_id == current_user.id
+            razon = "Técnico asignado a este predio" if puede_acceder else "No asignado"
+
+        elif current_user.rol == "productor":
+            puede_acceder = predio.agricultor_id == current_user.id
+            razon = "Productor propietario" if puede_acceder else "No es propietario"
+
+    elif recurso_tipo == "inspeccion":
+        inspeccion = db.query(Inspeccion).filter(Inspeccion.id == recurso_id).first()
+        if not inspeccion:
+            return {"tiene_acceso": False, "razon": "Recurso no encontrado"}
+
+        if current_user.rol == "tecnico":
+            puede_acceder = inspeccion.tecnico_id == current_user.id
+            razon = "Técnico asignado" if puede_acceder else "No asignado"
+
+        elif current_user.rol == "productor":
+            predio = db.query(Predio).filter(
+                Predio.id == inspeccion.predio_id
+            ).first()
+            puede_acceder = predio and predio.agricultor_id == current_user.id
+            razon = "Productor propietario" if puede_acceder else "No es propietario"
+
+    return {
+        "tiene_acceso": puede_acceder,
+        "razon": razon,
+        "usuario_rol": current_user.rol,
+        "recurso_tipo": recurso_tipo
+    }
