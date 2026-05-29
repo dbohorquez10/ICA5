@@ -23,6 +23,7 @@ export class SolicitarInspeccionComponent implements OnInit {
   public fechaSugerida = '';
   public comentarios = '';
   public agendaStatus: 'disponible' | 'ocupado' | null = null;
+  public agendaTecnicosMap: { [tecnicoId: string]: boolean } = {};
   public enviado = false;
   public isLoading = false;
 
@@ -88,7 +89,36 @@ export class SolicitarInspeccionComponent implements OnInit {
   }
 
   public onFechaChange(): void {
-    this.verificarAgenda();
+    this.actualizarDisponibilidadTecnicos();
+  }
+
+  public actualizarDisponibilidadTecnicos(): void {
+    this.agendaTecnicosMap = {};
+    if (!this.fechaSugerida) {
+      this.agendaStatus = null;
+      return;
+    }
+
+    this.dataService.getInspecciones().subscribe({
+      next: (inspecciones) => {
+        inspecciones.forEach(ins => {
+          const mFecha = ins.fecha_inspeccion || ins.fechaSolicitada || '';
+          const mEstado = (ins.estado || '').toLowerCase();
+          const tecId = ins.tecnico_id;
+
+          if (mFecha === this.fechaSugerida && mEstado !== 'cancelada' && tecId) {
+            this.agendaTecnicosMap[tecId] = true;
+          }
+        });
+
+        if (this.tecnicoElegido) {
+          this.agendaStatus = this.agendaTecnicosMap[this.tecnicoElegido] ? 'ocupado' : 'disponible';
+        }
+      },
+      error: (err) => {
+        console.error('Error al actualizar disponibilidad de técnicos:', err);
+      }
+    });
   }
 
   public verificarAgenda(): void {
@@ -96,20 +126,7 @@ export class SolicitarInspeccionComponent implements OnInit {
       this.agendaStatus = null;
       return;
     }
-    this.dataService.getInspeccionesPorTecnico(this.tecnicoElegido).subscribe({
-      next: (inspecciones) => {
-        const tieneVisita = inspecciones.some(ins => {
-          const mFecha = ins.fecha_inspeccion || ins.fechaSolicitada || '';
-          const mEstado = (ins.estado || '').toLowerCase();
-          return mFecha === this.fechaSugerida && mEstado !== 'cancelada';
-        });
-        this.agendaStatus = tieneVisita ? 'ocupado' : 'disponible';
-      },
-      error: (err) => {
-        console.error('Error al verificar agenda:', err);
-        this.agendaStatus = null;
-      }
-    });
+    this.agendaStatus = this.agendaTecnicosMap[this.tecnicoElegido] ? 'ocupado' : 'disponible';
   }
 
   public enviar(): void {

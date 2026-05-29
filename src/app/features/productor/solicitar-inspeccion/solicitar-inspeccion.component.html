@@ -106,15 +106,17 @@
             *ngFor="let t of tecnicosDisponibles"
             (click)="seleccionarTecnico(t.id)"
             [class.selected]="tecnicoElegido === t.id"
-            [class.ocupado]="!t.activo"
+            [class.ocupado]="fechaSugerida ? agendaTecnicosMap[t.id] : !t.activo"
           >
             <div class="tecnico-avatar">{{ (t.nombre || '').substring(0, 2).toUpperCase() }}</div>
             <div class="tecnico-info">
               <h3>{{ t.nombre }} {{ t.apellido }}</h3>
               <p>{{ t.registro_ica || t.email }}</p>
             </div>
-            <span class="tecnico-status" [class.libre]="t.activo" [class.busy]="!t.activo">
-              {{ t.activo !== false ? 'Disponible' : 'Ocupado' }}
+            <span class="tecnico-status" 
+                  [class.libre]="fechaSugerida ? !agendaTecnicosMap[t.id] : t.activo !== false" 
+                  [class.busy]="fechaSugerida ? agendaTecnicosMap[t.id] : t.activo === false">
+              {{ fechaSugerida ? (agendaTecnicosMap[t.id] ? 'Ocupado' : 'Disponible') : (t.activo !== false ? 'Disponible' : 'Ocupado') }}
             </span>
           </div>
         </div>
