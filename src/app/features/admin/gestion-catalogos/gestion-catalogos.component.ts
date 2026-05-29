@@ -13,6 +13,8 @@ export class GestionCatalogosComponent implements OnInit {
   public plagas: Plaga[] = [];
   public cultivos: Cultivo[] = [];
   public plagasDisponibles: Plaga[] = [];
+  public plagasAprobadas: Plaga[] = [];
+  public plagasPendientes: Plaga[] = [];
 
   public modalVisible = false;
   public modalTipo: 'plaga' | 'cultivo' = 'plaga';
@@ -32,7 +34,9 @@ export class GestionCatalogosComponent implements OnInit {
     }).subscribe(({ plagas, cultivos }) => {
       this.plagas = plagas;
       this.cultivos = cultivos;
-      this.plagasDisponibles = plagas;
+      this.plagasAprobadas = plagas.filter(p => p.estado !== 'pendiente');
+      this.plagasPendientes = plagas.filter(p => p.estado === 'pendiente');
+      this.plagasDisponibles = this.plagasAprobadas;
     });
   }
 
@@ -180,5 +184,16 @@ export class GestionCatalogosComponent implements OnInit {
     if (confirm('¿Eliminar este cultivo?')) {
       this.dataService.eliminarCultivo(id).subscribe(() => this.recargar());
     }
+  }
+
+  public aprobarSugerencia(id: string): void {
+    this.dataService.aprobarPlaga(id).subscribe({
+      next: () => {
+        this.recargar();
+      },
+      error: (err) => {
+        console.error('Error al aprobar plaga:', err);
+      }
+    });
   }
 }

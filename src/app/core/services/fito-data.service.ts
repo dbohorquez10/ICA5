@@ -25,6 +25,7 @@ export interface Plaga {
   tipo: string;
   riesgo: 'Alto' | 'Medio' | 'Bajo';
   descripcion: string;
+  estado?: 'aprobado' | 'pendiente';
   cultivos_afectados?: string[];
   /** Alias de compatibilidad frontend */
   nombre?: string;
@@ -232,11 +233,25 @@ export class FitoDataService {
   }
 
   getPlagasByPrediosCultivos(cultivoId: string): Observable<Plaga[]> {
-    return this.http.get<Plaga[]>(`${this.coreUrl}/catalogos/plagas/por-cultivo/${cultivoId}`);
+    return this.http.get<Plaga[]>(`${this.coreUrl}/catalogos/plagas/por-cultivo/${cultivoId}`).pipe(
+      map(plagas => (Array.isArray(plagas) ? plagas : []).map(p => this.normalizarPlaga(p)))
+    );
   }
 
   agregarPlaga(plaga: Partial<Plaga>): Observable<Plaga> {
     return this.http.post<Plaga>(`${this.coreUrl}/catalogos/plagas`, plaga);
+  }
+
+  sugerirPlaga(plaga: any): Observable<Plaga> {
+    return this.http.post<Plaga>(`${this.coreUrl}/catalogos/plagas/sugerir`, plaga).pipe(
+      map(p => this.normalizarPlaga(p))
+    );
+  }
+
+  aprobarPlaga(plagaId: string): Observable<Plaga> {
+    return this.http.patch<Plaga>(`${this.coreUrl}/catalogos/plagas/${plagaId}/aprobar`, {}).pipe(
+      map(p => this.normalizarPlaga(p))
+    );
   }
 
   editarPlaga(id: string, datos: Partial<Plaga>): Observable<Plaga> {

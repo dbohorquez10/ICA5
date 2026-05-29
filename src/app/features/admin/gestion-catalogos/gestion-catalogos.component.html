@@ -15,7 +15,7 @@
         <div class="board-title">
           <span class="material-icons">bug_report</span>
           <h2>Catálogo de Plagas</h2>
-          <span class="count-badge">{{ plagas.length }}</span>
+          <span class="count-badge">{{ plagasAprobadas.length }}</span>
         </div>
         <button class="add-btn" (click)="abrirModal('plaga')">
           <span class="material-icons">add</span> Añadir
@@ -23,7 +23,7 @@
       </div>
 
       <div class="cards-list">
-        <div class="catalog-card" *ngFor="let plaga of plagas">
+        <div class="catalog-card" *ngFor="let plaga of plagasAprobadas">
           <div
             class="card-icon"
             [style.background-color]="plaga.color + '22'"
@@ -91,6 +91,47 @@
               <span class="material-icons">delete_outline</span>
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de Plagas Pendientes -->
+    <div class="board-column pending-column">
+      <div class="board-header">
+        <div class="board-title">
+          <span class="material-icons" style="color: #eab308;">rule</span>
+          <h2>Plagas Pendientes</h2>
+          <span class="count-badge" style="background-color: #fef08a; color: #854d0e;">{{ plagasPendientes.length }}</span>
+        </div>
+      </div>
+
+      <div class="cards-list">
+        <div class="catalog-card pending-card" *ngFor="let plaga of plagasPendientes">
+          <div
+            class="card-icon"
+            [style.background-color]="plaga.color + '22'"
+            [style.border]="'1px solid ' + plaga.color + '55'"
+          >
+            <span class="material-icons" [style.color]="plaga.color">{{ plaga.icon }}</span>
+          </div>
+          <div class="card-content">
+            <h3>{{ plaga.nombre_comun || plaga.nombre }}</h3>
+            <p class="description">{{ plaga.descripcion }}</p>
+            <span class="risk-badge risk-med" style="background-color: #fef08a; color: #854d0e;">
+              <span class="material-icons" style="font-size: 14px; vertical-align: middle;">hourglass_empty</span> Sugerida
+            </span>
+          </div>
+          <div class="card-actions" style="flex-direction: column; gap: 8px;">
+            <button class="action-btn edit" (click)="aprobarSugerencia(plaga.id)" title="Aprobar Plaga" style="background: rgba(16, 185, 129, 0.1); border-color: #10b981; color: #10b981;">
+              <span class="material-icons">check</span>
+            </button>
+            <button class="action-btn delete" (click)="eliminarPlaga(plaga.id)" title="Rechazar/Eliminar">
+              <span class="material-icons">delete_outline</span>
+            </button>
+          </div>
+        </div>
+        <div *ngIf="plagasPendientes.length === 0" style="text-align: center; color: #94a3b8; padding: 30px; font-style: italic; font-size: 0.9rem;">
+          No hay sugerencias pendientes de revisión.
         </div>
       </div>
     </div>

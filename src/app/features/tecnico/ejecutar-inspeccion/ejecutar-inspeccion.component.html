@@ -1,4 +1,9 @@
 <div class="inspeccion-wrapper fade-in" *ngIf="inspeccion && predio">
+  <!-- Spinner de Carga -->
+  <div class="loading-overlay-global" *ngIf="isLoading">
+    <div class="spinner-modern"></div>
+    <p>Guardando datos de inspección...</p>
+  </div>
   <!-- VISTA 1: FICHA DEL PREDIO -->
   <div *ngIf="vista === 'ficha-predio'" class="vista-ficha">
     <div class="ficha-header">
@@ -110,13 +115,14 @@
         <label style="color: #64748b; font-weight: bold; font-size: 0.9rem;">Observaciones Generales (ICA)</label>
         <textarea 
           [(ngModel)]="observacionesGenerales"
+          (ngModelChange)="guardarDraftLocal()"
           rows="4"
           placeholder="Escribe las observaciones y recomendaciones para el productor..."
           style="width: 100%; border-radius: 8px; border: 1px solid #cbd5e1; padding: 10px; margin-top: 8px; resize: vertical; box-sizing: border-box; font-family: inherit;"
         ></textarea>
       </div>
 
-      <button class="btn-finalizar-predio" (click)="finalizarInspeccionCompleta()">
+      <button class="btn-finalizar-predio" (click)="finalizarInspeccionCompleta()" [disabled]="isLoading">
         <span class="material-icons">done_all</span> Finalizar Inspección del Predio
       </button>
     </div>
@@ -129,9 +135,12 @@
         <span class="material-icons">arrow_back</span>
       </button>
       <div class="tap-header-info">
-        <h3>
+        <h3 style="display: flex; align-items: center; gap: 6px;">
           {{ loteActual.nombre }} —
           {{ getCultivoNombre(loteActual) }}
+          <button type="button" class="info-icon-btn inline" (click)="verDetallesCultivo(loteActual, $event)" title="Ver detalles del cultivo">
+            <span class="material-icons" style="font-size: 1.1rem; color: #475569;">info</span>
+          </button>
         </h3>
         <p>{{ loteActual.area || loteActual.hectareas }} Ha</p>
       </div>
@@ -151,8 +160,16 @@
     </div>
 
     <div class="tap-plagas-section">
-      <h3 class="section-title">¿Qué observas en esta planta?</h3>
-      <p class="section-subtitle">Toca las plagas presentes. Si está sana, pasa directamente.</p>
+      <div class="section-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h3 class="section-title" style="margin: 0;">¿Qué observas en esta planta?</h3>
+          <p class="section-subtitle" style="margin: 3px 0 0 0;">Toca las plagas presentes. Si está sana, pasa directamente.</p>
+        </div>
+        <button type="button" class="btn-sugerir-plaga-trigger" (click)="abrirModalSugerir()">
+          <span class="material-icons">add</span> Sugerir Plaga
+        </button>
+      </div>
+      
       <div class="plagas-grid" *ngIf="plagasDelLote.length > 0; else sinPlagas">
         <button
           class="plaga-card"
@@ -165,6 +182,11 @@
             <span class="material-icons">{{ plaga.icon }}</span>
           </div>
           <span class="plaga-name">{{ plaga.nombre_comun || plaga.nombre }}</span>
+          
+          <span class="card-info-btn-wrapper">
+            <span class="material-icons info-btn-icon" (click)="verDetallesPlaga(plaga, $event)" title="Ver detalles de la plaga">info</span>
+          </span>
+          
           <div class="active-overlay" *ngIf="hasPlaga(plaga.id)">
             <span class="material-icons">check_circle</span>
           </div>
@@ -179,12 +201,76 @@
     </div>
 
     <div class="bottom-bar">
-      <button class="btn-completar-lote" (click)="completarLote()">
+      <button class="btn-completar-lote" (click)="completarLote()" [disabled]="isLoading">
         <span class="material-icons">done_all</span> Completar {{ loteActual.nombre }}
       </button>
-      <button class="btn-siguiente-planta" (click)="siguientePlanta()">
+      <button class="btn-siguiente-planta" (click)="siguientePlanta()" [disabled]="isLoading">
         <span class="material-icons">add_circle</span> Siguiente Planta
       </button>
+    </div>
+  </div>
+
+  <!-- MODAL DE DETALLES (INFO MODAL DE SOLO LECTURA) -->
+  <div class="modal-overlay" *ngIf="modalInfoVisible" (click)="cerrarModalInfo()">
+    <div class="modal-box info-modal-box fade-in" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ modalInfoData.titulo }}</h2>
+        <button class="close-btn" (click)="cerrarModalInfo()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="info-row" *ngFor="let item of modalInfoData.detalles">
+          <label class="info-label">{{ item.etiqueta }}</label>
+          <p class="info-value">{{ item.valor }}</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cerrarModalInfo()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PARA SUGERIR NUEVA PLAGA -->
+  <div class="modal-overlay" *ngIf="modalSugerirVisible" (click)="cerrarModalSugerir()">
+    <div class="modal-box fade-in" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Sugerir Nueva Plaga</h2>
+        <button class="close-btn" (click)="cerrarModalSugerir()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nombre Común *</label>
+          <input type="text" [(ngModel)]="nuevaSugerenciaPlaga.nombre_comun" placeholder="Ej: Diaphorina citri" class="modal-input" />
+        </div>
+        <div class="form-group">
+          <label>Nombre Científico (Opcional)</label>
+          <input type="text" [(ngModel)]="nuevaSugerenciaPlaga.nombre_cientifico" placeholder="Ej: Diaphorina citri Kuwayama" class="modal-input" />
+        </div>
+        <div class="form-group">
+          <label>Tipo de Agente</label>
+          <select [(ngModel)]="nuevaSugerenciaPlaga.tipo" class="modal-input select-input">
+            <option value="insecto">Insecto</option>
+            <option value="hongo">Hongo</option>
+            <option value="bacteria">Bacteria</option>
+            <option value="virus">Virus</option>
+            <option value="nematodo">Nematodo</option>
+            <option value="maleza">Maleza</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Descripción y Síntomas *</label>
+          <textarea [(ngModel)]="nuevaSugerenciaPlaga.descripcion" rows="3" placeholder="Describe los síntomas visuales del daño en la planta..." class="modal-input"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cerrarModalSugerir()">Cancelar</button>
+        <button class="btn-save" (click)="enviarSugerenciaPlaga()" [disabled]="isLoading">
+          <span class="material-icons">send</span> Enviar Sugerencia
+        </button>
+      </div>
     </div>
   </div>
 </div>

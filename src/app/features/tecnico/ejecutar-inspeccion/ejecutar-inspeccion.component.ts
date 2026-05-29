@@ -1,8 +1,9 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FitoDataService, Inspeccion, Predio, Lote, Plaga, SubInspeccionLote, RegistroPlanta } from '../../../core/services/fito-data.service';
+import { FitoDataService, Inspeccion, Predio, Lote, Plaga, SubInspeccionLote, RegistroPlanta, Cultivo } from '../../../core/services/fito-data.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { forkJoin } from 'rxjs';
 
 type Vista = 'ficha-predio' | 'lista-lotes' | 'inspeccion-lote';
 
@@ -26,6 +27,20 @@ export class EjecutarInspeccionComponent implements OnInit {
   public plantaActual: number = 1;
   public observacionesGenerales: string = '';
   public cultivosMap: { [id: string]: string } = {};
+  public cultivosFullMap: { [id: string]: Cultivo } = {};
+
+  // Estados adicionales y modales
+  public isLoading: boolean = false;
+  public modalInfoVisible: boolean = false;
+  public modalInfoData: { titulo: string, detalles: { etiqueta: string, valor: string }[] } = { titulo: '', detalles: [] };
+  
+  public modalSugerirVisible: boolean = false;
+  public nuevaSugerenciaPlaga = {
+    nombre_comun: '',
+    nombre_cientifico: '',
+    tipo: 'insecto',
+    descripcion: ''
+  };
 
   constructor(
     public dataService: FitoDataService,
@@ -41,7 +56,8 @@ export class EjecutarInspeccionComponent implements OnInit {
   }
 
   public guardarParcial(): void {
-    // Progress is auto-saved on completarLote
+    this.guardarDraftLocal();
+    this.notify.showSuccess('Borrador guardado localmente.');
   }
 
   ngOnInit(): void {
@@ -58,23 +74,71 @@ export class EjecutarInspeccionComponent implements OnInit {
       return;
     }
 
-    this.dataService.getInspeccionPorId(inspeccionId).subscribe(ins => {
-      this.inspeccion = ins;
-      const predioId = this.inspeccion.predio_id || this.inspeccion.predioId || '';
+    this.dataService.getInspeccionPorId(inspeccionId).subscribe({
+      next: (ins) => {
+        this.inspeccion = ins;
+        const predioId = this.inspeccion.predio_id || this.inspeccion.predioId || '';
 
-      // Cargar sub-inspecciones existentes
-      this.dataService.getSubInspeccionesPorInspeccion(inspeccionId).subscribe(subs => {
-        this.inspeccion.sub_inspecciones = subs;
-      });
+        forkJoin({
+          subs: this.dataService.getSubInspeccionesPorInspeccion(inspeccionId),
+          predio: this.dataService.getPredio(predioId),
+          lotes: this.dataService.getLotesPorPredio(predioId),
+          cultivos: this.dataService.getCultivos()
+        }).subscribe({
+          next: ({ subs, predio, lotes, cultivos }) => {
+            this.inspeccion.sub_inspecciones = subs;
+            this.predio = predio;
+            this.lotesDePredio = lotes;
+            cultivos.forEach(c => {
+              this.cultivosMap[c.id] = c.nombre;
+              this.cultivosFullMap[c.id] = c;
+            });
 
-      this.dataService.getPredio(predioId).subscribe(p => this.predio = p);
-      this.dataService.getLotesPorPredio(predioId).subscribe(l => this.lotesDePredio = l);
-      this.dataService.getCultivos().subscribe(cultivos => {
-        cultivos.forEach(c => this.cultivosMap[c.id] = c.nombre);
-      });
-    }, err => {
-      this.notify.showError('No se pudo cargar la inspección.');
-      this.router.navigate(['/app/tecnico/inspecciones']);
+            // Cargar observaciones generales iniciales si ya existen
+            if (this.inspeccion.observaciones) {
+              this.observacionesGenerales = this.inspeccion.observaciones;
+            }
+
+            // Restaurar borrador local si existe
+            const draftKey = `draft_inspeccion_${inspeccionId}`;
+            const draftStr = localStorage.getItem(draftKey);
+            if (draftStr) {
+              try {
+                const draft = JSON.parse(draftStr);
+                this.inspeccion = draft.inspeccion;
+                this.observacionesGenerales = draft.observacionesGenerales || '';
+                this.vista = draft.vista || 'ficha-predio';
+                if (draft.loteActualId) {
+                  const matchedLote = this.lotesDePredio.find(l => l.id === draft.loteActualId);
+                  if (matchedLote) this.loteActual = matchedLote;
+                }
+                this.subActual = draft.subActual;
+                this.plantaActual = draft.plantaActual || 1;
+                this.plagasMarcadas = new Set(draft.plagasMarcadas || []);
+                
+                // Si el lote actual estaba cargado, aseguramos plagas cargadas
+                if (this.loteActual) {
+                  this.iniciarLoteView(this.loteActual);
+                }
+                
+                this.notify.showInfo('Se ha restaurado el borrador guardado localmente.');
+              } catch (e) {
+                console.error('Error al restaurar borrador local:', e);
+              }
+            }
+          },
+          error: (err) => {
+            console.error("Error al cargar datos de la inspección:", err);
+            this.notify.showError('No se pudieron cargar todos los metadatos de la inspección.');
+            this.router.navigate(['/app/tecnico/inspecciones']);
+          }
+        });
+      },
+      error: (err) => {
+        console.error("Error al cargar inspección:", err);
+        this.notify.showError('No se pudo cargar la inspección.');
+        this.router.navigate(['/app/tecnico/inspecciones']);
+      }
     });
   }
 
@@ -160,12 +224,22 @@ export class EjecutarInspeccionComponent implements OnInit {
 
   private iniciarLoteView(lote: Lote): void {
     const cultivoId = lote.cultivo_id || lote.cultivoId || '';
-    this.dataService.getPlagasByPrediosCultivos(cultivoId).subscribe(p => this.plagasDelLote = p);
+    this.dataService.getPlagasByPrediosCultivos(cultivoId).subscribe({
+      next: (p) => {
+        this.plagasDelLote = p;
+        // Asegurar guardar el estado inicial del lote en borrador
+        this.guardarDraftLocal();
+      },
+      error: (err) => {
+        console.error('Error al obtener plagas del cultivo:', err);
+      }
+    });
     this.vista = 'inspeccion-lote';
   }
 
   public togglePlaga(plagaId: string): void {
     this.plagasMarcadas.has(plagaId) ? this.plagasMarcadas.delete(plagaId) : this.plagasMarcadas.add(plagaId);
+    this.guardarDraftLocal();
   }
 
   public hasPlaga(plagaId: string): boolean {
@@ -182,6 +256,7 @@ export class EjecutarInspeccionComponent implements OnInit {
     this.subActual.plantasEvaluadas = this.plantaActual;
     this.plantaActual++;
     this.plagasMarcadas.clear();
+    this.guardarDraftLocal();
   }
 
   public completarLote(): void {
@@ -197,6 +272,7 @@ export class EjecutarInspeccionComponent implements OnInit {
     }
 
     this.subActual.estado = 'Completada';
+    this.isLoading = true;
 
     // Construir los registros de plantas para el backend
     if (this.subActual.id && this.subActual.registroPlantas.length > 0) {
@@ -230,9 +306,22 @@ export class EjecutarInspeccionComponent implements OnInit {
             estado: 'completado' as any, 
             observaciones: '',
             plantas_evaluadas: this.subActual.plantasEvaluadas
-          }).subscribe(() => this.vista = 'lista-lotes');
+          }).subscribe({
+            next: () => {
+              this.isLoading = false;
+              this.vista = 'lista-lotes';
+              this.guardarDraftLocal();
+              this.notify.showSuccess('Lote guardado con éxito.');
+            },
+            error: (err) => {
+              this.isLoading = false;
+              console.error("Error al actualizar estado del lote", err);
+              this.notify.showError("Hubo un error al actualizar el estado de la sub-inspección.");
+            }
+          });
         },
         error: (err) => {
+          this.isLoading = false;
           console.error("Error al registrar plantas", err);
           this.notify.showError("Hubo un error al guardar los registros de las plantas.");
         }
@@ -242,8 +331,21 @@ export class EjecutarInspeccionComponent implements OnInit {
         estado: 'completado' as any, 
         observaciones: '',
         plantas_evaluadas: this.subActual.plantasEvaluadas || 0
-      }).subscribe(() => this.vista = 'lista-lotes');
+      }).subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.vista = 'lista-lotes';
+          this.guardarDraftLocal();
+          this.notify.showSuccess('Lote completado.');
+        },
+        error: (err) => {
+          this.isLoading = false;
+          console.error("Error al completar lote sin plantas", err);
+          this.notify.showError("Error al completar la sub-inspección.");
+        }
+      });
     } else {
+      this.isLoading = false;
       this.vista = 'lista-lotes';
     }
   }
@@ -254,11 +356,129 @@ export class EjecutarInspeccionComponent implements OnInit {
 
   public finalizarInspeccionCompleta(): void {
     if (confirm(`¿Finalizar la inspección del predio "${this.predio.nombre}"?`)) {
+      this.isLoading = true;
       this.dataService.finalizarInspeccion(this.inspeccion.id, this.observacionesGenerales)
-        .subscribe(() => {
-          this.notify.showSuccess('¡Inspección completada exitosamente!');
-          this.router.navigate(['/app/tecnico/inspecciones']);
+        .subscribe({
+          next: () => {
+            this.isLoading = false;
+            this.limpiarDraftLocal();
+            this.notify.showSuccess('¡Inspección completada exitosamente!');
+            this.router.navigate(['/app/tecnico/inspecciones']);
+          },
+          error: (err) => {
+            this.isLoading = false;
+            console.error("Error al finalizar inspección:", err);
+            this.notify.showError(err.error?.detail || 'Hubo un error al finalizar la inspección.');
+          }
         });
     }
+  }
+
+  // --- MÉTODOS DE BORRADOR LOCAL ---
+  public guardarDraftLocal(): void {
+    if (!this.inspeccion) return;
+    const draftData = {
+      inspeccion: this.inspeccion,
+      observacionesGenerales: this.observacionesGenerales,
+      vista: this.vista,
+      loteActualId: this.loteActual?.id || null,
+      subActual: this.subActual || null,
+      plantaActual: this.plantaActual,
+      plagasMarcadas: Array.from(this.plagasMarcadas)
+    };
+    localStorage.setItem(`draft_inspeccion_${this.inspeccion.id}`, JSON.stringify(draftData));
+  }
+
+  public limpiarDraftLocal(): void {
+    if (this.inspeccion) {
+      localStorage.removeItem(`draft_inspeccion_${this.inspeccion.id}`);
+    }
+  }
+
+  // --- MÉTODOS DE DETALLES (INFO MODAL) ---
+  public verDetallesCultivo(lote: Lote, event: Event): void {
+    event.stopPropagation();
+    const cultivoId = lote.cultivo_id || lote.cultivoId || '';
+    const cultivo = this.cultivosFullMap[cultivoId];
+    if (cultivo) {
+      this.modalInfoData = {
+        titulo: `Cultivo: ${cultivo.nombre}`,
+        detalles: [
+          { etiqueta: 'Nombre Científico', valor: cultivo.nombre_cientifico || '—' },
+          { etiqueta: 'Variedad', valor: cultivo.variedad || '—' },
+          { etiqueta: 'Descripción', valor: cultivo.descripcion || '—' }
+        ]
+      };
+      this.modalInfoVisible = true;
+    } else {
+      this.notify.showInfo('No se encontraron detalles para este cultivo.');
+    }
+  }
+
+  public verDetallesPlaga(plaga: Plaga, event: Event): void {
+    event.stopPropagation();
+    this.modalInfoData = {
+      titulo: `Plaga: ${plaga.nombre_comun || plaga.nombre}`,
+      detalles: [
+        { etiqueta: 'Nombre Científico', valor: plaga.nombre_cientifico || '—' },
+        { etiqueta: 'Tipo', valor: plaga.tipo || '—' },
+        { etiqueta: 'Riesgo', valor: plaga.riesgo || 'Medio' },
+        { etiqueta: 'Estado', valor: plaga.estado || 'aprobado' },
+        { etiqueta: 'Descripción', valor: plaga.descripcion || '—' }
+      ]
+    };
+    this.modalInfoVisible = true;
+  }
+
+  public cerrarModalInfo(): void {
+    this.modalInfoVisible = false;
+  }
+
+  // --- MÉTODOS DE SUGERENCIA DE PLAGA ---
+  public abrirModalSugerir(): void {
+    this.nuevaSugerenciaPlaga = {
+      nombre_comun: '',
+      nombre_cientifico: '',
+      tipo: 'insecto',
+      descripcion: ''
+    };
+    this.modalSugerirVisible = true;
+  }
+
+  public cerrarModalSugerir(): void {
+    this.modalSugerirVisible = false;
+  }
+
+  public enviarSugerenciaPlaga(): void {
+    if (!this.nuevaSugerenciaPlaga.nombre_comun.trim()) {
+      this.notify.showError('El nombre común es obligatorio.');
+      return;
+    }
+    if (!this.nuevaSugerenciaPlaga.descripcion.trim()) {
+      this.notify.showError('La descripción es obligatoria.');
+      return;
+    }
+
+    const cultivoId = this.loteActual.cultivo_id || this.loteActual.cultivoId || '';
+    const payload = {
+      ...this.nuevaSugerenciaPlaga,
+      cultivo_id: cultivoId
+    };
+
+    this.isLoading = true;
+    this.dataService.sugerirPlaga(payload).subscribe({
+      next: (nuevaPlaga) => {
+        this.isLoading = false;
+        this.plagasDelLote.push(nuevaPlaga);
+        this.cerrarModalSugerir();
+        this.guardarDraftLocal();
+        this.notify.showSuccess(`Se sugirió la plaga "${nuevaPlaga.nombre}" correctamente y está disponible para este predio.`);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        console.error('Error al sugerir plaga:', err);
+        this.notify.showError(err.error?.detail || 'No se pudo sugerir la plaga.');
+      }
+    });
   }
 }
