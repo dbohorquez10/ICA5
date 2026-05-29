@@ -154,7 +154,10 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
         this.map = null;
       }
 
-      if (!this.L) this.L = await import('leaflet');
+      if (!this.L) {
+        const leaflet = await import('leaflet');
+        this.L = leaflet.default || leaflet;
+      }
       const center = this.solicitudesMapa.length > 0
         ? [this.solicitudesMapa[0].lat, this.solicitudesMapa[0].lng]
         : [7.1193, -73.1227];

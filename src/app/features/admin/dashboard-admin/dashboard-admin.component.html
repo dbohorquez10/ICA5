@@ -115,7 +115,7 @@
       >
         <div class="tec-avatar">
           {{
-            tec.nombre
+            (tec.nombre || '')
               .split(' ')
               .slice(0, 2)
               .map((n) => n[0])

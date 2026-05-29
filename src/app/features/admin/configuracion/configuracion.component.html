@@ -19,7 +19,7 @@
       <div class="profile-header">
         <div class="avatar-large">
           {{
-            perfil.nombre
+            (perfil.nombre || '')
               .split(' ')
               .slice(0, 2)
               .map((n) => n[0])

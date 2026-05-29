@@ -144,7 +144,10 @@ export class InspeccionesComponent implements OnInit {
     const container = document.getElementById('mapaTecnico');
     if (!container) return;
 
-    if (!this.L) this.L = await import('leaflet');
+    if (!this.L) {
+      const leaflet = await import('leaflet');
+      this.L = leaflet.default || leaflet;
+    }
 
     if (this.map) {
       try {

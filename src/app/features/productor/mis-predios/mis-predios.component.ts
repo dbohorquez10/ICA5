@@ -251,7 +251,10 @@ export class MisPrediosComponent implements OnInit {
   // === MAPA ===
   public async iniciarMapa(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
-    if (!this.L) this.L = await import('leaflet');
+    if (!this.L) {
+      const leaflet = await import('leaflet');
+      this.L = leaflet.default || leaflet;
+    }
     setTimeout(() => {
       if (this.map) return;
       this.map = this.L.map('mapaFito').setView([7.1193, -73.1227], 11);
