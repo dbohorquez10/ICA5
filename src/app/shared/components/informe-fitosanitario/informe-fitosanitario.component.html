@@ -190,10 +190,10 @@
       <span class="material-icons">workspace_premium</span> Descargar Certificado PDF
     </button>
 
-    <!-- Acciones de Aprobación para el Administrador (Solo si está pendiente) -->
-    <ng-container *ngIf="usuarioActual?.rol === 'admin' && (inspeccion.estado_aprobacion === 'pendiente' || !inspeccion.estado_aprobacion)">
-      <!-- Si la incidencia excede el 15%, no aprobable -->
-      <div *ngIf="(inspeccion.incidencia_global_pct || 0) >= 15.0" class="alerta-banner alerta-critica" style="margin: 0; width: 100%; display: flex; align-items: center; gap: 12px; background-color: #fde8e8; border-left: 5px solid #e74c3c; color: #c0392b; padding: 12px;">
+    <!-- Acciones de Aprobación para el Administrador -->
+    <ng-container *ngIf="usuarioActual?.rol === 'admin'">
+      <!-- Si la incidencia excede el 15% y no está rechazado, mostrar advertencia de no aprobable -->
+      <div *ngIf="(inspeccion.incidencia_global_pct || 0) >= 15.0 && inspeccion.estado_aprobacion !== 'rechazado'" class="alerta-banner alerta-critica" style="margin: 0; width: 100%; display: flex; align-items: center; gap: 12px; background-color: #fde8e8; border-left: 5px solid #e74c3c; color: #c0392b; padding: 12px;">
         <span class="material-icons" style="color: #e74c3c; font-size: 24px;">info</span>
         <div style="text-align: left;">
           <strong style="font-size: 15px; display: block;">No aprobable automáticamente</strong>
@@ -201,13 +201,13 @@
         </div>
       </div>
 
-      <!-- Botón Aprobar: Solo habilitado si la incidencia < 15% -->
-      <button *ngIf="(inspeccion.incidencia_global_pct || 0) < 15.0" class="btn-action approve-btn" (click)="evaluarReporte('aprobado')" style="background-color: #10b981; color: white; display: inline-flex; align-items: center; gap: 8px; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; cursor: pointer;">
+      <!-- Botón Aprobar: visible si el estado actual no es 'aprobado' y la incidencia < 15% -->
+      <button *ngIf="inspeccion.estado_aprobacion !== 'aprobado' && (inspeccion.incidencia_global_pct || 0) < 15.0" class="btn-action approve-btn" (click)="evaluarReporte('aprobado')" style="background-color: #10b981; color: white; display: inline-flex; align-items: center; gap: 8px; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; cursor: pointer;">
         <span class="material-icons">check</span> Aprobar Certificado
       </button>
 
-      <!-- Botón Rechazar/Anular -->
-      <button class="btn-action reject-btn" (click)="evaluarReporte('rechazado')" style="background-color: #ef4444; color: white; display: inline-flex; align-items: center; gap: 8px; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; cursor: pointer;">
+      <!-- Botón Rechazar/Anular: visible si el estado actual no es 'rechazado' -->
+      <button *ngIf="inspeccion.estado_aprobacion !== 'rechazado'" class="btn-action reject-btn" (click)="evaluarReporte('rechazado')" style="background-color: #ef4444; color: white; display: inline-flex; align-items: center; gap: 8px; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; cursor: pointer;">
         <span class="material-icons">close</span> Rechazar / Anular
       </button>
     </ng-container>
