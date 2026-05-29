@@ -199,19 +199,50 @@ export class MisPrediosComponent implements OnInit {
     if (!this.nuevoLote.cultivo_id || !this.nuevoLote.area) {
       this.notify.showError('Completa todos los campos'); return;
     }
+
+    const nombreLote = (this.nuevoLote.nombre || '').trim();
+    if (!nombreLote) {
+      this.notify.showError('El nombre del lote no puede estar vacío');
+      return;
+    }
+
+    // Obtener los lotes del predio actual
+    const lotesExistentes = this.getLotesDe(this.predioActualParaLote);
+
+    // Validar si el nombre ya existe (ignorando mayúsculas/minúsculas y espacios al inicio/final)
+    const nombreRepetido = lotesExistentes.some(l => 
+      l.nombre.trim().toLowerCase() === nombreLote.toLowerCase() && 
+      (this.modalLoteModo === 'crear' || l.id !== this.loteEnEdicionId)
+    );
+
+    if (nombreRepetido) {
+      this.notify.showError(`Ya existe un lote con el nombre "${nombreLote}" en este lugar de producción. Por favor elige otro nombre.`);
+      return;
+    }
+
     if (this.modalLoteModo === 'crear') {
-      this.dataService.agregarLote(this.nuevoLote).subscribe(() => {
-        this.modalLoteVisible = false;
-        // Limpiar caché antes de recargar para evitar duplicados visuales
-        delete this.lotesCache[this.predioActualParaLote];
-        this.cargarLotes(this.predioActualParaLote);
+      this.dataService.agregarLote(this.nuevoLote).subscribe({
+        next: () => {
+          this.modalLoteVisible = false;
+          // Limpiar caché antes de recargar para evitar duplicados visuales
+          delete this.lotesCache[this.predioActualParaLote];
+          this.cargarLotes(this.predioActualParaLote);
+        },
+        error: (err) => {
+          this.notify.showError(err.error?.detail || 'No se pudo guardar el lote.');
+        }
       });
     } else {
-      this.dataService.editarLote(this.loteEnEdicionId, this.nuevoLote).subscribe(() => {
-        this.modalLoteVisible = false;
-        // Limpiar caché antes de recargar para evitar duplicados visuales
-        delete this.lotesCache[this.predioActualParaLote];
-        this.cargarLotes(this.predioActualParaLote);
+      this.dataService.editarLote(this.loteEnEdicionId, this.nuevoLote).subscribe({
+        next: () => {
+          this.modalLoteVisible = false;
+          // Limpiar caché antes de recargar para evitar duplicados visuales
+          delete this.lotesCache[this.predioActualParaLote];
+          this.cargarLotes(this.predioActualParaLote);
+        },
+        error: (err) => {
+          this.notify.showError(err.error?.detail || 'No se pudo guardar el lote.');
+        }
       });
     }
   }
