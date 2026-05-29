@@ -1,9 +1,11 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { API_CONFIG } from '../../../core/services/api.config';
 import { FitoDataService, Inspeccion, Predio, Usuario, Lote } from '../../../core/services/fito-data.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-informe-fitosanitario',
@@ -13,6 +15,7 @@ import { FitoDataService, Inspeccion, Predio, Usuario, Lote } from '../../../cor
 })
 export class InformeFitosanitarioComponent implements OnInit {
   @Input() inspeccionId!: string;
+  @Output() statusChanged = new EventEmitter<void>();
   
   public inspeccion: Inspeccion | null = null;
   public predio: Predio | null = null;
@@ -21,16 +24,20 @@ export class InformeFitosanitarioComponent implements OnInit {
   public informeMetrics: any = null;
   public lotesData: Lote[] = [];
   public plagasMap: Record<string, string> = {};
+  public usuarioActual: any = null;
   
   public isLoading = true;
   public error: string | null = null;
 
   constructor(
     private http: HttpClient,
-    private dataService: FitoDataService
+    private dataService: FitoDataService,
+    private authService: AuthService,
+    private notify: NotificationService
   ) {}
 
   ngOnInit(): void {
+    this.usuarioActual = this.authService.getUsuarioActual();
     if (this.inspeccionId) {
       this.cargarDatos();
     } else {
@@ -151,4 +158,39 @@ export class InformeFitosanitarioComponent implements OnInit {
       window.URL.revokeObjectURL(url);
     });
   }
+
+  public evaluarReporte(accion: 'aprobado' | 'rechazado'): void {
+    if (!this.inspeccion) return;
+    const incidencia = this.inspeccion.incidencia_global_pct !== undefined && this.inspeccion.incidencia_global_pct !== null ? this.inspeccion.incidencia_global_pct : 0;
+    let justificacion: string | undefined = undefined;
+
+    if (accion === 'rechazado') {
+      if (incidencia < 15.0) {
+        const res = prompt('La incidencia es menor al 15%. Indique obligatoriamente el motivo del rechazo/anulación:');
+        if (res === null) return; // User cancelled prompt
+        if (!res.trim()) {
+          this.notify.showError('El motivo de rechazo es obligatorio.');
+          return;
+        }
+        justificacion = res.trim();
+      } else {
+        if (!confirm('¿Estás seguro de que deseas rechazar esta inspección?')) return;
+      }
+    } else {
+      if (!confirm('¿Estás seguro de que deseas aprobar esta inspección?')) return;
+    }
+
+    this.dataService.evaluarAprobacion(this.inspeccion.id!, accion, justificacion).subscribe({
+      next: () => {
+        this.notify.showSuccess(`Inspección ${accion === 'aprobado' ? 'aprobada' : 'rechazada'} con éxito.`);
+        this.cargarDatos();
+        this.statusChanged.emit();
+      },
+      error: (err) => {
+        console.error('Error al evaluar la inspección:', err);
+        this.notify.showError('No se pudo actualizar el estado de aprobación de la inspección.');
+      }
+    });
+  }
 }
+

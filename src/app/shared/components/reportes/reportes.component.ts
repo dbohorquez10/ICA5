@@ -41,7 +41,7 @@ export class ReportesComponent implements OnInit {
     this.cargarReportes();
   }
 
-  private cargarReportes(): void {
+  public cargarReportes(): void {
     if (!this.usuarioActual) {
       this.isLoading = false;
       return;
