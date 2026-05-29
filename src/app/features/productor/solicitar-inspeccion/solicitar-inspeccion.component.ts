@@ -31,6 +31,14 @@ export class SolicitarInspeccionComponent implements OnInit {
     private authService: AuthService,
   ) {}
 
+  public get fechaMinima(): string {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
   ngOnInit(): void {
     const user = this.authService.getUsuarioActual();
     const productorId = user?.id || '';
@@ -84,6 +92,12 @@ export class SolicitarInspeccionComponent implements OnInit {
       return;
     }
     if (!this.fechaSugerida) { this.notify.showInfo('Indica la fecha sugerida.'); return; }
+    
+    const todayStr = this.fechaMinima;
+    if (this.fechaSugerida < todayStr) {
+      this.notify.showError('La fecha sugerida no puede ser anterior al día de hoy.');
+      return;
+    }
     if (!this.asignacionAutomatica && !this.tecnicoElegido) {
       this.notify.showError('Selecciona un técnico de preferencia.');
       return;

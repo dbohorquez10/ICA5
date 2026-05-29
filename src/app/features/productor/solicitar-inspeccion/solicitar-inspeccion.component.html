@@ -71,6 +71,7 @@
           <label>Fecha Sugerida para la Visita</label>
           <input
             type="date"
+            [min]="fechaMinima"
             [(ngModel)]="fechaSugerida"
             (change)="setModo(asignacionAutomatica)"
             class="form-input"
