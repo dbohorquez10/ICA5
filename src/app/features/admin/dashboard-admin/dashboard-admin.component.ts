@@ -17,13 +17,16 @@ import { map, catchError } from 'rxjs/operators';
 export class DashboardAdminComponent implements OnInit {
   private notify = inject(NotificationService);
 
-  public metricas = { productores: 0, tecnicos: 0, inspeccionesPendientes: 0, alertas: 0 };
+   public metricas = { productores: 0, tecnicos: 0, inspeccionesPendientes: 0, alertas: 0 };
   public solicitudesPendientes: Array<any> = [];
 
   public modalAsignacionVisible = false;
   public inspeccionSeleccionada: string = '';
   public tecnicosDisponibles: Usuario[] = [];
   public tecnicoSeleccionado: string = '';
+  
+  public modalRechazoVisible = false;
+  public justificacionRechazo = '';
 
   constructor(
     private dataService: FitoDataService,
@@ -136,6 +139,9 @@ export class DashboardAdminComponent implements OnInit {
     const sol = this.solicitudesPendientes.find(s => s.id === id);
     const dep = sol?.departamento || '';
 
+    this.modalRechazoVisible = sol?.modoAsignacion === 'preferencia';
+    this.justificacionRechazo = '';
+
     this.dataService.getTecnicosActivos().subscribe(t => {
       // Filtrar técnicos por la misma región (departamento) de la inspección
       this.tecnicosDisponibles = dep ? t.filter(x => x.departamento === dep) : t;
@@ -144,13 +150,53 @@ export class DashboardAdminComponent implements OnInit {
     });
   }
 
+  public aprobarPreferencia(id: string): void {
+    this.dataService.actualizarInspeccion(id, { estado: 'en_progreso' }).subscribe({
+      next: () => {
+        this.notify.showSuccess('Inspección con técnico preferido aprobada exitosamente.');
+        this.recargar();
+      },
+      error: (err) => {
+        this.notify.showError('No se pudo aprobar la inspección.');
+      }
+    });
+  }
+
   public confirmarAsignacion(): void {
     if (!this.tecnicoSeleccionado) { this.notify.showError('Selecciona un técnico.'); return; }
-    this.dataService.asignarTecnicoAInspeccion(this.inspeccionSeleccionada, this.tecnicoSeleccionado)
-      .subscribe(() => { this.modalAsignacionVisible = false; this.recargar(); });
+    
+    if (this.modalRechazoVisible) {
+      if (!this.justificacionRechazo || !this.justificacionRechazo.trim()) {
+        this.notify.showError('Debes ingresar la justificación por la cual reasignas la visita.');
+        return;
+      }
+      this.dataService.actualizarInspeccion(this.inspeccionSeleccionada, {
+        tecnico_id: this.tecnicoSeleccionado,
+        razon_rechazo: this.justificacionRechazo.trim(),
+        estado: 'en_progreso'
+      }).subscribe({
+        next: () => {
+          this.modalAsignacionVisible = false;
+          this.notify.showSuccess('Inspección reasignada exitosamente.');
+          this.recargar();
+        },
+        error: (err) => {
+          this.notify.showError('No se pudo reasignar la inspección.');
+        }
+      });
+    } else {
+      this.dataService.asignarTecnicoAInspeccion(this.inspeccionSeleccionada, this.tecnicoSeleccionado)
+        .subscribe(() => { 
+          this.modalAsignacionVisible = false; 
+          this.notify.showSuccess('Técnico asignado exitosamente.');
+          this.recargar(); 
+        });
+    }
   }
 
   public cerrarModalAsignacion(): void {
     this.modalAsignacionVisible = false;
+    this.modalRechazoVisible = false;
+    this.justificacionRechazo = '';
   }
 }

@@ -67,6 +67,10 @@
             {{ sol.ubicacion || '—' }} &nbsp;|&nbsp;
             <span class="material-icons small">layers</span> {{ sol.lotesCount || 0 }} lotes
           </p>
+          <p *ngIf="sol.modoAsignacion === 'preferencia'" style="margin-top: 4px; font-weight: 600; color: #1b2610;">
+            <span class="material-icons small" style="color: #668a4c;">person</span>
+            Técnico sugerido: {{ sol.tecnicoNombre }}
+          </p>
         </div>
         <div class="sol-meta">
           <span
@@ -84,10 +88,20 @@
           </span>
           <small>Solicitada para: {{ sol.fechaSolicitada }}</small>
         </div>
-        <div class="sol-actions">
-          <button class="btn-assign" (click)="asignarTecnico(sol.id)">
-            <span class="material-icons">person_add</span> Asignar
-          </button>
+        <div class="sol-actions" style="display: flex; gap: 8px;">
+          <ng-container *ngIf="sol.modoAsignacion === 'preferencia'; else autoActions">
+            <button class="btn-assign" (click)="aprobarPreferencia(sol.id)" style="background: linear-gradient(135deg, #10b981, #059669); color: white;" title="Aprobar Técnico Sugerido">
+              <span class="material-icons">check</span> Aprobar
+            </button>
+            <button class="btn-assign" (click)="asignarTecnico(sol.id)" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white;" title="Rechazar y Asignar Otro Técnico">
+              <span class="material-icons">close</span> Rechazar
+            </button>
+          </ng-container>
+          <ng-template #autoActions>
+            <button class="btn-assign" (click)="asignarTecnico(sol.id)">
+              <span class="material-icons">person_add</span> Asignar
+            </button>
+          </ng-template>
         </div>
       </div>
     </div>
@@ -105,6 +119,19 @@
     </div>
 
     <p class="modal-desc">Selecciona un técnico activo para asignar a esta inspección.</p>
+
+    <div class="form-group" *ngIf="modalRechazoVisible" style="margin-bottom: 16px;">
+      <label style="font-weight: 700; color: #1b2610; font-size: 0.95rem; display: block; margin-bottom: 6px;">
+        Justificación de Rechazo/Reasignación del Técnico de Preferencia:
+      </label>
+      <textarea
+        [(ngModel)]="justificacionRechazo"
+        rows="2"
+        placeholder="Escribe el porqué rechazas/reasignas esta visita..."
+        class="form-input"
+        style="width: 100%; padding: 10px; border: 2px solid #e5ebdf; border-radius: 12px; font-family: inherit; font-size: 0.95rem; resize: none; box-sizing: border-box;"
+      ></textarea>
+    </div>
 
     <div class="tecnicos-list">
       <div

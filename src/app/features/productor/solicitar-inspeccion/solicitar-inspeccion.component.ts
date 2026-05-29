@@ -79,10 +79,37 @@ export class SolicitarInspeccionComponent implements OnInit {
   public setModo(auto: boolean): void {
     this.asignacionAutomatica = auto;
     this.tecnicoElegido = null;
+    this.agendaStatus = null;
   }
 
   public seleccionarTecnico(id: string): void {
     this.tecnicoElegido = id;
+    this.verificarAgenda();
+  }
+
+  public onFechaChange(): void {
+    this.verificarAgenda();
+  }
+
+  public verificarAgenda(): void {
+    if (this.asignacionAutomatica || !this.tecnicoElegido || !this.fechaSugerida) {
+      this.agendaStatus = null;
+      return;
+    }
+    this.dataService.getInspeccionesPorTecnico(this.tecnicoElegido).subscribe({
+      next: (inspecciones) => {
+        const tieneVisita = inspecciones.some(ins => {
+          const mFecha = ins.fecha_inspeccion || ins.fechaSolicitada || '';
+          const mEstado = (ins.estado || '').toLowerCase();
+          return mFecha === this.fechaSugerida && mEstado !== 'cancelada';
+        });
+        this.agendaStatus = tieneVisita ? 'ocupado' : 'disponible';
+      },
+      error: (err) => {
+        console.error('Error al verificar agenda:', err);
+        this.agendaStatus = null;
+      }
+    });
   }
 
   public enviar(): void {
@@ -100,6 +127,10 @@ export class SolicitarInspeccionComponent implements OnInit {
     }
     if (!this.asignacionAutomatica && !this.tecnicoElegido) {
       this.notify.showError('Selecciona un técnico de preferencia.');
+      return;
+    }
+    if (!this.asignacionAutomatica && this.agendaStatus === 'ocupado') {
+      this.notify.showError('El técnico seleccionado ya tiene visitas agendadas para esa fecha. Elige otro o cambia la fecha.');
       return;
     }
     
