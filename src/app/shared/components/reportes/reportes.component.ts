@@ -1,9 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { NotificationService } from '../../../core/services/notification.service';
 import { FitoDataService } from '../../../core/services/fito-data.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError, defaultIfEmpty } from 'rxjs/operators';
+
 
 @Component({
   selector: 'app-reportes',
@@ -13,11 +15,13 @@ import { catchError, defaultIfEmpty } from 'rxjs/operators';
 })
 export class ReportesComponent implements OnInit {
   private notify = inject(NotificationService);
+  private router = inject(Router);
 
   public filtroActivo: string = 'todos';
   public listaReportes: any[] = [];
   public isLoading: boolean = true;
   public usuarioActual: any = null;
+  public esSoloCertificados: boolean = false;
 
   constructor(
     private dataService: FitoDataService,
@@ -26,6 +30,14 @@ export class ReportesComponent implements OnInit {
 
   ngOnInit(): void {
     this.usuarioActual = this.authService.getUsuarioActual();
+    
+    // Detectar si estamos en la vista exclusiva de certificados
+    const url = this.router.url;
+    if (url.includes('certificados')) {
+      this.filtroActivo = 'aprobado';
+      this.esSoloCertificados = true;
+    }
+    
     this.cargarReportes();
   }
 
@@ -144,7 +156,7 @@ export class ReportesComponent implements OnInit {
       return;
     }
 
-    this.dataService.getInspecciones(this.usuarioActual.id).pipe(
+    this.dataService.getInspeccionesPorTecnico(this.usuarioActual.id).pipe(
       catchError((err) => {
         console.error('Error fetching tecnico inspecciones:', err);
         return of([]);

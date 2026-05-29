@@ -1,8 +1,8 @@
 <div class="reportes-container fade-in">
   <div class="header-section">
     <div>
-      <h1 class="page-title">Reportes y Certificados</h1>
-      <p class="page-subtitle">Historial de inspecciones y certificados fitosanitarios — FitoGestión.</p>
+      <h1 class="page-title">{{ esSoloCertificados ? 'Certificados Fitosanitarios' : 'Reportes y Certificados' }}</h1>
+      <p class="page-subtitle">{{ esSoloCertificados ? 'Historial de certificados fitosanitarios oficiales emitidos — FitoGestión.' : 'Historial de inspecciones y certificados fitosanitarios — FitoGestión.' }}</p>
     </div>
   </div>
 
@@ -40,7 +40,7 @@
     </div>
 
     <!-- Filtros -->
-    <div class="filters-bar" *ngIf="listaReportes.length > 0">
+    <div class="filters-bar" *ngIf="listaReportes.length > 0 && !esSoloCertificados">
       <button
         class="filter-chip"
         [class.active]="filtroActivo === 'todos'"
@@ -65,14 +65,14 @@
     </div>
 
     <!-- Empty State -->
-    <div class="empty-state" *ngIf="listaReportes.length === 0">
+    <div class="empty-state" *ngIf="reportesFiltrados.length === 0">
       <span class="material-icons empty-icon">folder_open</span>
-      <h2>No hay reportes disponibles</h2>
-      <p>Aún no se han completado inspecciones en tus predios registrados.</p>
+      <h2>{{ esSoloCertificados ? 'No hay certificados disponibles' : 'No hay reportes disponibles' }}</h2>
+      <p>{{ esSoloCertificados ? 'Aún no se han emitido certificados oficiales aprobados.' : 'Aún no se han completado inspecciones en tus predios registrados.' }}</p>
     </div>
 
     <!-- Lista de Reportes -->
-    <div class="card" *ngIf="listaReportes.length > 0">
+    <div class="card" *ngIf="reportesFiltrados.length > 0">
       <div class="reporte-row" *ngFor="let reporte of reportesFiltrados">
         <div
           class="reporte-icon"

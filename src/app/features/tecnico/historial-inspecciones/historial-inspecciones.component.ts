@@ -31,7 +31,11 @@ export class HistorialInspeccionesComponent implements OnInit {
     const isTecnico = user?.rol === 'tecnico';
     const tecnicoId = isTecnico ? user.id : undefined;
 
-    this.dataService.getInspecciones(tecnicoId).subscribe(inspecciones => {
+    const loadInspecciones = (isTecnico && tecnicoId)
+      ? this.dataService.getInspeccionesPorTecnico(tecnicoId)
+      : this.dataService.getInspecciones();
+
+    loadInspecciones.subscribe(inspecciones => {
       if (!inspecciones.length) { this.historial = []; return; }
 
       // ── BATCH: Cargar TODOS los predios en UNA sola petición (elimina N+1) ──

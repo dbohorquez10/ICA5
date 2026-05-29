@@ -13,7 +13,8 @@ const routes: Routes = [
   { path: 'usuarios', component: GestionUsuariosComponent },
   { path: 'catalogos', component: GestionCatalogosComponent },
   { path: 'configuracion', component: ConfiguracionComponent },
-  { path: 'reportes', component: ReportesComponent }
+  { path: 'reportes', component: ReportesComponent },
+  { path: 'certificados', component: ReportesComponent }
 ];
 
 @NgModule({

@@ -19,6 +19,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .ica-logos {
@@ -163,6 +165,7 @@
 .metrics-row {
   display: flex;
   gap: 20px;
+  flex-wrap: wrap;
 }
 
 .metric-card {
@@ -232,9 +235,15 @@
   font-weight: 500;
 }
 
+.table-responsive {
+  overflow-x: auto;
+  width: 100%;
+}
+
 .report-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 500px;
 }
 
 .report-table th, .report-table td {
@@ -358,5 +367,18 @@
   }
   .lote-block {
     break-inside: avoid;
+  }
+}
+
+@media (max-width: 600px) {
+  .informe-header-ica {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .informe-title {
+    text-align: left;
+  }
+  .metrics-row {
+    flex-direction: column;
   }
 }

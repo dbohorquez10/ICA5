@@ -132,38 +132,40 @@
         </div>
         
         <!-- Tabla de Plantas -->
-        <table class="report-table" *ngIf="sub.registroPlantas && sub.registroPlantas.length > 0">
-          <thead>
-            <tr>
-              <th>Planta #</th>
-              <th>Estado</th>
-              <th>Plaga Detectada</th>
-              <th>Síntomas</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let rp of sub.registroPlantas" [ngClass]="{'row-danger': rp.estado_planta === 'Afectada' || (rp.plagasDetectadas && rp.plagasDetectadas.length > 0)}">
-              <td>{{ rp.numero_planta || rp.numeroPlanta }}</td>
-              <td>
-                <span class="status-indicator" [class.sana]="rp.estado_planta === 'Sana' || (!rp.plagasDetectadas || rp.plagasDetectadas.length === 0)">
-                  {{ rp.estado_planta || ((rp.plagasDetectadas && rp.plagasDetectadas.length > 0) ? 'Afectada' : 'Sana') }}
-                </span>
-              </td>
-              <td>
-                <ng-container *ngIf="rp.plaga_id">
-                  {{ getPlagaName(rp.plaga_id) }}
-                </ng-container>
-                <ng-container *ngIf="rp.plagasDetectadas && rp.plagasDetectadas.length > 0">
-                  <span *ngFor="let pId of rp.plagasDetectadas; let last = last">
-                    {{ getPlagaName(pId) }}{{ !last ? ', ' : '' }}
+        <div class="table-responsive" *ngIf="sub.registroPlantas && sub.registroPlantas.length > 0">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Planta #</th>
+                <th>Estado</th>
+                <th>Plaga Detectada</th>
+                <th>Síntomas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let rp of sub.registroPlantas" [ngClass]="{'row-danger': rp.estado_planta === 'Afectada' || (rp.plagasDetectadas && rp.plagasDetectadas.length > 0)}">
+                <td>{{ rp.numero_planta || rp.numeroPlanta }}</td>
+                <td>
+                  <span class="status-indicator" [class.sana]="rp.estado_planta === 'Sana' || (!rp.plagasDetectadas || rp.plagasDetectadas.length === 0)">
+                    {{ rp.estado_planta || ((rp.plagasDetectadas && rp.plagasDetectadas.length > 0) ? 'Afectada' : 'Sana') }}
                   </span>
-                </ng-container>
-                <span *ngIf="!rp.plaga_id && (!rp.plagasDetectadas || rp.plagasDetectadas.length === 0)">—</span>
-              </td>
-              <td>{{ rp.sintoma || rp.observaciones || '—' }}</td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+                <td>
+                  <ng-container *ngIf="rp.plaga_id">
+                    {{ getPlagaName(rp.plaga_id) }}
+                  </ng-container>
+                  <ng-container *ngIf="rp.plagasDetectadas && rp.plagasDetectadas.length > 0">
+                    <span *ngFor="let pId of rp.plagasDetectadas; let last = last">
+                      {{ getPlagaName(pId) }}{{ !last ? ', ' : '' }}
+                    </span>
+                  </ng-container>
+                  <span *ngIf="!rp.plaga_id && (!rp.plagasDetectadas || rp.plagasDetectadas.length === 0)">—</span>
+                </td>
+                <td>{{ rp.sintoma || rp.observaciones || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <p *ngIf="!sub.registroPlantas || sub.registroPlantas.length === 0" class="text-muted" style="padding: 10px;">
           No hay registros detallados de plantas para este lote.
         </p>
