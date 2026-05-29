@@ -184,13 +184,6 @@ export class ReportesComponent implements OnInit {
         })
       );
 
-      const usersObs = this.dataService.getUsuarios().pipe(
-        catchError((err) => {
-          console.error('Error fetching usuarios:', err);
-          return of([]);
-        })
-      );
-
       const lotesObs = forkJoin(predioIds.map(pId => 
         this.dataService.getLotesPorPredio(pId).pipe(
           catchError((err) => {
@@ -202,20 +195,17 @@ export class ReportesComponent implements OnInit {
 
       forkJoin({
         predios: prediosObs,
-        usuarios: usersObs,
         lotesList: lotesObs
       }).pipe(
         catchError((err) => {
           console.error('Error in forkJoin:', err);
-          return of({ predios: [], usuarios: [], lotesList: [] });
+          return of({ predios: [], lotesList: [] });
         })
-      ).subscribe(({ predios, usuarios, lotesList }) => {
+      ).subscribe(({ predios, lotesList }) => {
         const safePredios = Array.isArray(predios) ? predios.filter(Boolean) : [];
-        const safeUsuarios = Array.isArray(usuarios) ? usuarios.filter(Boolean) : [];
         const safeLotesList = Array.isArray(lotesList) ? lotesList : [];
 
         const predioMap = new Map(safePredios.map(p => [p.id, p]));
-        const userMap = new Map(safeUsuarios.map(u => [u.id, u]));
         const lotesMap = new Map<string, string>();
         
         safeLotesList.filter(Array.isArray).flat().forEach(l => {
@@ -284,14 +274,6 @@ export class ReportesComponent implements OnInit {
           return;
         }
         
-        // Fetch users and lotes
-        const usersObs = this.dataService.getUsuarios().pipe(
-          catchError((err) => {
-            console.error('Error fetching usuarios:', err);
-            return of([]);
-          })
-        );
-        
         const lotesObs = predioIds.length > 0 
           ? forkJoin(predioIds.map(pId => 
               this.dataService.getLotesPorPredio(pId).pipe(
@@ -303,19 +285,8 @@ export class ReportesComponent implements OnInit {
             )).pipe(defaultIfEmpty([]))
           : of([]);
           
-        forkJoin({
-          usuarios: usersObs,
-          lotesList: lotesObs
-        }).pipe(
-          catchError((err) => {
-            console.error('Error in forkJoin usuarios/lotes:', err);
-            return of({ usuarios: [], lotesList: [] });
-          })
-        ).subscribe(({ usuarios, lotesList }) => {
-          const safeUsuarios = Array.isArray(usuarios) ? usuarios.filter(Boolean) : [];
+        lotesObs.subscribe(lotesList => {
           const safeLotesList = Array.isArray(lotesList) ? lotesList : [];
-          
-          const userMap = new Map(safeUsuarios.map(u => [u.id, u]));
           const lotesMap = new Map<string, string>();
           safeLotesList.filter(Array.isArray).flat().forEach(l => {
             if (l && l.id) lotesMap.set(l.id, l.nombre);
@@ -325,8 +296,7 @@ export class ReportesComponent implements OnInit {
           
           this.listaReportes = filteredIns.map(ins => {
             const predioObj = predioMap.get(ins.predio_id || ins.predioId || '');
-            const tech = ins.tecnico_id ? userMap.get(ins.tecnico_id) : null;
-            const techName = tech ? `${tech.nombre} ${tech.apellido || ''}`.trim() : (ins.tecnico_nombre || 'No Asignado');
+            const techName = ins.nombre_tecnico || ins.tecnico_nombre || 'No Asignado';
             const loteName = lotesMap.get(ins.lote_id || '') || 'Generales';
             
             return this.mapearInspeccionAReporte(ins, predioObj, techName, loteName);

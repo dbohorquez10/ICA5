@@ -139,14 +139,19 @@ export class InspeccionesComponent implements OnInit {
     });
   }
 
+  public get listaCoordenadas(): any[] {
+    return this.listaInspecciones;
+  }
+
   private async iniciarMapa(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
+    if (!this.listaCoordenadas || !Array.isArray(this.listaCoordenadas)) return;
     const container = document.getElementById('mapaTecnico');
     if (!container) return;
 
     if (!this.L) {
       const leaflet = await import('leaflet');
-      this.L = leaflet.default || leaflet;
+      this.L = leaflet.default && typeof leaflet.default.map === 'function' ? leaflet.default : leaflet;
     }
 
     if (this.map) {

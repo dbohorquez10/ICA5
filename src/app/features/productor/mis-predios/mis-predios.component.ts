@@ -221,6 +221,7 @@ export class MisPrediosComponent implements OnInit {
     if (confirm('¿Estás seguro de que deseas eliminar este lote de forma permanente?')) {
       this.dataService.eliminarLote(id).subscribe({
         next: () => {
+          delete this.lotesCache[predioId];
           this.cargarLotes(predioId);
           this.notify.showSuccess("Lote eliminado correctamente.");
         },
@@ -253,7 +254,7 @@ export class MisPrediosComponent implements OnInit {
     if (!isPlatformBrowser(this.platformId)) return;
     if (!this.L) {
       const leaflet = await import('leaflet');
-      this.L = leaflet.default || leaflet;
+      this.L = leaflet.default && typeof leaflet.default.map === 'function' ? leaflet.default : leaflet;
     }
     setTimeout(() => {
       if (this.map) return;

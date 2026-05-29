@@ -49,6 +49,7 @@ export class SolicitarInspeccionComponent implements OnInit {
   public seleccionarPredio(predio: Predio): void {
     this.predioSeleccionado = predio;
     this.loteSeleccionado = null;
+    this.lotesDelPredio = [];
     this.dataService.getLotesPorPredio(predio.id).subscribe(l => {
       this.lotesDelPredio = l;
       if (l.length > 0) {

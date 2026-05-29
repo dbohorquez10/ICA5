@@ -143,8 +143,13 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
     }
   }
 
+  public get listaCoordenadas(): any[] {
+    return this.solicitudesMapa;
+  }
+
   async iniciarMapa() {
     if (isPlatformBrowser(this.platformId)) {
+      if (!this.listaCoordenadas || !Array.isArray(this.listaCoordenadas)) return;
       if (this.map) {
         try {
           this.map.remove();
@@ -156,7 +161,7 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
 
       if (!this.L) {
         const leaflet = await import('leaflet');
-        this.L = leaflet.default || leaflet;
+        this.L = leaflet.default && typeof leaflet.default.map === 'function' ? leaflet.default : leaflet;
       }
       const center = this.solicitudesMapa.length > 0
         ? [this.solicitudesMapa[0].lat, this.solicitudesMapa[0].lng]

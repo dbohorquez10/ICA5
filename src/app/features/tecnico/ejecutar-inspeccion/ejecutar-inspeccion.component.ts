@@ -106,6 +106,7 @@ export class EjecutarInspeccionComponent implements OnInit {
   }
 
   public get progresoGlobal(): number {
+    if (!this.inspeccion) return 0;
     const subs = this.inspeccion.sub_inspecciones || this.inspeccion.subInspecciones || [];
     const total = subs.length;
     const completos = subs.filter(s => (s.estado || '').toLowerCase().includes('completad')).length;
@@ -113,6 +114,7 @@ export class EjecutarInspeccionComponent implements OnInit {
   }
 
   public get todosLotesCompletos(): boolean {
+    if (!this.inspeccion) return false;
     const subs = this.inspeccion.sub_inspecciones || this.inspeccion.subInspecciones || [];
     return subs.every(s => (s.estado || '').toLowerCase().includes('completad'));
   }
