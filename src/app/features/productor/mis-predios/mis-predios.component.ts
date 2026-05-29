@@ -60,9 +60,9 @@ export class MisPrediosComponent implements OnInit {
       : this.dataService.getPredios();
 
     loadPredios.subscribe(p => {
-      this.predios = p;
+      this.predios = Array.isArray(p) ? p : [];
       // Auto-cargar lotes de cada predio para que se vean de inmediato
-      p.forEach(predio => this.cargarLotes(predio.id));
+      this.predios.forEach(predio => this.cargarLotes(predio.id));
     });
   }
 
@@ -72,7 +72,7 @@ export class MisPrediosComponent implements OnInit {
 
   public cargarLotes(predioId: string): void {
     this.dataService.getLotesPorPredio(predioId).subscribe(l => {
-      this.lotesCache[predioId] = l;
+      this.lotesCache[predioId] = Array.isArray(l) ? l : [];
     });
   }
 
@@ -201,13 +201,17 @@ export class MisPrediosComponent implements OnInit {
     }
     if (this.modalLoteModo === 'crear') {
       this.dataService.agregarLote(this.nuevoLote).subscribe(() => {
-        this.cargarLotes(this.predioActualParaLote);
         this.modalLoteVisible = false;
+        // Limpiar caché antes de recargar para evitar duplicados visuales
+        delete this.lotesCache[this.predioActualParaLote];
+        this.cargarLotes(this.predioActualParaLote);
       });
     } else {
       this.dataService.editarLote(this.loteEnEdicionId, this.nuevoLote).subscribe(() => {
-        this.cargarLotes(this.predioActualParaLote);
         this.modalLoteVisible = false;
+        // Limpiar caché antes de recargar para evitar duplicados visuales
+        delete this.lotesCache[this.predioActualParaLote];
+        this.cargarLotes(this.predioActualParaLote);
       });
     }
   }

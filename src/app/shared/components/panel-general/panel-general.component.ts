@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
+import { Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
 import { FitoDataService, Predio } from '../../../core/services/fito-data.service';
@@ -33,7 +34,8 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private dataService: FitoDataService,
     @Inject(PLATFORM_ID) private platformId: Object,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -69,7 +71,7 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
 
         // Cargar inspecciones pendientes de sus predios
         this.dataService.getInspecciones().subscribe(inspecciones => {
-          const predioIds = predios.map(p => p.id);
+          const predioIds = (predios || []).map(p => p.id);
           const misPendientes = inspecciones.filter(i =>
             predioIds.includes(i.predio_id || i.predioId || '') &&
             (i.estado || '').toLowerCase().includes('pendiente')
@@ -105,7 +107,7 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
         // Cargar marcadores del mapa para inspecciones pendientes (BATCH — no N+1)
         const pendientes = inspecciones.filter(i => (i.estado || '').toLowerCase().includes('pendiente'));
         if (pendientes.length > 0) {
-          const predioIds = pendientes.map(ins => ins.predio_id || ins.predioId || '');
+          const predioIds = (pendientes || []).map(ins => ins.predio_id || ins.predioId || '');
           this.dataService.getPrediosBatch(predioIds).subscribe(predios => {
             const predioMap = new Map(predios.map(p => [p.id, p]));
             this.solicitudesMapa = pendientes
@@ -135,37 +137,9 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
       });
 
     } else if (rol === 'admin') {
-      forkJoin({
-        usuarios: this.dataService.getUsuarios(),
-        inspecciones: this.dataService.getInspecciones(),
-        predios: this.dataService.getPredios(),
-      }).subscribe(({ usuarios, inspecciones, predios }) => {
-        this.resumenAgricola = {
-          totalPredios: predios.length,
-          hectareas: predios.reduce((sum, p) => sum + (p.area_total || 0), 0),
-          pendientes: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('pendiente')).length,
-        };
-        this.statsTecnico = {
-          pendientes: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('pendiente')).length,
-          alertas: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('progreso')).length,
-          completadas: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('completada')).length,
-        };
-
-        // Mapa con todos los predios
-        this.solicitudesMapa = predios
-          .filter(p => p.latitud && p.longitud)
-          .map(p => ({
-            id: p.id,
-            predio: p.nombre,
-            lat: p.latitud!,
-            lng: p.longitud!,
-            prioridad: 'Normal',
-          }));
-        if (isPlatformBrowser(this.platformId)) {
-          setTimeout(() => this.iniciarMapa(), 300);
-        }
-        this.cdr.detectChanges();
-      });
+      // Redirigir admin directamente a su panel funcional
+      this.router.navigate(['/app/admin/dashboard']);
+      return;
     }
   }
 

@@ -227,7 +227,7 @@ export class FitoDataService {
 
   getPlagas(): Observable<Plaga[]> {
     return this.http.get<any[]>(`${this.coreUrl}/catalogos/plagas`).pipe(
-      map(plagas => plagas.map(p => this.normalizarPlaga(p)))
+      map(plagas => (Array.isArray(plagas) ? plagas : []).map(p => this.normalizarPlaga(p)))
     );
   }
 
@@ -251,19 +251,19 @@ export class FitoDataService {
 
   getPredios(): Observable<Predio[]> {
     return this.http.get<any[]>(`${this.coreUrl}/predios/`).pipe(
-      map(predios => predios.map(p => this.normalizarPredio(p)))
+      map(predios => (Array.isArray(predios) ? predios : []).map(p => this.normalizarPredio(p)))
     );
   }
 
   getPredio(id: string): Observable<Predio> {
     return this.http.get<any>(`${this.coreUrl}/predios/${id}`).pipe(
-      map(p => this.normalizarPredio(p))
+      map(p => p ? this.normalizarPredio(p) : p)
     );
   }
 
   getPrediosPorProductor(productorId: string): Observable<Predio[]> {
     return this.http.get<any[]>(`${this.coreUrl}/predios/productor/${productorId}`).pipe(
-      map(predios => predios.map(p => this.normalizarPredio(p)))
+      map(predios => (Array.isArray(predios) ? predios : []).map(p => this.normalizarPredio(p)))
     );
   }
 
@@ -277,7 +277,7 @@ export class FitoDataService {
     const uniqueIds = [...new Set(ids.filter(id => !!id))];
     if (!uniqueIds.length) return of([]);
     return this.http.post<any[]>(`${this.coreUrl}/predios/batch`, { ids: uniqueIds }).pipe(
-      map(predios => predios.map(p => this.normalizarPredio(p))),
+      map(predios => (Array.isArray(predios) ? predios : []).map(p => this.normalizarPredio(p))),
       catchError(() => of([]))
     );
   }
