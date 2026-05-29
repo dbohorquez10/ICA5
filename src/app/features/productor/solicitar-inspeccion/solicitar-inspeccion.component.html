@@ -46,16 +46,17 @@
         <div class="lotes-preview" *ngIf="predioSeleccionado && lotesDelPredio.length > 0">
           <p class="lotes-label">
             <span class="material-icons">layers</span>
-            {{ lotesDelPredio.length }} lotes en este predio. Selecciona el lote a inspeccionar:
+            Lotes y cultivos incluidos en la inspección del predio:
           </p>
-          <div class="form-group" style="margin-top: 10px;">
-            <select [(ngModel)]="loteSeleccionado" class="form-input">
-              <option *ngFor="let l of lotesDelPredio" [value]="l.id">
-                {{ l.nombre }} ({{ l.area || l.hectareas }} Ha)
-              </option>
-            </select>
-            <small class="text-muted" style="display: block; margin-top: 5px;">*Solo se puede solicitar inspección para un lote a la vez.</small>
+          <div class="lotes-chips" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+            <span class="lote-chip" *ngFor="let l of lotesDelPredio" style="display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid #d4e5c4; padding: 6px 12px; border-radius: 20px; font-size: 1rem; color: #30391f; font-weight: 500;">
+              <span class="material-icons" style="font-size: 18px; color: #668a4c;">eco</span>
+              {{ l.nombre }} ({{ l.area || l.hectareas }} Ha)
+            </span>
           </div>
+          <small class="text-muted" style="display: block; margin-top: 8px; font-size: 0.9rem; color: #668a4c;">
+            *Por reglamentación del ICA, las visitas de inspección se realizan sobre la totalidad de los lotes del predio.
+          </small>
         </div>
       </div>
 

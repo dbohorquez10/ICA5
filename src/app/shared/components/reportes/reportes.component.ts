@@ -140,7 +140,7 @@ export class ReportesComponent implements OnInit {
           const predioObj = predioMap.get(ins.predio_id || ins.predioId || '');
           const tech = ins.tecnico_id ? userMap.get(ins.tecnico_id) : null;
           const techName = tech ? `${tech.nombre} ${tech.apellido || ''}`.trim() : (ins.tecnico_nombre || 'No Asignado');
-          const loteName = lotesMap.get(ins.lote_id || '') || 'Generales';
+          const loteName = 'Todo el Predio';
           
           return this.mapearInspeccionAReporte(ins, predioObj, techName, loteName);
         });
@@ -217,7 +217,7 @@ export class ReportesComponent implements OnInit {
         
         this.listaReportes = filteredIns.map(ins => {
           const predioObj = predioMap.get(ins.predio_id || ins.predioId || '');
-          const loteName = lotesMap.get(ins.lote_id || '') || 'Generales';
+          const loteName = 'Todo el Predio';
           
           return this.mapearInspeccionAReporte(ins, predioObj, techName, loteName);
         });
@@ -297,7 +297,7 @@ export class ReportesComponent implements OnInit {
           this.listaReportes = filteredIns.map(ins => {
             const predioObj = predioMap.get(ins.predio_id || ins.predioId || '');
             const techName = ins.nombre_tecnico || ins.tecnico_nombre || 'No Asignado';
-            const loteName = lotesMap.get(ins.lote_id || '') || 'Generales';
+            const loteName = 'Todo el Predio';
             
             return this.mapearInspeccionAReporte(ins, predioObj, techName, loteName);
           });

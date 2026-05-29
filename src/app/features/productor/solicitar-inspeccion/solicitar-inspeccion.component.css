@@ -1,6 +1,6 @@
 .solicitar-container {
-  padding: 24px;
-  max-width: 860px;
+  padding: 32px 24px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 .page-header {
@@ -14,13 +14,14 @@
   margin: 0 0 4px;
 }
 .page-header h1 {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
   color: #1b2610;
-  margin: 0 0 4px;
+  margin: 0 0 6px;
 }
 .page-header .sub {
   color: #668a4c;
+  font-size: 1.15rem;
   margin: 0;
 }
 
@@ -42,8 +43,8 @@
   margin-bottom: 20px;
 }
 .step-num {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, #668a4c, #30391f);
   color: #accc78;
   border-radius: 50%;
@@ -51,11 +52,11 @@
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 1.15rem;
   flex-shrink: 0;
 }
 .step-header h2 {
-  font-size: 1.2rem;
+  font-size: 1.45rem;
   color: #1b2610;
   margin: 0;
 }
@@ -69,9 +70,9 @@
 .predio-option {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  border-radius: 12px;
+  gap: 16px;
+  padding: 18px 22px;
+  border-radius: 14px;
   border: 2px solid #f0f4ed;
   background: #f9fbf7;
   cursor: pointer;
@@ -87,16 +88,16 @@
 }
 .predio-option .material-icons {
   color: #668a4c;
-  font-size: 24px;
+  font-size: 28px;
 }
 .predio-option h3 {
   color: #1b2610;
-  margin: 0 0 2px;
-  font-size: 1.15rem;
+  margin: 0 0 4px;
+  font-size: 1.35rem;
 }
 .predio-option small {
   color: #668a4c;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
 }
 .predio-option .check-icon {
   margin-left: auto;
@@ -157,15 +158,15 @@
   display: block;
   color: #30391f;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   margin-bottom: 8px;
 }
 .form-input {
   width: 100%;
   border: 1.5px solid #d4e5c4;
   border-radius: 10px;
-  padding: 12px;
-  font-size: 1rem;
+  padding: 14px;
+  font-size: 1.1rem;
   color: #1b2610;
   background: #f9fbf7;
   transition: all 0.2s;
@@ -190,15 +191,16 @@ textarea.form-input {
 .toggle-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex: 1;
-  padding: 12px 16px;
+  padding: 14px 20px;
   border-radius: 10px;
   border: 2px solid #d4e5c4;
   background: #f9fbf7;
   color: #464646;
   cursor: pointer;
   font-weight: 600;
+  font-size: 1.05rem;
   transition: all 0.2s;
   justify-content: center;
 }
@@ -216,7 +218,7 @@ textarea.form-input {
 }
 .toggle-desc {
   color: #668a4c;
-  font-size: 0.88rem;
+  font-size: 0.98rem;
   margin: 0 0 16px;
 }
 
@@ -250,8 +252,8 @@ textarea.form-input {
   cursor: not-allowed;
 }
 .tecnico-avatar {
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   background: linear-gradient(135deg, #668a4c, #30391f);
   color: #accc78;
   border-radius: 50%;
@@ -259,29 +261,29 @@ textarea.form-input {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   flex-shrink: 0;
 }
 .tecnico-info h3 {
   color: #1b2610;
-  margin: 0 0 2px;
-  font-size: 0.95rem;
+  margin: 0 0 4px;
+  font-size: 1.15rem;
 }
 .tecnico-info p {
   color: #668a4c;
   margin: 0 0 4px;
-  font-size: 0.82rem;
+  font-size: 0.95rem;
 }
 .rating {
   color: #668a4c;
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 .tecnico-status {
   margin-left: auto;
-  padding: 4px 12px;
+  padding: 6px 14px;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 .libre {
@@ -326,14 +328,14 @@ textarea.form-input {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 16px;
+  padding: 18px;
   background: linear-gradient(135deg, #668a4c, #30391f);
   color: #accc78;
   border: none;
   border-radius: 12px;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s;
