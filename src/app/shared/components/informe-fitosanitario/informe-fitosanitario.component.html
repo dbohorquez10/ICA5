@@ -48,7 +48,7 @@
       <div class="info-item">
         <label>Estado</label>
         <p class="estado-badge" 
-           [ngClass]="{'bg-green': inspeccion.estado === 'completada' || inspeccion.estado === 'Completada'}">
+           [ngClass]="{'bg-green': inspeccion.estado === 'completada'}">
           {{ inspeccion.estado | titlecase }}
         </p>
       </div>
