@@ -103,7 +103,7 @@ export interface SubInspeccionLote {
   codigo_punto?: string;
   ubicacion_referencia?: string;
   observaciones?: string;
-  estado: 'Pendiente' | 'En Progreso' | 'Completada' | 'pendiente' | 'completado';
+  estado: 'pendiente' | 'completado' | 'en_progreso';
   /** Campos de compatibilidad frontend */
   loteId?: string;
   plantasEvaluadas?: number;
@@ -120,7 +120,7 @@ export interface Inspeccion {
   lote_id?: string;
   fecha_inspeccion?: string;
   tipo_inspeccion?: string;
-  estado: 'Pendiente' | 'En Progreso' | 'Completada' | 'pendiente' | 'en_progreso' | 'completada' | 'cancelada' | 'rechazada';
+  estado: 'pendiente' | 'en_progreso' | 'completada' | 'cancelada' | 'rechazada';
   modo_asignacion?: string;
   observaciones?: string;
   resultado_general?: string;

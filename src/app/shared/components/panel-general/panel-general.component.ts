@@ -4,6 +4,8 @@ import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
 import { FitoDataService, Predio } from '../../../core/services/fito-data.service';
 import { forkJoin, Subscription } from 'rxjs';
+import { switchMap, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 /**
  * @description
@@ -22,7 +24,8 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
   usuarioActual: any = null;
   private map: any;
   private L: any;
-  private sub: Subscription | null = null;
+  /** Contenedor de todas las suscripciones — se cancelan de golpe en ngOnDestroy */
+  private subs = new Subscription();
 
   resumenAgricola = { totalPredios: 0, hectareas: 0, pendientes: 0 };
   climaActual = { temp: 0, condicion: 'Cargando...', lluvia: 0 };
@@ -46,17 +49,20 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
       this.cargarDatosReales();
     } else {
       // Fallback: si el usuario aún no se ha resuelto, suscribirse al observable
-      this.sub = this.authService.getUsuario().subscribe((u) => {
-        if (u && !this.usuarioActual) {
-          this.usuarioActual = u;
-          this.cargarDatosReales();
-        }
-      });
+      this.subs.add(
+        this.authService.getUsuario().subscribe((u) => {
+          if (u && !this.usuarioActual) {
+            this.usuarioActual = u;
+            this.cargarDatosReales();
+          }
+        })
+      );
     }
   }
 
   ngOnDestroy(): void {
-    this.sub?.unsubscribe();
+    // Cancela todas las suscripciones (usuario + datos + mapa)
+    this.subs.unsubscribe();
     if (this.map) { this.map.remove(); this.map = null; }
   }
 
@@ -64,77 +70,82 @@ export class PanelGeneralComponent implements OnInit, OnDestroy {
     const rol = this.usuarioActual?.rol;
 
     if (rol === 'productor') {
-      // Cargar predios del productor
-      this.dataService.getPrediosPorProductor(this.usuarioActual.id).subscribe(predios => {
-        this.resumenAgricola.totalPredios = predios.length;
-        this.resumenAgricola.hectareas = predios.reduce((sum, p) => sum + (p.area_total || 0), 0);
-
-        // Cargar inspecciones pendientes de sus predios
-        this.dataService.getInspecciones().subscribe(inspecciones => {
-          const predioIds = (predios || []).map(p => p.id);
-          const misPendientes = inspecciones.filter(i =>
-            predioIds.includes(i.predio_id || i.predioId || '') &&
-            (i.estado || '').toLowerCase().includes('pendiente')
-          );
-          this.resumenAgricola.pendientes = misPendientes.length;
-
-          // Preparar marcadores del mapa
-          this.solicitudesMapa = predios
-            .filter(p => p.latitud && p.longitud)
-            .map(p => ({
-              id: p.id,
-              predio: p.nombre,
-              lat: p.latitud!,
-              lng: p.longitud!,
-              prioridad: 'Normal',
-            }));
-
-          if (isPlatformBrowser(this.platformId)) {
-            setTimeout(() => this.iniciarMapa(), 300);
-          }
-          this.cdr.detectChanges();
-        });
-      });
+      // switchMap aplana las dos llamadas en una sola suscripción rastreada
+      this.subs.add(
+        this.dataService.getPrediosPorProductor(this.usuarioActual.id).pipe(
+          switchMap(predios => {
+            this.resumenAgricola.totalPredios = predios.length;
+            this.resumenAgricola.hectareas = predios.reduce((sum, p) => sum + (p.area_total || 0), 0);
+            return this.dataService.getInspecciones().pipe(
+              catchError(() => of([])),
+              switchMap(inspecciones => {
+                const predioIds = (predios || []).map(p => p.id);
+                const misPendientes = inspecciones.filter((i: any) =>
+                  predioIds.includes(i.predio_id || i.predioId || '') &&
+                  (i.estado || '').toLowerCase().includes('pendiente')
+                );
+                this.resumenAgricola.pendientes = misPendientes.length;
+                this.solicitudesMapa = predios
+                  .filter(p => p.latitud && p.longitud)
+                  .map(p => ({
+                    id: p.id,
+                    predio: p.nombre,
+                    lat: p.latitud!,
+                    lng: p.longitud!,
+                    prioridad: 'Normal',
+                  }));
+                if (isPlatformBrowser(this.platformId)) {
+                  setTimeout(() => this.iniciarMapa(), 300);
+                }
+                this.cdr.detectChanges();
+                return of(null); // señal de completado
+              })
+            );
+          })
+        ).subscribe()
+      );
 
     } else if (rol === 'tecnico') {
-      this.dataService.getInspeccionesPorTecnico(this.usuarioActual.id).subscribe(inspecciones => {
-        this.statsTecnico = {
-          pendientes: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('pendiente')).length,
-          alertas: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('progreso')).length,
-          completadas: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('completada')).length,
-        };
-
-        // Cargar marcadores del mapa para inspecciones pendientes (BATCH — no N+1)
-        const pendientes = inspecciones.filter(i => (i.estado || '').toLowerCase().includes('pendiente'));
-        if (pendientes.length > 0) {
-          const predioIds = (pendientes || []).map(ins => ins.predio_id || ins.predioId || '');
-          this.dataService.getPrediosBatch(predioIds).subscribe(predios => {
-            const predioMap = new Map(predios.map(p => [p.id, p]));
-            this.solicitudesMapa = pendientes
-              .map(ins => {
-                const p = predioMap.get(ins.predio_id || ins.predioId || '');
-                return p && p.latitud && p.longitud ? {
-                  id: ins.id,
-                  predio: p.nombre,
-                  lat: p.latitud!,
-                  lng: p.longitud!,
-                  prioridad: 'Alta',
-                } : null;
-              })
-              .filter((x): x is NonNullable<typeof x> => !!x);
-            if (isPlatformBrowser(this.platformId)) {
-              setTimeout(() => this.iniciarMapa(), 300);
+      this.subs.add(
+        this.dataService.getInspeccionesPorTecnico(this.usuarioActual.id).pipe(
+          switchMap(inspecciones => {
+            this.statsTecnico = {
+              pendientes: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('pendiente')).length,
+              alertas:    inspecciones.filter(i => (i.estado || '').toLowerCase().includes('progreso')).length,
+              completadas: inspecciones.filter(i => (i.estado || '').toLowerCase().includes('completada')).length,
+            };
+            const pendientes = inspecciones.filter(i => (i.estado || '').toLowerCase().includes('pendiente'));
+            if (pendientes.length === 0) {
+              this.solicitudesMapa = [];
+              if (isPlatformBrowser(this.platformId)) { setTimeout(() => this.iniciarMapa(), 300); }
+              this.cdr.detectChanges();
+              return of(null);
             }
-            this.cdr.detectChanges();
-          });
-        } else {
-          this.solicitudesMapa = [];
-          if (isPlatformBrowser(this.platformId)) {
-            setTimeout(() => this.iniciarMapa(), 300);
-          }
-          this.cdr.detectChanges();
-        }
-      });
+            const predioIds = pendientes.map(ins => ins.predio_id || ins.predioId || '');
+            return this.dataService.getPrediosBatch(predioIds).pipe(
+              catchError(() => of([] as Predio[])),
+              switchMap(predios => {
+                const predioMap = new Map(predios.map(p => [p.id, p]));
+                this.solicitudesMapa = pendientes
+                  .map(ins => {
+                    const p = predioMap.get(ins.predio_id || ins.predioId || '');
+                    return p && p.latitud && p.longitud ? {
+                      id: ins.id,
+                      predio: p.nombre,
+                      lat: p.latitud!,
+                      lng: p.longitud!,
+                      prioridad: 'Alta',
+                    } : null;
+                  })
+                  .filter((x): x is NonNullable<typeof x> => !!x);
+                if (isPlatformBrowser(this.platformId)) { setTimeout(() => this.iniciarMapa(), 300); }
+                this.cdr.detectChanges();
+                return of(null);
+              })
+            );
+          })
+        ).subscribe()
+      );
 
     } else if (rol === 'admin') {
       // Redirigir admin directamente a su panel funcional

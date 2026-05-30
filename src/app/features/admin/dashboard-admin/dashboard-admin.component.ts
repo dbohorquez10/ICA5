@@ -1,12 +1,14 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { NotificationService } from '../../../core/services/notification.service';
 import { FitoDataService, Inspeccion, Predio, Lote, Usuario } from '../../../core/services/fito-data.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { forkJoin, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { forkJoin, of, Subject } from 'rxjs';
+import { map, catchError, takeUntil, switchMap } from 'rxjs/operators';
 
 /**
  * Panel de control central para administradores.
+ * Implementa OnDestroy con el patrón destroy$ para cancelar
+ * todas las suscripciones al desmontar el componente (evita memory leaks).
  */
 @Component({
   selector: 'app-dashboard-admin',
@@ -14,8 +16,11 @@ import { map, catchError } from 'rxjs/operators';
   styleUrls: ['./dashboard-admin.component.css'],
   standalone: false
 })
-export class DashboardAdminComponent implements OnInit {
+export class DashboardAdminComponent implements OnInit, OnDestroy {
   private notify = inject(NotificationService);
+
+  /** Subject que emite al destruir el componente para cancelar todas las suscripciones. */
+  private destroy$ = new Subject<void>();
 
    public metricas = { productores: 0, tecnicos: 0, inspeccionesPendientes: 0, alertas: 0 };
   public solicitudesPendientes: Array<any> = [];
@@ -35,6 +40,12 @@ export class DashboardAdminComponent implements OnInit {
 
   ngOnInit(): void { this.recargar(); }
 
+  ngOnDestroy(): void {
+    // Emitir y completar el Subject cancela automáticamente TODOS los takeUntil encadenados
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   private recargar(): void {
     const admin = this.authService.getUsuarioActual();
     const adminDep = admin?.departamento || '';
@@ -43,94 +54,96 @@ export class DashboardAdminComponent implements OnInit {
       usuarios: this.dataService.getUsuarios().pipe(catchError(() => of([] as Usuario[]))),
       inspecciones: this.dataService.getInspecciones().pipe(catchError(() => of([] as Inspeccion[]))),
       pendientes: this.dataService.getInspeccionesPendientes().pipe(catchError(() => of([] as Inspeccion[]))),
-    }).subscribe(({ usuarios, inspecciones, pendientes }: { usuarios: Usuario[], inspecciones: Inspeccion[], pendientes: Inspeccion[] }) => {
-      
-      // Filtrar usuarios por departamento si el administrador pertenece a una región
-      const usuariosFiltrados = adminDep 
-        ? usuarios.filter((u: Usuario) => u.departamento === adminDep) 
-        : usuarios;
+    }).pipe(
+      takeUntil(this.destroy$),
+      // --- Aplanar con switchMap: reemplaza el subscribe anidado de getPrediosBatch ---
+      switchMap(({ usuarios, inspecciones, pendientes }) => {
+        const usuariosFiltrados = adminDep
+          ? usuarios.filter((u: Usuario) => u.departamento === adminDep)
+          : usuarios;
 
-      // Obtener predioIds de todas las inspecciones para filtrar por departamento
-      const predioIds = Array.from(new Set([
-        ...inspecciones.map((ins: Inspeccion) => ins.predio_id || ins.predioId || ''),
-        ...pendientes.map((ins: Inspeccion) => ins.predio_id || ins.predioId || '')
-      ].filter(Boolean)));
+        const predioIds = Array.from(new Set([
+          ...inspecciones.map((ins: Inspeccion) => ins.predio_id || ins.predioId || ''),
+          ...pendientes.map((ins: Inspeccion) => ins.predio_id || ins.predioId || '')
+        ].filter(Boolean)));
 
-      if (predioIds.length > 0) {
-        this.dataService.getPrediosBatch(predioIds).pipe(
-          catchError(() => of([] as Predio[]))
-        ).subscribe((prediosBatch: Predio[]) => {
-          const prediosMap = new Map<string, Predio>();
-          prediosBatch.forEach((p: Predio) => prediosMap.set(p.id, p));
+        if (predioIds.length === 0) {
+          // Sin inspecciones: devolver los datos base sin query adicional
+          return of({ usuariosFiltrados, inspecciones, pendientes, prediosMap: new Map<string, Predio>() });
+        }
 
-          // Filtrar inspecciones y pendientes por la región del administrador
-          const inspeccionesFiltradas = adminDep
-            ? inspecciones.filter((i: Inspeccion) => prediosMap.get(i.predio_id || i.predioId || '')?.departamento === adminDep)
-            : inspecciones;
+        return this.dataService.getPrediosBatch(predioIds).pipe(
+          catchError(() => of([] as Predio[])),
+          map((prediosBatch: Predio[]) => {
+            const prediosMap = new Map<string, Predio>();
+            prediosBatch.forEach((p: Predio) => prediosMap.set(p.id, p));
+            return { usuariosFiltrados, inspecciones, pendientes, prediosMap };
+          })
+        );
+      }),
+      // --- Segundo switchMap: aplanar forkJoin de lotes (antes era el 3.er subscribe anidado) ---
+      switchMap(({ usuariosFiltrados, inspecciones, pendientes, prediosMap }) => {
+        const inspeccionesFiltradas = adminDep
+          ? inspecciones.filter((i: Inspeccion) => prediosMap.get(i.predio_id || i.predioId || '')?.departamento === adminDep)
+          : inspecciones;
 
-          const pendientesFiltradas = adminDep
-            ? pendientes.filter((i: Inspeccion) => prediosMap.get(i.predio_id || i.predioId || '')?.departamento === adminDep)
-            : pendientes;
+        const pendientesFiltradas = adminDep
+          ? pendientes.filter((i: Inspeccion) => prediosMap.get(i.predio_id || i.predioId || '')?.departamento === adminDep)
+          : pendientes;
 
-          this.metricas = {
-            productores: usuariosFiltrados.filter((u: Usuario) => u.rol === 'productor').length,
-            tecnicos: usuariosFiltrados.filter((u: Usuario) => u.rol === 'tecnico').length,
-            inspeccionesPendientes: inspeccionesFiltradas.filter((i: Inspeccion) => (i.estado || '').toLowerCase().includes('pendiente')).length,
-            alertas: inspeccionesFiltradas.filter((i: Inspeccion) => (i.estado || '').toLowerCase().includes('progreso')).length,
-          };
+        const uniquePredioIdsPendientes = [...new Set(
+          pendientesFiltradas.map((ins: Inspeccion) => ins.predio_id || ins.predioId || '').filter(Boolean)
+        )];
 
-          // Cargar lotes para calcular lotesCount en las solicitudes filtradas
-          const prediosIdsPendientes = pendientesFiltradas.map((ins: Inspeccion) => ins.predio_id || ins.predioId || '').filter(Boolean);
-          const uniquePredioIdsPendientes = [...new Set(prediosIdsPendientes)];
-          
-          const lotesObservables = uniquePredioIdsPendientes.map((pId: string) => 
-            this.dataService.getLotesPorPredio(pId).pipe(
-              map((lotes: Lote[]) => ({ predioId: pId, count: lotes.length })),
-              catchError(() => of({ predioId: pId, count: 0 }))
-            )
-          );
+        const lotesObservables = uniquePredioIdsPendientes.map((pId: string) =>
+          this.dataService.getLotesPorPredio(pId).pipe(
+            map((lotes: Lote[]) => ({ predioId: pId, count: lotes.length })),
+            catchError(() => of({ predioId: pId, count: 0 }))
+          )
+        );
 
-          const finishMapping = (countsMap: Map<string, number>) => {
-            this.solicitudesPendientes = pendientesFiltradas.map((ins: Inspeccion) => {
-              const predioId = ins.predio_id || ins.predioId || '';
-              const predioObj = prediosMap.get(predioId);
-              const loc = predioObj 
-                ? [predioObj.vereda, predioObj.municipio, predioObj.departamento].filter(Boolean).join(', ')
-                : '—';
+        const lotes$ = lotesObservables.length > 0
+          ? forkJoin(lotesObservables)
+          : of([] as Array<{ predioId: string; count: number }>);
 
-              return {
-                ...ins,
-                predioId: predioId,
-                predioNombre: predioObj?.nombre || 'Predio Desconocido',
-                departamento: predioObj?.departamento || '',
-                ubicacion: loc || '—',
-                tecnicoNombre: ins.tecnico_nombre || ins.tecnicoNombre || 'Sin asignar',
-                fechaSolicitada: ins.fecha_inspeccion || ins.fechaSolicitada,
-                modoAsignacion: ins.modo_asignacion || ins.modoAsignacion || 'automatica',
-                lotesCount: countsMap.get(predioId) || 0
-              };
-            });
-          };
+        return lotes$.pipe(
+          map(lotesCounts => ({
+            usuariosFiltrados, inspeccionesFiltradas, pendientesFiltradas, prediosMap, lotesCounts
+          }))
+        );
+      })
+    ).subscribe(({ usuariosFiltrados, inspeccionesFiltradas, pendientesFiltradas, prediosMap, lotesCounts }) => {
+      // Actualizar métricas
+      this.metricas = {
+        productores: usuariosFiltrados.filter((u: Usuario) => u.rol === 'productor').length,
+        tecnicos: usuariosFiltrados.filter((u: Usuario) => u.rol === 'tecnico').length,
+        inspeccionesPendientes: inspeccionesFiltradas.filter((i: Inspeccion) => (i.estado || '').toLowerCase().includes('pendiente')).length,
+        alertas: inspeccionesFiltradas.filter((i: Inspeccion) => (i.estado || '').toLowerCase().includes('progreso')).length,
+      };
 
-          if (lotesObservables.length > 0) {
-            forkJoin(lotesObservables).subscribe((lotesCounts: Array<{ predioId: string, count: number }>) => {
-              const countsMap = new Map<string, number>();
-              lotesCounts.forEach((item) => countsMap.set(item.predioId, item.count));
-              finishMapping(countsMap);
-            });
-          } else {
-            finishMapping(new Map<string, number>());
-          }
-        });
-      } else {
-        this.metricas = {
-          productores: usuariosFiltrados.filter((u: Usuario) => u.rol === 'productor').length,
-          tecnicos: usuariosFiltrados.filter((u: Usuario) => u.rol === 'tecnico').length,
-          inspeccionesPendientes: 0,
-          alertas: 0,
+      const countsMap = new Map<string, number>();
+      lotesCounts.forEach((item) => countsMap.set(item.predioId, item.count));
+
+      // Mapear las solicitudes pendientes con datos enriquecidos
+      this.solicitudesPendientes = pendientesFiltradas.map((ins: Inspeccion) => {
+        const predioId = ins.predio_id || ins.predioId || '';
+        const predioObj = prediosMap.get(predioId);
+        const loc = predioObj
+          ? [predioObj.vereda, predioObj.municipio, predioObj.departamento].filter(Boolean).join(', ')
+          : '—';
+
+        return {
+          ...ins,
+          predioId,
+          predioNombre: predioObj?.nombre || 'Predio Desconocido',
+          departamento: predioObj?.departamento || '',
+          ubicacion: loc || '—',
+          tecnicoNombre: ins.tecnico_nombre || ins.tecnicoNombre || 'Sin asignar',
+          fechaSolicitada: ins.fecha_inspeccion || ins.fechaSolicitada,
+          modoAsignacion: ins.modo_asignacion || ins.modoAsignacion || 'automatica',
+          lotesCount: countsMap.get(predioId) || 0
         };
-        this.solicitudesPendientes = [];
-      }
+      });
     });
   }
 
@@ -142,8 +155,9 @@ export class DashboardAdminComponent implements OnInit {
     this.modalRechazoVisible = sol?.modoAsignacion === 'preferencia';
     this.justificacionRechazo = '';
 
-    this.dataService.getTecnicosActivos().subscribe(t => {
-      // Filtrar técnicos por la misma región (departamento) de la inspección
+    this.dataService.getTecnicosActivos().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(t => {
       this.tecnicosDisponibles = dep ? t.filter(x => x.departamento === dep) : t;
       this.tecnicoSeleccionado = '';
       this.modalAsignacionVisible = true;
@@ -151,14 +165,14 @@ export class DashboardAdminComponent implements OnInit {
   }
 
   public aprobarPreferencia(id: string): void {
-    this.dataService.actualizarInspeccion(id, { estado: 'en_progreso' }).subscribe({
+    this.dataService.actualizarInspeccion(id, { estado: 'en_progreso' }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: () => {
         this.notify.showSuccess('Inspección con técnico preferido aprobada exitosamente.');
         this.recargar();
       },
-      error: (err) => {
-        this.notify.showError('No se pudo aprobar la inspección.');
-      }
+      error: () => this.notify.showError('No se pudo aprobar la inspección.')
     });
   }
 
@@ -174,35 +188,36 @@ export class DashboardAdminComponent implements OnInit {
         tecnico_id: this.tecnicoSeleccionado,
         razon_rechazo: this.justificacionRechazo.trim(),
         estado: 'en_progreso'
-      }).subscribe({
+      }).pipe(takeUntil(this.destroy$)).subscribe({
         next: () => {
           this.modalAsignacionVisible = false;
           this.notify.showSuccess('Inspección reasignada exitosamente.');
           this.recargar();
         },
-        error: (err) => {
-          this.notify.showError('No se pudo reasignar la inspección.');
-        }
+        error: () => this.notify.showError('No se pudo reasignar la inspección.')
       });
     } else {
       this.dataService.asignarTecnicoAInspeccion(this.inspeccionSeleccionada, this.tecnicoSeleccionado)
-        .subscribe(() => { 
-          this.modalAsignacionVisible = false; 
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => {
+          this.modalAsignacionVisible = false;
           this.notify.showSuccess('Técnico asignado exitosamente.');
-          this.recargar(); 
+          this.recargar();
         });
     }
   }
 
   public rechazarPreferencia(id: string): void {
     const motivo = prompt('Por favor, indique el motivo de rechazo de la asignación del técnico de preferencia:');
-    if (motivo === null) return; // Cancelado por el usuario
+    if (motivo === null) return;
     if (!motivo.trim()) {
       this.notify.showError('El motivo de rechazo es obligatorio.');
       return;
     }
 
-    this.dataService.actualizarEstadoInspeccion(id, 'rechazada', motivo.trim()).subscribe({
+    this.dataService.actualizarEstadoInspeccion(id, 'rechazada', motivo.trim()).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: () => {
         this.notify.showSuccess('Solicitud de asignación rechazada exitosamente.');
         this.recargar();

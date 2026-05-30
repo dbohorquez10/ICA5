@@ -56,24 +56,6 @@ export class InspectionService {
   }
 
   /**
-   * Obtiene inspecciones con la jerarquía completa en UNA consulta
-   * Reemplaza múltiples peticiones con una sola
-   */
-  getInspeccionesOptimizado(filters?: any): Observable<any[]> {
-    return this.http.get<any[]>(`${this.insUrl}/inspecciones/optimized`, { params: filters });
-  }
-
-  /**
-   * Obtiene predios filtrados por rol y departamento
-   */
-  getPrediosFiltrados(rol?: string, deptId?: string): Observable<any[]> {
-    return this.predios$ = this.http.get<any[]>(
-      `${this.coreUrl}/predios/filtrados`,
-      { params: { ...(rol && { rol }), ...(deptId && { dept_id: deptId }) } }
-    ).pipe(shareReplay(1));
-  }
-
-  /**
    * Asigna un técnico a un lugar de producción
    */
   asignarTecnico(predioId: string, tecnicoId: string): Observable<any> {
@@ -85,5 +67,14 @@ export class InspectionService {
         this.setUsuarioFilters(this.usuarioFiltersSubject.value);
       })
     );
+  }
+
+  /**
+   * Resetea todos los BehaviorSubjects a estado vacío.
+   * Debe llamarse durante el logout para evitar stale data en la próxima sesión.
+   */
+  resetState(): void {
+    this.prediosSubject.next([]);
+    this.inspeccionesSubject.next([]);
   }
 }

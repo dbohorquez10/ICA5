@@ -3,6 +3,8 @@ import { RouterModule, Routes } from '@angular/router';
 
 // 1. IMPORTANTE: Traemos a nuestro "portero"
 import { authGuard } from './core/guards/auth.guard';
+import { UnauthorizedComponent } from './shared/components/unauthorized.component';
+import { NotFoundComponent } from './shared/components/not-found.component';
 
 const routes: Routes = [
   // Rutas públicas (Cualquiera puede entrar)
@@ -22,11 +24,15 @@ const routes: Routes = [
     loadChildren: () => import('./layout/layout.module').then((m) => m.LayoutModule),
   },
 
+  // Rutas de error
+  { path: 'unauthorized', component: UnauthorizedComponent },
+  { path: 'not-found', component: NotFoundComponent },
+
   // Redirecciones por defecto
   { path: '', redirectTo: 'landing', pathMatch: 'full' },
 
-  // Ruta comodín (Si alguien escribe una URL que no existe, lo mandamos al landing)
-  { path: '**', redirectTo: 'landing' },
+  // Ruta comodín apunta al NotFoundComponent
+  { path: '**', component: NotFoundComponent },
 ];
 
 @NgModule({

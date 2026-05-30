@@ -15,14 +15,17 @@ export const roleGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
   const http = inject(HttpClient);
 
-  // Roles permitidos en la ruta
-  const rolesPermitidos = route.data['roles'] as string[] || [];
+  // Roles permitidos en la ruta (acepta 'roles' plural-array o 'rol' singular-string)
+  const rolData = route.data['roles'] ?? route.data['rol'];
+  const rolesPermitidos: string[] = Array.isArray(rolData)
+    ? rolData
+    : rolData ? [rolData] : [];
   
   return authService.getUsuario().pipe(
     take(1),
     map((usuario) => {
       if (!usuario) {
-        return router.createUrlTree(['/login']);
+        return router.createUrlTree(['/auth/login']);
       }
 
       // Verificar si el rol está permitido

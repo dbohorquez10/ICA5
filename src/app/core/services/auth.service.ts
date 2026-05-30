@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject, Observable, tap, catchError, of, throwError } from 'rxjs';
 import { API_CONFIG } from './api.config';
+import { InspectionService } from './inspection.service';
 
 /**
  * Servicio de autenticación conectado al backend real.
@@ -19,6 +20,7 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: Object,
+    private inspectionService: InspectionService,
   ) {
     // Restaurar sesión desde localStorage al iniciar
     if (isPlatformBrowser(this.platformId)) {
@@ -111,17 +113,24 @@ export class AuthService {
     municipio?: string;
     vereda?: string;
   }): Observable<any> {
-    const token = this.getToken();
-    const headers = { Authorization: `Bearer ${token}` };
+    // No se pasan headers manuales — el authInterceptor adjunta el token automáticamente
     return this.http.post(`${this.authUrl}/register`, {
       ...data,
       rol: 'admin',
-    }, { headers });
+    });
   }
 
   logout(): void {
-    this.http.post(`${this.authUrl}/logout`, {}).subscribe({ error: () => {} });
+    // 1. Capturar el token ANTES de limpiar la sesión local
+    const token = this.getToken();
+    // 2. Limpiar sesión local inmediatamente para respuesta ágil en la UI
     this.limpiarSesion();
+    // 3. Revocar el JWT en el servidor usando el token capturado (en header manual)
+    if (token) {
+      this.http.post(`${this.authUrl}/logout`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).subscribe({ error: () => {} });
+    }
   }
 
   private guardarSesion(token: string, user: any): void {
@@ -140,5 +149,7 @@ export class AuthService {
     }
     this.currentUserSubject.next(null);
     this.loggedIn.next(false);
+    // Limpiar datos cacheados del InspectionService para evitar stale data en la próxima sesión
+    this.inspectionService.resetState();
   }
 }

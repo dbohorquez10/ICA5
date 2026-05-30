@@ -204,7 +204,7 @@ export class EjecutarInspeccionComponent implements OnInit {
     
     if (sub) {
       this.subActual = { ...sub };
-      this.subActual.estado = 'En Progreso';
+      this.subActual.estado = 'en_progreso';
       this.plantaActual = (this.subActual.plantasEvaluadas || 0) + 1;
       this.iniciarLoteView(lote);
     } else {
@@ -217,7 +217,7 @@ export class EjecutarInspeccionComponent implements OnInit {
       }).subscribe(newSub => {
         this.subActual = newSub;
         this.subActual.loteId = lote.id; // local tracking
-        this.subActual.estado = 'En Progreso';
+        this.subActual.estado = 'en_progreso';
         this.subActual.registroPlantas = [];
         this.subActual.plantasEvaluadas = 0;
         
@@ -278,7 +278,7 @@ export class EjecutarInspeccionComponent implements OnInit {
       this.subActual.plantasEvaluadas = this.plantaActual;
     }
 
-    this.subActual.estado = 'Completada';
+    this.subActual.estado = 'completado';
     this.isLoading = true;
 
     // Construir los registros de plantas para el backend

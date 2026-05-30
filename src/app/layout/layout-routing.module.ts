@@ -13,21 +13,21 @@ const routes: Routes = [
       {
         path: 'productor',
         canActivate: [roleGuard],
-        data: { rol: 'productor' },
+        data: { roles: ['productor'] },
         loadChildren: () =>
           import('../features/productor/productor.module').then((m) => m.ProductorModule),
       },
       {
         path: 'tecnico',
         canActivate: [roleGuard],
-        data: { rol: 'tecnico' },
+        data: { roles: ['tecnico'] },
         loadChildren: () =>
           import('../features/tecnico/tecnico.module').then((m) => m.TecnicoModule),
       },
       {
         path: 'admin',
         canActivate: [roleGuard],
-        data: { rol: 'admin' },
+        data: { roles: ['admin'] },
         loadChildren: () =>
           import('../features/admin/admin.module').then((m) => m.AdminModule),
       },
