@@ -49,6 +49,10 @@ export class EjecutarInspeccionComponent implements OnInit {
     private authService: AuthService
   ) {}
 
+  get lote(): Lote {
+    return this.loteActual;
+  }
+
   /** Resolves cultivo name from local cache */
   public getCultivoNombre(lote: any): string {
     const id = lote?.cultivo_id || lote?.cultivoId || '';
@@ -195,6 +199,7 @@ export class EjecutarInspeccionComponent implements OnInit {
   }
 
   public seleccionarLote(lote: Lote): void {
+    if (lote.estado === 'completado') return;
     const sub = this.getSubInspeccion(lote.id);
     if (sub && (sub.estado || '').toLowerCase().includes('completad')) return;
 
@@ -328,6 +333,7 @@ export class EjecutarInspeccionComponent implements OnInit {
                 }
               }
               this.vista = 'lista-lotes';
+              localStorage.removeItem('draft_inspeccion_' + this.lote.id);
               this.guardarDraftLocal();
               this.notify.showSuccess('Lote guardado con éxito.');
             },
@@ -364,6 +370,7 @@ export class EjecutarInspeccionComponent implements OnInit {
             }
           }
           this.vista = 'lista-lotes';
+          localStorage.removeItem('draft_inspeccion_' + this.lote.id);
           this.guardarDraftLocal();
           this.notify.showSuccess('Lote completado.');
         },

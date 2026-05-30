@@ -42,17 +42,19 @@ export class SolicitarInspeccionComponent implements OnInit {
 
   ngOnInit(): void {
     const user = this.authService.getUsuarioActual();
-    const productorId = user?.id || '';
-    // Cargar solo los predios del productor autenticado
-    if (productorId) {
-      this.dataService.getPrediosPorProductor(productorId).subscribe(p => this.predios = p);
-    } else {
-      this.dataService.getPredios().subscribe(p => this.predios = p);
+    if (user) {
+      const productorId = user.id || '';
+      // Cargar solo los predios del productor autenticado
+      if (productorId) {
+        this.dataService.getPrediosPorProductor(productorId).subscribe(p => this.predios = p);
+      } else {
+        this.dataService.getPredios().subscribe(p => this.predios = p);
+      }
+      this.dataService.getTecnicosActivos().subscribe(t => {
+        this.todosLosTecnicos = t;
+        this.filtrarTecnicos();
+      });
     }
-    this.dataService.getTecnicosActivos().subscribe(t => {
-      this.todosLosTecnicos = t;
-      this.filtrarTecnicos();
-    });
   }
 
   public seleccionarPredio(predio: Predio): void {

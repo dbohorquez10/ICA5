@@ -1,8 +1,8 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { inject, PLATFORM_ID } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, throwError, of, Observable } from 'rxjs';
 import { LoadingService } from '../services/loading.service';
 
 /**
@@ -39,7 +39,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }
         // Resetear el spinner para que no quede bloqueado infinitamente
         loadingService.reset();
-        router.navigate(['/auth/login']);
+
+        // Silenciar peticiones fantasma (Error 401) si ya estamos en /auth/login
+        if (router.url === '/auth/login' && !req.url.endsWith('/auth/login')) {
+          return of(null) as unknown as Observable<HttpEvent<any>>;
+        }
+
+        if (router.url !== '/auth/login') {
+          router.navigate(['/auth/login']);
+        }
       } else if (error.status === 403) {
         // Permisos insuficientes: redirigir a la página de acceso no autorizado
         loadingService.reset();

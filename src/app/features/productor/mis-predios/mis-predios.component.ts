@@ -49,9 +49,11 @@ export class MisPrediosComponent implements OnInit {
 
   ngOnInit(): void {
     const user = this.authService.getUsuarioActual();
-    this.productorId = user?.id || '';
-    this.cargarPredios();
-    this.dataService.getCultivos().subscribe(c => this.cultivos = c);
+    if (user) {
+      this.productorId = user.id || '';
+      this.cargarPredios();
+      this.dataService.getCultivos().subscribe(c => this.cultivos = c);
+    }
   }
 
   private cargarPredios(): void {

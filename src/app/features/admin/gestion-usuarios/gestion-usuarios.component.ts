@@ -56,11 +56,14 @@ export class GestionUsuariosComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.cargarUsuarios();
+    if (this.authService.getUsuarioActual()) {
+      this.cargarUsuarios();
+    }
   }
 
   private cargarUsuarios(): void {
     const admin = this.authService.getUsuarioActual();
+    if (!admin) return;
     const adminDep = admin?.departamento || '';
 
     this.dataService.getUsuarios().subscribe(data => {

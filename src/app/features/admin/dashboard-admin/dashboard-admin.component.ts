@@ -38,7 +38,11 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
     private authService: AuthService
   ) {}
 
-  ngOnInit(): void { this.recargar(); }
+  ngOnInit(): void {
+    if (this.authService.getUsuarioActual()) {
+      this.recargar();
+    }
+  }
 
   ngOnDestroy(): void {
     // Emitir y completar el Subject cancela automáticamente TODOS los takeUntil encadenados
@@ -48,6 +52,7 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
 
   private recargar(): void {
     const admin = this.authService.getUsuarioActual();
+    if (!admin) return;
     const adminDep = admin?.departamento || '';
 
     forkJoin({

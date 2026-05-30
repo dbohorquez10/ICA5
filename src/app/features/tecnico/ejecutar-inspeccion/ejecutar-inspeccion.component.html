@@ -74,7 +74,8 @@
         (click)="seleccionarLote(lote)"
         [ngClass]="{
           completado: (getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('completad'),
-          'en-progreso': (getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('progreso')
+          'en-progreso': (getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('progreso'),
+          disabled: (getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('completad') || lote.estado === 'completado'
         }"
       >
         <div class="lote-status-icon">
@@ -155,7 +156,7 @@
         <span class="counter-number">#{{ plantaActual }}</span>
       </div>
       <p class="counter-summary">
-        Evaluadas: <strong>{{ subActual.plantasEvaluadas || 0 }}</strong>
+        Evaluadas: <strong>{{ subActual.plantasEvaluadas || 0 }} / {{ loteActual.num_plantas || 0 }}</strong>
       </p>
     </div>
 
@@ -204,7 +205,7 @@
       <button class="btn-completar-lote" (click)="completarLote()" [disabled]="isLoading">
         <span class="material-icons">done_all</span> Completar {{ loteActual.nombre }}
       </button>
-      <button class="btn-siguiente-planta" (click)="siguientePlanta()" [disabled]="isLoading">
+      <button class="btn-siguiente-planta" (click)="siguientePlanta()" [disabled]="isLoading || (loteActual.num_plantas && plantaActual >= loteActual.num_plantas)">
         <span class="material-icons">add_circle</span> Siguiente Planta
       </button>
     </div>
