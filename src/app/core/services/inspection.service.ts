@@ -34,14 +34,14 @@ export class InspectionService {
   private initializeReactiveQueries(): void {
     this.usuarioFiltersSubject.pipe(
       switchMap(filters =>
-        this.http.get<any[]>(`${this.coreUrl}/predios`, { params: filters as any })
+        this.http.get<any[]>(`${this.coreUrl}/predios/`, { params: filters as any })
       ),
       shareReplay(1)
     ).subscribe(predios => this.prediosSubject.next(predios));
 
     this.usuarioFiltersSubject.pipe(
       switchMap(filters =>
-        this.http.get<any[]>(`${this.insUrl}/inspecciones`, { params: filters as any })
+        this.http.get<any[]>(`${this.insUrl}/inspecciones/`, { params: filters as any })
       ),
       shareReplay(1)
     ).subscribe(inspecciones => this.inspeccionesSubject.next(inspecciones));
