@@ -120,7 +120,7 @@ export interface Inspeccion {
   lote_id?: string;
   fecha_inspeccion?: string;
   tipo_inspeccion?: string;
-  estado: 'Pendiente' | 'En Progreso' | 'Completada' | 'pendiente' | 'en_progreso' | 'completada' | 'cancelada';
+  estado: 'Pendiente' | 'En Progreso' | 'Completada' | 'pendiente' | 'en_progreso' | 'completada' | 'cancelada' | 'rechazada';
   modo_asignacion?: string;
   observaciones?: string;
   resultado_general?: string;
@@ -134,6 +134,7 @@ export interface Inspeccion {
   subInspecciones?: SubInspeccionLote[];
   estado_aprobacion?: 'pendiente' | 'aprobado' | 'rechazado';
   razon_rechazo?: string;
+  motivo_rechazo?: string;
   incidencia_global_pct?: number;
   nivel_alerta?: string;
 }
@@ -437,6 +438,13 @@ export class FitoDataService {
 
   actualizarInspeccion(id: string, datos: Partial<Inspeccion>): Observable<Inspeccion> {
     return this.http.put<Inspeccion>(`${this.insUrl}/inspecciones/${id}`, datos);
+  }
+
+  actualizarEstadoInspeccion(id: string, estado: string, motivoRechazo?: string): Observable<Inspeccion> {
+    return this.http.patch<Inspeccion>(`${this.insUrl}/inspecciones/${id}/estado`, {
+      estado,
+      motivo_rechazo: motivoRechazo
+    });
   }
 
   asignarTecnicoAInspeccion(inspeccionId: string, tecnicoIdOrNombre: string, tecnicoId?: string): Observable<any> {

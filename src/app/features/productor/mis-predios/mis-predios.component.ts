@@ -224,8 +224,8 @@ export class MisPrediosComponent implements OnInit {
       this.dataService.agregarLote(this.nuevoLote).subscribe({
         next: () => {
           this.modalLoteVisible = false;
-          // Limpiar caché antes de recargar para evitar duplicados visuales
-          delete this.lotesCache[this.predioActualParaLote];
+          // Vaciar el arreglo antes de hacer la suscripción al GET para refrescar los datos
+          this.lotesCache[this.predioActualParaLote] = [];
           this.cargarLotes(this.predioActualParaLote);
         },
         error: (err) => {
@@ -236,8 +236,8 @@ export class MisPrediosComponent implements OnInit {
       this.dataService.editarLote(this.loteEnEdicionId, this.nuevoLote).subscribe({
         next: () => {
           this.modalLoteVisible = false;
-          // Limpiar caché antes de recargar para evitar duplicados visuales
-          delete this.lotesCache[this.predioActualParaLote];
+          // Vaciar el arreglo antes de hacer la suscripción al GET para refrescar los datos
+          this.lotesCache[this.predioActualParaLote] = [];
           this.cargarLotes(this.predioActualParaLote);
         },
         error: (err) => {

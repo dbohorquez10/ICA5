@@ -73,20 +73,20 @@
         *ngFor="let lote of lotesDePredio"
         (click)="seleccionarLote(lote)"
         [ngClass]="{
-          completado: getSubInspeccion(lote.id)?.estado === 'Completada',
-          'en-progreso': getSubInspeccion(lote.id)?.estado === 'En Progreso',
+          completado: (getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('completad'),
+          'en-progreso': (getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('progreso')
         }"
       >
         <div class="lote-status-icon">
-          <span class="material-icons" *ngIf="getSubInspeccion(lote.id)?.estado === 'Completada'"
+          <span class="material-icons" *ngIf="(getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('completad')"
             >check_circle</span
           >
-          <span class="material-icons" *ngIf="getSubInspeccion(lote.id)?.estado === 'En Progreso'"
+          <span class="material-icons" *ngIf="(getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('progreso')"
             >pending</span
           >
           <span
             class="material-icons"
-            *ngIf="!getSubInspeccion(lote.id) || getSubInspeccion(lote.id)?.estado === 'Pendiente'"
+            *ngIf="!getSubInspeccion(lote.id) || (!(getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('completad') && !(getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('progreso'))"
             >radio_button_unchecked</span
           >
         </div>
@@ -99,10 +99,10 @@
         </div>
         <span
           class="material-icons arrow-icon"
-          *ngIf="getSubInspeccion(lote.id)?.estado !== 'Completada'"
+          *ngIf="!(getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('completad')"
           >chevron_right</span
         >
-        <span class="completado-label" *ngIf="getSubInspeccion(lote.id)?.estado === 'Completada'"
+        <span class="completado-label" *ngIf="(getSubInspeccion(lote.id)?.estado || '').toLowerCase().includes('completad')"
           >✓ Completado</span
         >
       </div>

@@ -162,7 +162,7 @@ export class EjecutarInspeccionComponent implements OnInit {
 
   public getSubInspeccion(loteId: string): SubInspeccionLote | undefined {
     const subs = this.inspeccion.sub_inspecciones || this.inspeccion.subInspecciones || [];
-    return subs.find(s => s.loteId === loteId || s.id === loteId);
+    return subs.find(s => s.loteId === loteId || s.codigo_punto === loteId || s.id === loteId);
   }
 
   public getLoteName(loteId: string): string {
@@ -170,17 +170,24 @@ export class EjecutarInspeccionComponent implements OnInit {
   }
 
   public get progresoGlobal(): number {
-    if (!this.inspeccion) return 0;
-    const subs = this.inspeccion.sub_inspecciones || this.inspeccion.subInspecciones || [];
-    const total = subs.length;
-    const completos = subs.filter(s => (s.estado || '').toLowerCase().includes('completad')).length;
-    return total ? Math.round((completos / total) * 100) : 0;
+    const total = this.lotesDePredio.length;
+    if (total === 0) return 0;
+    let completos = 0;
+    for (const lote of this.lotesDePredio) {
+      const sub = this.getSubInspeccion(lote.id);
+      if (sub && (sub.estado || '').toLowerCase().includes('completad')) {
+        completos++;
+      }
+    }
+    return Math.round((completos / total) * 100);
   }
 
   public get todosLotesCompletos(): boolean {
-    if (!this.inspeccion) return false;
-    const subs = this.inspeccion.sub_inspecciones || this.inspeccion.subInspecciones || [];
-    return subs.every(s => (s.estado || '').toLowerCase().includes('completad'));
+    if (this.lotesDePredio.length === 0) return false;
+    return this.lotesDePredio.every(lote => {
+      const sub = this.getSubInspeccion(lote.id);
+      return !!(sub && (sub.estado || '').toLowerCase().includes('completad'));
+    });
   }
 
   public iniciarInspeccion(): void {
@@ -309,6 +316,17 @@ export class EjecutarInspeccionComponent implements OnInit {
           }).subscribe({
             next: () => {
               this.isLoading = false;
+              // Actualizar el estado en el arreglo local
+              if (this.inspeccion && this.inspeccion.sub_inspecciones) {
+                const idx = this.inspeccion.sub_inspecciones.findIndex(s => s.id === this.subActual.id);
+                if (idx !== -1) {
+                  this.inspeccion.sub_inspecciones[idx] = {
+                    ...this.inspeccion.sub_inspecciones[idx],
+                    estado: 'completado',
+                    plantas_evaluadas: this.subActual.plantasEvaluadas
+                  };
+                }
+              }
               this.vista = 'lista-lotes';
               this.guardarDraftLocal();
               this.notify.showSuccess('Lote guardado con éxito.');
@@ -334,6 +352,17 @@ export class EjecutarInspeccionComponent implements OnInit {
       }).subscribe({
         next: () => {
           this.isLoading = false;
+          // Actualizar el estado en el arreglo local
+          if (this.inspeccion && this.inspeccion.sub_inspecciones) {
+            const idx = this.inspeccion.sub_inspecciones.findIndex(s => s.id === this.subActual.id);
+            if (idx !== -1) {
+              this.inspeccion.sub_inspecciones[idx] = {
+                ...this.inspeccion.sub_inspecciones[idx],
+                estado: 'completado',
+                plantas_evaluadas: this.subActual.plantasEvaluadas || 0
+              };
+            }
+          }
           this.vista = 'lista-lotes';
           this.guardarDraftLocal();
           this.notify.showSuccess('Lote completado.');

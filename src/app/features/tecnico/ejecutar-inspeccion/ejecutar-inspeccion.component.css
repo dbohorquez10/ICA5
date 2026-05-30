@@ -274,6 +274,8 @@
   border-color: rgba(102, 138, 76, 0.4);
   background: #f0f7e8;
   cursor: default;
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .lote-selector-card.en-progreso {

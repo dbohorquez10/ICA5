@@ -194,6 +194,26 @@ export class DashboardAdminComponent implements OnInit {
     }
   }
 
+  public rechazarPreferencia(id: string): void {
+    const motivo = prompt('Por favor, indique el motivo de rechazo de la asignación del técnico de preferencia:');
+    if (motivo === null) return; // Cancelado por el usuario
+    if (!motivo.trim()) {
+      this.notify.showError('El motivo de rechazo es obligatorio.');
+      return;
+    }
+
+    this.dataService.actualizarEstadoInspeccion(id, 'rechazada', motivo.trim()).subscribe({
+      next: () => {
+        this.notify.showSuccess('Solicitud de asignación rechazada exitosamente.');
+        this.recargar();
+      },
+      error: (err) => {
+        const errorDetail = err?.error?.detail || 'No se pudo rechazar la solicitud.';
+        this.notify.showError(errorDetail);
+      }
+    });
+  }
+
   public cerrarModalAsignacion(): void {
     this.modalAsignacionVisible = false;
     this.modalRechazoVisible = false;
