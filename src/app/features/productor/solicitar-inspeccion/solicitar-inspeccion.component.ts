@@ -108,7 +108,10 @@ export class SolicitarInspeccionComponent implements OnInit {
           const mEstado = (ins.estado || '').toLowerCase();
           const tecId = ins.tecnico_id;
 
-          if (mFecha === this.fechaSugerida && mEstado !== 'cancelada' && tecId) {
+          // Solo se considera ocupado si la inspección está en estado pendiente o en progreso
+          const estaOcupado = mEstado.includes('pendiente') || mEstado.includes('progreso');
+
+          if (mFecha === this.fechaSugerida && estaOcupado && tecId) {
             this.agendaTecnicosMap[tecId] = true;
           }
         });
