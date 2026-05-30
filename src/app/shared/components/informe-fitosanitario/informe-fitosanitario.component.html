@@ -206,8 +206,8 @@
         <span class="material-icons">check</span> Aprobar Certificado
       </button>
 
-      <!-- Botón Rechazar/Anular: visible si el estado actual no es 'rechazado' -->
-      <button *ngIf="inspeccion.estado_aprobacion !== 'rechazado'" class="btn-action reject-btn" (click)="evaluarReporte('rechazado')" style="background-color: #ef4444; color: white; display: inline-flex; align-items: center; gap: 8px; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; cursor: pointer;">
+      <!-- Botón Rechazar/Anular: visible si el estado actual no es 'rechazado' y tampoco 'aprobado' -->
+      <button *ngIf="inspeccion.estado_aprobacion !== 'rechazado' && inspeccion.estado_aprobacion !== 'aprobado'" class="btn-action reject-btn" (click)="evaluarReporte('rechazado')" style="background-color: #ef4444; color: white; display: inline-flex; align-items: center; gap: 8px; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; cursor: pointer;">
         <span class="material-icons">close</span> Rechazar / Anular
       </button>
     </ng-container>
